@@ -1,0 +1,15 @@
+{
+  "watch": [
+    "."
+  ],
+  "ignore": [
+    ".git/**",
+    "node_modules/**",
+    "data/**",
+    "**/*.docx",
+    "**/*.md",
+    "**/*.xlsx"
+  ],
+  "ext": "*",
+  "exec": "node server.js"
+}
