@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= pageTitle ? `${pageTitle} - ${platformName}` : platformName %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/public/css/main.css" rel="stylesheet">
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-semibold" href="/"><%= platformName %></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="切换导航">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="/">仪表盘</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'candidates' ? 'active' : '' %>" href="/candidates">候选人管理</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'progress' ? 'active' : '' %>" href="/progress">招聘进度</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'channels' ? 'active' : '' %>" href="/channels">渠道分析</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="/settings">系统配置</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <main class="container-fluid py-4">
