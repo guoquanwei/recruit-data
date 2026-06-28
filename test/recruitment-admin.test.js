@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const { makeUniqueHeaders } = require('../service/imports/excel');
-const { buildEmployeeFilters } = require('../service/employees/repository');
+const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
 const { maskPhone, parsePage, formatPercent } = require('../service/shared/format');
-const { normalizeActiveEmployee, normalizeResignedEmployee } = require('../service/employees/normalize');
+const { inferBase, isRecruiterEmployee, normalizeActiveEmployee, normalizeResignedEmployee } = require('../service/employees/normalize');
 const { calculateTargetProgress } = require('../service/targets/progress');
 const { normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('../service/interviews/normalize');
 
@@ -63,6 +63,56 @@ test('employee normalization maps active and resigned source columns to one mode
   assert.equal(resigned.position, '招聘专员');
 });
 
+test('talent development department base uses third-level department', () => {
+  assert.equal(inferBase({
+    department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+    officeLocation: 'HB01-石家庄广安大厦'
+  }), '人才开发部');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 人才开发部 - 济南招聘组',
+    officeLocation: 'SD01-济阳达沃智慧园'
+  }), '人才开发部');
+});
+
+test('frontline base maps special office locations to business target names', () => {
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 韶关基地 - 运营交付部 - 在线客服',
+    officeLocation: 'SG01-韶关基地'
+  }), '南二在线客服项目');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010',
+    officeLocation: 'BJ02-北京硅谷'
+  }), '忽略');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部',
+    officeLocation: 'SD02-济南实训基地'
+  }), '济南基地-夏都');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 合肥基地',
+    officeLocation: 'AH01-合肥基地'
+  }), '合肥基地');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 成都基地 - 运营交付部',
+    officeLocation: 'CD01-成都基地'
+  }), '成都基地');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 长春基地 - 京东外呼项目',
+    officeLocation: 'YB-宜宾基地'
+  }), '宜宾基地');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 金融业务运营 - 重庆外呼项目',
+    officeLocation: 'CQ-重庆外呼项目'
+  }), '新业务运营中心');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 金融业务运营 - 重庆中行项目',
+    officeLocation: 'CQ-重庆中行'
+  }), '新业务运营中心');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - ITO项目',
+    officeLocation: 'GZ01-贵阳德福中心'
+  }), 'ITO项目');
+});
+
 test('employee filters support single-select enums and fuzzy channel names', () => {
   const { whereSql, params } = buildEmployeeFilters({
     base: '江苏基地-南京',
@@ -81,6 +131,36 @@ test('employee filters support single-select enums and fuzzy channel names', () 
   assert.equal(params.base, '江苏基地-南京');
   assert.equal(params.channelName, '%尹翔宇+JZ005942%');
   assert.equal(params.channelType, '自主社招');
+});
+
+test('employee base filter options hide ignored and raw department paths', () => {
+  assert.deepEqual(formatBaseOptions([
+    '忽略',
+    '成都基地',
+    '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 培训期',
+    '联通河北',
+    '新业务运营中心'
+  ]), ['联通河北', '成都基地', '新业务运营中心']);
+});
+
+test('recruiter role requires talent development department and recruitment position', () => {
+  assert.equal(isRecruiterEmployee({
+    department: '伽睿集团 / 人才开发部 / 招聘组',
+    position: '招聘运营主管'
+  }), true);
+  assert.equal(isRecruiterEmployee({
+    department: '伽睿集团 / 人才开发部',
+    position: '人才开发总监'
+  }), false);
+  assert.equal(isRecruiterEmployee({
+    department: '伽睿集团 / 人事部',
+    position: '招聘专员'
+  }), false);
+
+  const { whereSql } = buildEmployeeFilters({ role: 'recruiter' });
+  assert.match(whereSql, /department LIKE '%人才开发部%'/);
+  assert.match(whereSql, /position LIKE '%招聘%'/);
+  assert.doesNotMatch(whereSql, /position = @recruiterPosition/);
 });
 
 test('target progress sums monthly and cutoff targets and de-duplicates employees', () => {

@@ -10,7 +10,39 @@ function inferBase({ department, officeLocation }) {
   const departmentText = toText(department);
   const officeText = toText(officeLocation);
   const source = `${departmentText} ${officeText}`;
+  const departmentParts = departmentText
+    .split(/\s+[-/]\s+|\s*\/\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
 
+  if (departmentParts[2] === '人才开发部') {
+    return '人才开发部';
+  }
+
+  if (source.includes('韶关基地') || source.includes('SG01-韶关基地')) {
+    return '南二在线客服项目';
+  }
+  if (source.includes('北京基地') || source.includes('BJ01-') || source.includes('BJ02-') || source.includes('BJ03-') || source.includes('BJ04-')) {
+    return '忽略';
+  }
+  if (source.includes('济南实训基地') || source.includes('SD02-济南实训基地')) {
+    return '济南基地-夏都';
+  }
+  if (source.includes('合肥基地') || source.includes('AH01-合肥基地')) {
+    return '合肥基地';
+  }
+  if (source.includes('成都基地') || source.includes('CD01-成都基地')) {
+    return '成都基地';
+  }
+  if (source.includes('宜宾基地') || source.includes('YB-宜宾基地')) {
+    return '宜宾基地';
+  }
+  if (source.includes('贵阳') || source.includes('GZ01-贵阳德福中心')) {
+    return 'ITO项目';
+  }
+  if (source.includes('成都中行') || source.includes('重庆中行') || source.includes('重庆外呼项目') || source.includes('ZH-成都中行') || source.includes('CQ-重庆中行') || source.includes('CQ-重庆外呼项目')) {
+    return '新业务运营中心';
+  }
   if (source.includes('联通河北') || source.includes('河北基地') || source.includes('石家庄')) {
     return '联通河北';
   }
@@ -86,10 +118,16 @@ function isFrontlineEmployee(employee) {
   return FRONTLINE_POSITIONS.has(toText(employee.position));
 }
 
+function isRecruiterEmployee(employee) {
+  return toText(employee.department).includes('人才开发部')
+    && toText(employee.position).includes('招聘');
+}
+
 module.exports = {
   FRONTLINE_POSITIONS,
   inferBase,
   normalizeActiveEmployee,
   normalizeResignedEmployee,
-  isFrontlineEmployee
+  isFrontlineEmployee,
+  isRecruiterEmployee
 };

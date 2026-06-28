@@ -31,8 +31,13 @@
     <table class="table table-hover align-middle">
       <thead>
         <tr>
-          <th>工号</th><th>姓名</th><th>在职状态</th><th>所属基地</th><th>职位</th>
-          <th>招聘渠道类型</th><th>招聘渠道名称</th><th>办公地点</th><th>入培日期</th><th>离职日期</th><th>手机号</th>
+          <% if (role === 'frontline') { %>
+            <th>所属基地</th><th>工号</th><th>姓名</th><th>在职状态</th><th>职位</th>
+            <th>招聘渠道类型</th><th>招聘渠道名称</th><th>办公地点</th><th>入培日期</th><th>离职日期</th><th>手机号</th>
+          <% } else { %>
+            <th>工号</th><th>姓名</th><th>在职状态</th><th>所属基地</th><th>职位</th>
+            <th>招聘渠道类型</th><th>招聘渠道名称</th><th>办公地点</th><th>入培日期</th><th>离职日期</th><th>手机号</th>
+          <% } %>
         </tr>
       </thead>
       <tbody>
@@ -41,17 +46,31 @@
         <% } %>
         <% result.rows.forEach((employee) => { %>
           <tr>
-            <td><%= employee.employeeNo %></td>
-            <td><%= employee.name %></td>
-            <td><%= employee.employeeStatus %></td>
-            <td><%= employee.base %></td>
-            <td><%= employee.position %></td>
-            <td><%= employee.channelType %></td>
-            <td><%= employee.channelName %></td>
-            <td><%= employee.officeLocation %></td>
-            <td><%= employee.trainingDate %></td>
-            <td><%= employee.resignedDate %></td>
-            <td><%= employee.maskedPhone %></td>
+            <% if (role === 'frontline') { %>
+              <td><%= employee.base %></td>
+              <td><%= employee.employeeNo %></td>
+              <td><%= employee.name %></td>
+              <td><%= employee.employeeStatus %></td>
+              <td><%= employee.position %></td>
+              <td><%= employee.channelType %></td>
+              <td><%= employee.channelName %></td>
+              <td><%= employee.officeLocation %></td>
+              <td><%= employee.trainingDate %></td>
+              <td><%= employee.resignedDate %></td>
+              <td><%= employee.maskedPhone %></td>
+            <% } else { %>
+              <td><%= employee.employeeNo %></td>
+              <td><%= employee.name %></td>
+              <td><%= employee.employeeStatus %></td>
+              <td><%= employee.base %></td>
+              <td><%= employee.position %></td>
+              <td><%= employee.channelType %></td>
+              <td><%= employee.channelName %></td>
+              <td><%= employee.officeLocation %></td>
+              <td><%= employee.trainingDate %></td>
+              <td><%= employee.resignedDate %></td>
+              <td><%= employee.maskedPhone %></td>
+            <% } %>
           </tr>
         <% }) %>
       </tbody>

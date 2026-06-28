@@ -37,6 +37,18 @@ function redirectWithResult(res, pathName, result) {
   res.redirect(`${pathName}?${params.toString()}`);
 }
 
+function cleanupUploadedFile(file) {
+  if (!file?.path) {
+    return;
+  }
+
+  fs.rm(file.path, { force: true }, (error) => {
+    if (error) {
+      console.warn(`上传临时文件删除失败：${file.path}`, error);
+    }
+  });
+}
+
 router.get('/', (req, res) => {
   res.redirect('/dashboard/overview');
 });
@@ -60,6 +72,7 @@ router.post('/employees/import', upload.single('file'), async (req, res) => {
   const result = type === 'resigned'
     ? await importResignedEmployees(req.file.path)
     : await importActiveEmployees(req.file.path);
+  cleanupUploadedFile(req.file);
   redirectWithResult(res, '/employees/import', result);
 });
 
@@ -90,7 +103,9 @@ router.post('/targets/import', upload.single('file'), async (req, res) => {
     res.redirect('/targets?error=请选择要导入的文件');
     return;
   }
-  redirectWithResult(res, '/targets', await importMonthlyTargets(req.file.path));
+  const result = await importMonthlyTargets(req.file.path);
+  cleanupUploadedFile(req.file);
+  redirectWithResult(res, '/targets', result);
 });
 
 router.get('/targets', (req, res) => {
@@ -128,7 +143,9 @@ router.post('/interviews/import', upload.single('file'), async (req, res) => {
     res.redirect('/interviews/import?error=请选择要导入的文件');
     return;
   }
-  redirectWithResult(res, '/interviews/import', await importInterviewRecords(req.file.path, req.body.mode));
+  const result = await importInterviewRecords(req.file.path, req.body.mode);
+  cleanupUploadedFile(req.file);
+  redirectWithResult(res, '/interviews/import', result);
 });
 
 router.get('/interviews', (req, res) => {

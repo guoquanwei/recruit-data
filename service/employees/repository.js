@@ -20,6 +20,27 @@ const EMPLOYEE_COLUMNS = [
   'handover_date'
 ];
 
+const BASE_OPTION_ORDER = [
+  '联通河北',
+  '联通天津',
+  '联通北京',
+  '10015升投',
+  '南二在线客服项目',
+  '长春热线项目',
+  '吉林外呼项目',
+  '江苏基地-南京',
+  '江苏基地-淮安',
+  '济南基地-济阳',
+  '济南基地-夏都',
+  '湖南基地-空港',
+  '湖南基地-荷花',
+  '成都基地',
+  '宜宾基地',
+  '合肥基地',
+  '新业务运营中心',
+  'ITO项目'
+];
+
 function toDatabaseRow(employee) {
   return {
     source_type: employee.sourceType,
@@ -120,8 +141,8 @@ function buildEmployeeFilters(filters = {}) {
     params.endDate = filters.endDate;
   }
   if (filters.role === 'recruiter') {
-    where.push('position = @recruiterPosition');
-    params.recruiterPosition = '招聘专员';
+    where.push("department LIKE '%人才开发部%'");
+    where.push("position LIKE '%招聘%'");
   }
   if (filters.role === 'frontline') {
     where.push("position IN ('客服专员', '培训期学员')");
@@ -166,6 +187,22 @@ function listAllEmployees() {
   return database.prepare('SELECT * FROM employees').all().map(fromDatabaseRow);
 }
 
+function formatBaseOptions(bases) {
+  return bases
+    .filter((base) => base && base !== '忽略' && !base.includes('伽睿集团'))
+    .sort((left, right) => {
+      const leftIndex = BASE_OPTION_ORDER.indexOf(left);
+      const rightIndex = BASE_OPTION_ORDER.indexOf(right);
+
+      if (leftIndex !== -1 || rightIndex !== -1) {
+        return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
+          - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      }
+
+      return left.localeCompare(right, 'zh-Hans-CN');
+    });
+}
+
 function getDistinctEmployeeFilterOptions(filters = {}) {
   const database = getDatabase();
   const { whereSql, params } = buildEmployeeFilters(filters);
@@ -175,7 +212,7 @@ function getDistinctEmployeeFilterOptions(filters = {}) {
   }
 
   return {
-    bases: pluck(`SELECT DISTINCT base FROM employees ${whereSql} ORDER BY base`, 'base'),
+    bases: formatBaseOptions(pluck(`SELECT DISTINCT base FROM employees ${whereSql} ORDER BY base`, 'base')),
     channelTypes: pluck(`SELECT DISTINCT channel_type FROM employees ${whereSql} ORDER BY channel_type`, 'channel_type')
   };
 }
@@ -188,6 +225,7 @@ module.exports = {
   replaceEmployeesBySource,
   buildEmployeeFilters,
   countEmployees,
+  formatBaseOptions,
   listEmployees,
   listAllEmployees,
   getDistinctEmployeeFilterOptions,
