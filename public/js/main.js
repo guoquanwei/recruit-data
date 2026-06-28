@@ -119,15 +119,16 @@ function getTooltip() {
   return tooltip;
 }
 
-function showOptionTooltip(option) {
-  const label = option.dataset.label || option.textContent.trim();
+function showTextTooltip(element, text) {
+  const label = text || element.dataset.label || element.textContent.trim();
+  const isOverflowing = element.scrollWidth > element.clientWidth;
 
-  if (label.length <= 15) {
+  if (label.length <= 15 && !isOverflowing) {
     hideOptionTooltip();
     return;
   }
 
-  const rect = option.getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
   const tooltip = getTooltip();
 
   tooltip.textContent = label;
@@ -137,6 +138,10 @@ function showOptionTooltip(option) {
   const left = Math.min(rect.left, window.innerWidth - tooltip.offsetWidth - 8);
   tooltip.style.top = `${top}px`;
   tooltip.style.left = `${Math.max(8, left)}px`;
+}
+
+function showOptionTooltip(option) {
+  showTextTooltip(option, option.dataset.label || option.textContent.trim());
 }
 
 function hideOptionTooltip() {
@@ -247,6 +252,11 @@ document.querySelectorAll('[data-search-select]').forEach((select) => {
 
 document.querySelectorAll('.clearable-field input').forEach((field) => {
   field.addEventListener('input', () => syncClearButtons());
+});
+
+document.querySelectorAll('.table tbody td').forEach((cell) => {
+  cell.addEventListener('mouseenter', () => showTextTooltip(cell));
+  cell.addEventListener('mouseleave', hideOptionTooltip);
 });
 
 syncClearButtons();
