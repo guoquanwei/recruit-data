@@ -611,6 +611,16 @@ body {
   width: 128px;
 }
 
+.employee-table-frontline th:nth-child(1),
+.employee-table-frontline td:nth-child(1) {
+  width: 150px;
+}
+
+.employee-table-frontline th:nth-child(4),
+.employee-table-frontline td:nth-child(4) {
+  width: 76px;
+}
+
 .table-hover > tbody > tr:hover > * {
   background: #f7fbff;
 }
