@@ -8,6 +8,24 @@
     <link href="/public/css/main.css" rel="stylesheet">
   </head>
   <body>
+    <%
+      const navIcon = (name) => {
+        const icons = {
+          upload: '<path d="M12 3v10m0-10 4 4m-4-4-4 4"/><path d="M5 14v4h14v-4"/>',
+          user: '<circle cx="12" cy="8" r="3"/><path d="M5 19c1.5-3 4-4.5 7-4.5s5.5 1.5 7 4.5"/>',
+          users: '<circle cx="9" cy="8" r="3"/><path d="M3 19c1.2-2.6 3.2-4 6-4"/><circle cx="16" cy="9" r="2.5"/><path d="M14 15c2.4.3 4.1 1.6 5 4"/>',
+          list: '<path d="M8 6h11M8 12h11M8 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+          target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 8v4l3 2"/>',
+          file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M8 13h8M8 17h6"/>',
+          calendar: '<path d="M5 5h14v15H5z"/><path d="M8 3v4M16 3v4M5 9h14"/>',
+          funnel: '<path d="M4 5h16l-6 7v5l-4 2v-7z"/>',
+          chart: '<path d="M5 19V5"/><path d="M5 19h14"/><path d="M8 16v-4M12 16V8M16 16v-7"/>',
+          alert: '<path d="M12 4 3 20h18z"/><path d="M12 9v5M12 17h.01"/>',
+          gauge: '<path d="M4 15a8 8 0 1 1 16 0"/><path d="M12 15l4-4"/><path d="M8 19h8"/>'
+        };
+        return `<span class="nav-icon" aria-hidden="true"><svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name]}</svg></span>`;
+      };
+    %>
     <div class="admin-shell">
       <script>
         if (localStorage.getItem('recruitAdminSidebarCollapsed') === '1') {
@@ -22,34 +40,48 @@
         <nav class="sidebar-nav" aria-label="主导航">
           <section class="nav-group <%= moduleActive === 'employees' ? 'open' : '' %>">
             <div class="nav-group-title">员工数据管理</div>
-            <a class="<%= active === 'employees-import' ? 'active' : '' %>" href="/employees/import" title="全量数据导入"><span class="nav-icon">导</span><span class="nav-label">全量数据导入</span></a>
-            <a class="<%= active === 'employees-recruiters' ? 'active' : '' %>" href="/employees/recruiters" title="招聘专员列表"><span class="nav-icon">招</span><span class="nav-label">招聘专员列表</span></a>
-            <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><span class="nav-icon">员</span><span class="nav-label">一线员工列表</span></a>
+            <a class="<%= active === 'employees-import' ? 'active' : '' %>" href="/employees/import" title="全量数据导入"><%- navIcon('upload') %><span class="nav-label">全量数据导入</span></a>
+            <a class="<%= active === 'employees-recruiters' ? 'active' : '' %>" href="/employees/recruiters" title="招聘专员列表"><%- navIcon('user') %><span class="nav-label">招聘专员列表</span></a>
+            <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><%- navIcon('users') %><span class="nav-label">一线员工列表</span></a>
           </section>
           <section class="nav-group <%= moduleActive === 'targets' ? 'open' : '' %>">
             <div class="nav-group-title">招聘目标管理</div>
-            <a class="<%= active === 'targets-list' ? 'active' : '' %>" href="/targets" title="目标列表"><span class="nav-icon">目</span><span class="nav-label">目标列表</span></a>
-            <a class="<%= active === 'targets-progress' ? 'active' : '' %>" href="/targets/progress" title="目标达成进度"><span class="nav-icon">达</span><span class="nav-label">目标达成进度</span></a>
+            <a class="<%= active === 'targets-list' ? 'active' : '' %>" href="/targets" title="目标列表"><%- navIcon('list') %><span class="nav-label">目标列表</span></a>
+            <a class="<%= active === 'targets-progress' ? 'active' : '' %>" href="/targets/progress" title="目标达成进度"><%- navIcon('target') %><span class="nav-label">目标达成进度</span></a>
           </section>
           <section class="nav-group <%= moduleActive === 'interviews' ? 'open' : '' %>">
             <div class="nav-group-title">面试记录管理</div>
-            <a class="<%= active === 'interviews-import' ? 'active' : '' %>" href="/interviews/import" title="数据导入"><span class="nav-icon">导</span><span class="nav-label">数据导入</span></a>
-            <a class="<%= active === 'interviews-list' ? 'active' : '' %>" href="/interviews" title="面试记录列表"><span class="nav-icon">面</span><span class="nav-label">面试记录列表</span></a>
-            <a class="<%= active === 'interviews-funnel' ? 'active' : '' %>" href="/interviews/funnel" title="招聘漏斗分析"><span class="nav-icon">漏</span><span class="nav-label">招聘漏斗分析</span></a>
+            <a class="<%= active === 'interviews-import' ? 'active' : '' %>" href="/interviews/import" title="数据导入"><%- navIcon('upload') %><span class="nav-label">数据导入</span></a>
+            <a class="<%= active === 'interviews-list' ? 'active' : '' %>" href="/interviews" title="面试记录列表"><%- navIcon('calendar') %><span class="nav-label">面试记录列表</span></a>
+            <a class="<%= active === 'interviews-funnel' ? 'active' : '' %>" href="/interviews/funnel" title="招聘漏斗分析"><%- navIcon('funnel') %><span class="nav-label">招聘漏斗分析</span></a>
           </section>
           <section class="nav-group <%= moduleActive === 'dashboard' ? 'open' : '' %>">
             <div class="nav-group-title">综合分析看板</div>
-            <a class="<%= active === 'dashboard-overview' ? 'active' : '' %>" href="/dashboard/overview" title="招聘负责人看板"><span class="nav-icon">看</span><span class="nav-label">招聘负责人看板</span></a>
-            <a class="<%= active === 'dashboard-base-risk' ? 'active' : '' %>" href="/dashboard/base-risk" title="基地风险分析"><span class="nav-icon">险</span><span class="nav-label">基地风险分析</span></a>
-            <a class="<%= active === 'dashboard-self-sourcing' ? 'active' : '' %>" href="/dashboard/self-sourcing" title="自主社招人效"><span class="nav-icon">效</span><span class="nav-label">自主社招人效</span></a>
+            <a class="<%= active === 'dashboard-overview' ? 'active' : '' %>" href="/dashboard/overview" title="招聘负责人看板"><%- navIcon('chart') %><span class="nav-label">招聘负责人看板</span></a>
+            <a class="<%= active === 'dashboard-base-risk' ? 'active' : '' %>" href="/dashboard/base-risk" title="基地风险分析"><%- navIcon('alert') %><span class="nav-label">基地风险分析</span></a>
+            <a class="<%= active === 'dashboard-self-sourcing' ? 'active' : '' %>" href="/dashboard/self-sourcing" title="自主社招人效"><%- navIcon('gauge') %><span class="nav-label">自主社招人效</span></a>
           </section>
         </nav>
       </aside>
       <div class="content-shell">
+        <%
+          const moduleTitleMap = {
+            employees: '员工数据管理',
+            targets: '招聘目标管理',
+            interviews: '面试记录管理',
+            dashboard: '综合分析看板'
+          };
+          const moduleTitle = moduleTitleMap[moduleActive];
+        %>
         <header class="page-header">
-          <div>
-            <p class="page-kicker">人力招聘数据分析后台</p>
-            <h1><%= pageTitle || platformName %></h1>
-          </div>
+          <nav class="page-breadcrumb" aria-label="当前位置">
+            <% if (moduleTitle) { %>
+              <span><%= moduleTitle %></span>
+              <span class="breadcrumb-separator">/</span>
+              <span><%= pageTitle || '' %></span>
+            <% } else { %>
+              <span><%= pageTitle || platformName %></span>
+            <% } %>
+          </nav>
         </header>
         <main class="page-content">

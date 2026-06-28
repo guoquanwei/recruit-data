@@ -11,7 +11,7 @@ const { normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('..
 test('shared formatting masks phone numbers and parses pagination defaults', () => {
   assert.equal(maskPhone('13915993720'), '139****3720');
   assert.equal(maskPhone(''), '');
-  assert.deepEqual(parsePage({}), { page: 1, pageSize: 20, limit: 20, offset: 0 });
+  assert.deepEqual(parsePage({}), { page: 1, pageSize: 10, limit: 10, offset: 0 });
   assert.equal(formatPercent(0.875), '87.50%');
   assert.equal(formatPercent(null), '0.00%');
 });

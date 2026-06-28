@@ -29,7 +29,7 @@ function parsePositiveInteger(value, fallback) {
 
 function parsePage(query = {}) {
   const page = parsePositiveInteger(query.page, 1);
-  const pageSize = parsePositiveInteger(query.pageSize, 20);
+  const pageSize = parsePositiveInteger(query.pageSize, 10);
 
   return {
     page,

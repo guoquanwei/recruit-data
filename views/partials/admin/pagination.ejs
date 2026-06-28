@@ -44,7 +44,7 @@
     <input type="hidden" name="page" value="1">
     <label class="page-size-label">
       <select class="form-select form-select-sm page-size-select" name="pageSize" data-page-size-select>
-        <% [20, 50, 100].forEach((size) => { %>
+        <% [10, 20, 50, 100].forEach((size) => { %>
           <option value="<%= size %>" <%= page.pageSize === size ? 'selected' : '' %>><%= size %>条/页</option>
         <% }) %>
       </select>
