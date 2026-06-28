@@ -1,0 +1,31 @@
+<%- include('../../partials/header') %>
+
+<section class="table-card">
+  <div class="table-actions">
+    <h2 class="h5 mb-0">基地风险分析</h2>
+    <a class="btn btn-sm btn-outline-primary" href="/dashboard/overview">返回总览</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>基地</th><th>月度目标</th><th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成率</th><th>主要缺口渠道</th></tr></thead>
+      <tbody>
+        <% if (dashboard.bases.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="7">暂无基地风险数据。</td></tr>
+        <% } %>
+        <% dashboard.bases.forEach((base) => { %>
+          <tr>
+            <td><%= base.base %></td>
+            <td><%= base.monthlyTarget %></td>
+            <td><%= base.cutoffTarget %></td>
+            <td><%= base.actualTraining %></td>
+            <td class="<%= base.gap < 0 ? 'danger-text' : '' %>"><%= base.gap %></td>
+            <td class="<%= base.achievementRate < 1 ? 'danger-text' : '' %>"><%= base.achievementRateText %></td>
+            <td><%= base.shortageChannels.map((item) => `${item.channel}(${item.gap})`).join('、') %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../../partials/footer') %>

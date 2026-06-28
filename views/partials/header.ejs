@@ -8,31 +8,48 @@
     <link href="/public/css/main.css" rel="stylesheet">
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-      <div class="container-fluid">
-        <a class="navbar-brand fw-semibold" href="/"><%= platformName %></a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="切换导航">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNavbar">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="/">仪表盘</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= active === 'candidates' ? 'active' : '' %>" href="/candidates">候选人管理</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= active === 'progress' ? 'active' : '' %>" href="/progress">招聘进度</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= active === 'channels' ? 'active' : '' %>" href="/channels">渠道分析</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="/settings">系统配置</a>
-            </li>
-          </ul>
+    <div class="admin-shell">
+      <script>
+        if (localStorage.getItem('recruitAdminSidebarCollapsed') === '1') {
+          document.currentScript.parentElement.classList.add('sidebar-collapsed');
+        }
+      </script>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <a href="/dashboard/overview"><%= platformName %></a>
+          <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="收起导航">☰</button>
         </div>
-      </div>
-    </nav>
-    <main class="container-fluid py-4">
+        <nav class="sidebar-nav" aria-label="主导航">
+          <section class="nav-group <%= moduleActive === 'employees' ? 'open' : '' %>">
+            <div class="nav-group-title">员工数据管理</div>
+            <a class="<%= active === 'employees-import' ? 'active' : '' %>" href="/employees/import" title="全量数据导入"><span class="nav-icon">导</span><span class="nav-label">全量数据导入</span></a>
+            <a class="<%= active === 'employees-recruiters' ? 'active' : '' %>" href="/employees/recruiters" title="招聘专员列表"><span class="nav-icon">招</span><span class="nav-label">招聘专员列表</span></a>
+            <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><span class="nav-icon">员</span><span class="nav-label">一线员工列表</span></a>
+          </section>
+          <section class="nav-group <%= moduleActive === 'targets' ? 'open' : '' %>">
+            <div class="nav-group-title">招聘目标管理</div>
+            <a class="<%= active === 'targets-list' ? 'active' : '' %>" href="/targets" title="目标列表"><span class="nav-icon">目</span><span class="nav-label">目标列表</span></a>
+            <a class="<%= active === 'targets-progress' ? 'active' : '' %>" href="/targets/progress" title="目标达成进度"><span class="nav-icon">达</span><span class="nav-label">目标达成进度</span></a>
+          </section>
+          <section class="nav-group <%= moduleActive === 'interviews' ? 'open' : '' %>">
+            <div class="nav-group-title">面试记录管理</div>
+            <a class="<%= active === 'interviews-import' ? 'active' : '' %>" href="/interviews/import" title="数据导入"><span class="nav-icon">导</span><span class="nav-label">数据导入</span></a>
+            <a class="<%= active === 'interviews-list' ? 'active' : '' %>" href="/interviews" title="面试记录列表"><span class="nav-icon">面</span><span class="nav-label">面试记录列表</span></a>
+            <a class="<%= active === 'interviews-funnel' ? 'active' : '' %>" href="/interviews/funnel" title="招聘漏斗分析"><span class="nav-icon">漏</span><span class="nav-label">招聘漏斗分析</span></a>
+          </section>
+          <section class="nav-group <%= moduleActive === 'dashboard' ? 'open' : '' %>">
+            <div class="nav-group-title">综合分析看板</div>
+            <a class="<%= active === 'dashboard-overview' ? 'active' : '' %>" href="/dashboard/overview" title="招聘负责人看板"><span class="nav-icon">看</span><span class="nav-label">招聘负责人看板</span></a>
+            <a class="<%= active === 'dashboard-base-risk' ? 'active' : '' %>" href="/dashboard/base-risk" title="基地风险分析"><span class="nav-icon">险</span><span class="nav-label">基地风险分析</span></a>
+            <a class="<%= active === 'dashboard-self-sourcing' ? 'active' : '' %>" href="/dashboard/self-sourcing" title="自主社招人效"><span class="nav-icon">效</span><span class="nav-label">自主社招人效</span></a>
+          </section>
+        </nav>
+      </aside>
+      <div class="content-shell">
+        <header class="page-header">
+          <div>
+            <p class="page-kicker">人力招聘数据分析后台</p>
+            <h1><%= pageTitle || platformName %></h1>
+          </div>
+        </header>
+        <main class="page-content">

@@ -1,0 +1,45 @@
+<%- include('../../partials/header') %>
+
+<div class="alert alert-info">当前漏斗仅覆盖面试反馈到入培的后段分析，不包含投递、邀约和到面前链路。</div>
+
+<section class="table-card mb-3">
+  <h2 class="h5">面试反馈结果</h2>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>反馈结果</th><th>人数</th></tr></thead>
+      <tbody>
+        <% if (funnel.feedbackResults.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="2">暂无面试反馈数据。</td></tr>
+        <% } %>
+        <% funnel.feedbackResults.forEach((item) => { %>
+          <tr><td><%= item.name %></td><td><%= item.count %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="table-card">
+  <h2 class="h5">渠道维度后段转化</h2>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>渠道标签</th><th>面试人数</th><th>推荐人数</th><th>入培人数</th><th>推荐到入培转化率</th></tr></thead>
+      <tbody>
+        <% if (funnel.channels.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="5">暂无渠道转化数据。</td></tr>
+        <% } %>
+        <% funnel.channels.forEach((item) => { %>
+          <tr>
+            <td><%= item.channel %></td>
+            <td><%= item.interviewCount %></td>
+            <td><%= item.recommendedCount %></td>
+            <td><%= item.trainingCount %></td>
+            <td><%= item.conversionRateText %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../../partials/footer') %>

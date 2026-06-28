@@ -17,6 +17,9 @@ function createApp() {
 
   app.use((req, res, next) => {
     res.locals.platformName = runtime.platformName;
+    res.locals.active = '';
+    res.locals.moduleActive = '';
+    res.locals.pageTitle = runtime.platformName;
     next();
   });
 

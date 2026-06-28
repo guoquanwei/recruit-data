@@ -1,0 +1,69 @@
+<%- include('../../partials/header') %>
+
+<% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+<section class="filter-card">
+  <form method="get">
+    <div class="filter-grid">
+      <%- include('../../partials/admin/search-select', { label: '月份', name: 'yearMonth', value: result.filters.yearMonth, items: result.options.months }) %>
+      <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: result.filters.base, items: result.options.bases }) %>
+      <%- include('../../partials/admin/search-select', { label: '渠道', name: 'channel', value: result.filters.channel, items: result.options.channels }) %>
+      <%- include('../../partials/admin/clearable-input', { label: '关键词', name: 'keyword', value: result.filters.keyword, placeholder: '基地/渠道/订单类型' }) %>
+      <div class="filter-actions">
+        <button class="btn btn-primary" type="submit">查询</button>
+        <button class="btn btn-outline-secondary" type="button" data-reset-form>重置</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="import-card">
+  <form class="row g-2 align-items-end" action="/targets/import" method="post" enctype="multipart/form-data">
+    <div class="col-md-8">
+      <label class="form-label">导入月度招聘目标 Excel</label>
+      <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
+    </div>
+    <div class="col-md-4">
+      <button class="btn btn-primary" type="submit">按月覆盖导入</button>
+    </div>
+  </form>
+</section>
+
+<section class="table-card">
+  <div class="table-actions">
+    <h2 class="h5 mb-0">目标列表</h2>
+    <a class="btn btn-sm btn-outline-primary" href="/targets/progress">查看达成进度</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>月份</th><th>基地</th><th>渠道</th><th>订单类型</th><th>月度目标</th>
+          <th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成率</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (result.rows.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="9"><%= result.emptyMessage || '暂无目标数据，请先导入目标表。' %></td></tr>
+        <% } %>
+        <% result.rows.forEach((target) => { %>
+          <tr>
+            <td><%= target.yearMonth %></td>
+            <td><%= target.base %></td>
+            <td><%= target.channel %></td>
+            <td><%= target.orderType %></td>
+            <td><%= target.progress.monthlyTarget %></td>
+            <td><%= target.progress.cutoffTarget %></td>
+            <td><%= target.progress.actualTraining %></td>
+            <td class="<%= target.progress.gap < 0 ? 'danger-text' : '' %>"><%= target.progress.gap %></td>
+            <td class="<%= target.progress.achievementRate < 1 ? 'danger-text' : '' %>"><%= target.progress.achievementRateText %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('../../partials/admin/pagination', { total: result.total, page: result.page, filters: result.filters, basePath: '/targets' }) %>
+</section>
+
+<%- include('../../partials/footer') %>

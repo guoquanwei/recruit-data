@@ -1,0 +1,63 @@
+<%- include('../../partials/header') %>
+
+<section class="filter-card">
+  <form method="get">
+    <div class="filter-grid">
+      <%- include('../../partials/admin/clearable-input', { label: '关键词', name: 'keyword', value: result.filters.keyword, placeholder: '工号/姓名/手机号' }) %>
+      <%- include('../../partials/admin/search-select', { label: '所属基地', name: 'base', value: result.filters.base, items: result.options.bases }) %>
+      <%- include('../../partials/admin/search-select', { label: '在职状态', name: 'status', value: result.filters.status, items: ['在职', '离职'] }) %>
+      <%- include('../../partials/admin/clearable-input', { label: '招聘渠道', name: 'channelName', value: result.filters.channelName, placeholder: '支持渠道名称模糊匹配' }) %>
+      <%- include('../../partials/admin/search-select', { label: '招聘类型', name: 'channelType', value: result.filters.channelType, items: result.options.channelTypes }) %>
+      <label class="form-label">入培开始
+        <input class="form-control" type="date" name="startDate" value="<%= result.filters.startDate %>">
+      </label>
+      <label class="form-label">入培结束
+        <input class="form-control" type="date" name="endDate" value="<%= result.filters.endDate %>">
+      </label>
+      <div class="filter-actions">
+        <button class="btn btn-primary" type="submit">查询</button>
+        <button class="btn btn-outline-secondary" type="button" data-reset-form>重置</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="table-card">
+  <div class="table-actions">
+    <h2 class="h5 mb-0"><%= heading %></h2>
+    <a class="btn btn-sm btn-primary" href="/employees/import">导入员工数据</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>工号</th><th>姓名</th><th>在职状态</th><th>所属基地</th><th>职位</th>
+          <th>招聘渠道类型</th><th>招聘渠道名称</th><th>办公地点</th><th>入培日期</th><th>离职日期</th><th>手机号</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (result.rows.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="11"><%= result.emptyMessage %></td></tr>
+        <% } %>
+        <% result.rows.forEach((employee) => { %>
+          <tr>
+            <td><%= employee.employeeNo %></td>
+            <td><%= employee.name %></td>
+            <td><%= employee.employeeStatus %></td>
+            <td><%= employee.base %></td>
+            <td><%= employee.position %></td>
+            <td><%= employee.channelType %></td>
+            <td><%= employee.channelName %></td>
+            <td><%= employee.officeLocation %></td>
+            <td><%= employee.trainingDate %></td>
+            <td><%= employee.resignedDate %></td>
+            <td><%= employee.maskedPhone %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('../../partials/admin/pagination', { total: result.total, page: result.page, filters: result.filters, basePath: role === 'recruiter' ? '/employees/recruiters' : '/employees/frontline' }) %>
+</section>
+
+<%- include('../../partials/footer') %>

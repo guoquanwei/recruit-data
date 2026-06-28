@@ -1,0 +1,52 @@
+<%- include('../../partials/header') %>
+
+<section class="filter-card">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">月份</label>
+      <input class="form-control" type="month" name="yearMonth" value="<%= dashboard.yearMonth %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">截止日期</label>
+      <input class="form-control" type="date" name="cutoffDate" value="<%= dashboard.cutoffDate %>">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary" type="submit">查询</button>
+    </div>
+  </form>
+</section>
+
+<div class="metric-grid">
+  <div class="metric-card"><span>整体目标</span><strong><%= dashboard.topMetrics.monthlyTarget %></strong></div>
+  <div class="metric-card"><span>截止目标</span><strong><%= dashboard.topMetrics.cutoffTarget %></strong></div>
+  <div class="metric-card"><span>实际入培数</span><strong><%= dashboard.topMetrics.actualTraining %></strong></div>
+  <div class="metric-card <%= dashboard.topMetrics.gap < 0 ? 'danger' : '' %>"><span>GAP</span><strong><%= dashboard.topMetrics.gap %></strong></div>
+  <div class="metric-card <%= dashboard.topMetrics.achievementRate < 1 ? 'danger' : '' %>"><span>达成率</span><strong><%= dashboard.topMetrics.achievementRateText %></strong></div>
+  <div class="metric-card"><span>未达成基地数</span><strong><%= dashboard.topMetrics.unmetBaseCount %></strong></div>
+  <div class="metric-card"><span>自主社招整体人效</span><strong><%= dashboard.topMetrics.selfSourcingEfficiency %></strong></div>
+  <div class="metric-card"><span>自主社招占比</span><strong><%= (dashboard.topMetrics.selfSourcingShare * 100).toFixed(2) %>%</strong></div>
+</div>
+
+<section class="table-card">
+  <h2 class="h5">全局渠道占比</h2>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>渠道</th><th>目标</th><th>截止目标</th><th>实际</th><th>目标占比</th><th>达成占比</th><th>占比GAP</th></tr></thead>
+      <tbody>
+        <% dashboard.channels.forEach((channel) => { %>
+          <tr>
+            <td><%= channel.channel %></td>
+            <td><%= channel.monthlyTarget %></td>
+            <td><%= channel.cutoffTarget %></td>
+            <td><%= channel.actualTraining %></td>
+            <td><%= channel.targetShareText %></td>
+            <td><%= channel.actualShareText %></td>
+            <td><%= channel.shareGapText %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../../partials/footer') %>

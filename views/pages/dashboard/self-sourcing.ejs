@@ -1,0 +1,47 @@
+<%- include('../../partials/header') %>
+
+<section class="table-card mb-3">
+  <h2 class="h5">自主社招人效</h2>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>阶段</th><th>招聘规模</th><th>参培达成</th><th>7 天达成</th><th>人效</th></tr></thead>
+      <tbody>
+        <% dashboard.selfSourcingEfficiency.forEach((item) => { %>
+          <tr>
+            <td><%= item.stage %></td>
+            <td><%= item.recruiterCount %></td>
+            <td><%= item.trainingCount %></td>
+            <td><%= item.sevenDayCount %></td>
+            <td><%= item.efficiency %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="table-card">
+  <h2 class="h5">自主社招入培明细</h2>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>基地</th><th>工号</th><th>姓名</th><th>手机号</th><th>渠道</th><th>渠道名称</th><th>入培日期</th><th>状态</th><th>离职日期</th></tr></thead>
+      <tbody>
+        <% dashboard.trainingDetails.filter((item) => item.channelType === '自主社招').forEach((item) => { %>
+          <tr>
+            <td><%= item.base %></td>
+            <td><%= item.employeeNo %></td>
+            <td><%= item.name %></td>
+            <td><%= item.maskedPhone %></td>
+            <td><%= item.channelType %></td>
+            <td><%= item.channelName %></td>
+            <td><%= item.trainingDate %></td>
+            <td><%= item.employeeStatus %></td>
+            <td><%= item.resignedDate %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../../partials/footer') %>

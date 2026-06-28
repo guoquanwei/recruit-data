@@ -1,0 +1,59 @@
+<%- include('../../partials/header') %>
+
+<section class="filter-card">
+  <form method="get">
+    <div class="filter-grid">
+      <%- include('../../partials/admin/clearable-input', { label: '关键词', name: 'keyword', value: result.filters.keyword, placeholder: '职位/候选人/手机号' }) %>
+      <label class="form-label">反馈日期
+        <input class="form-control" type="date" name="feedbackDate" value="<%= result.filters.feedbackDate %>">
+      </label>
+      <%- include('../../partials/admin/search-select', { label: '反馈结果', name: 'feedbackResult', value: result.filters.feedbackResult, items: result.options.feedbackResults }) %>
+      <%- include('../../partials/admin/search-select', { label: '面试官', name: 'interviewer', value: result.filters.interviewer, items: result.options.interviewers }) %>
+      <%- include('../../partials/admin/search-select', { label: '渠道标签', name: 'channelTag', value: result.filters.channelTag, items: result.options.channelTags }) %>
+      <div class="filter-actions">
+        <button class="btn btn-primary" type="submit">查询</button>
+        <button class="btn btn-outline-secondary" type="button" data-reset-form>重置</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="table-card">
+  <div class="table-actions">
+    <h2 class="h5 mb-0">面试记录列表</h2>
+    <a class="btn btn-sm btn-primary" href="/interviews/import">导入面试记录</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>职位名称</th><th>候选人</th><th>性别</th><th>电话</th><th>反馈日期</th>
+          <th>反馈结果</th><th>面试官</th><th>渠道标签</th><th>合约名称</th><th>内推人</th><th>综合评价</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (result.rows.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="11"><%= result.emptyMessage || '暂无面试记录，请先导入面试记录。' %></td></tr>
+        <% } %>
+        <% result.rows.forEach((record) => { %>
+          <tr>
+            <td><%= record.positionName %></td>
+            <td><%= record.candidateName %></td>
+            <td><%= record.gender %></td>
+            <td><%= record.maskedPhone %></td>
+            <td><%= record.feedbackDate %></td>
+            <td><%= record.feedbackResult %></td>
+            <td><%= record.interviewer %></td>
+            <td><%= record.channelTag %></td>
+            <td><%= record.contractName %></td>
+            <td><%= record.referrer %></td>
+            <td><%= record.evaluation %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('../../partials/admin/pagination', { total: result.total, page: result.page, filters: result.filters, basePath: '/interviews' }) %>
+</section>
+
+<%- include('../../partials/footer') %>

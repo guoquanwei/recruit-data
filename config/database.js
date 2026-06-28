@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
 
+const { initializeBusinessSchema } = require('../dao/schema');
 const runtime = require('./runtime');
 
 let database;
@@ -22,6 +23,7 @@ function connectDatabase() {
   ensureDatabaseDirectory();
   database = new DatabaseSync(runtime.sqlite.path);
   database.exec('PRAGMA foreign_keys = ON;');
+  initializeBusinessSchema(database);
 
   return database;
 }

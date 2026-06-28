@@ -1,0 +1,27 @@
+<%
+  const selectedValue = value || '';
+  const selectedItem = (items || []).find((item) => item === selectedValue);
+  const selectedLabel = selectedItem || '全部';
+  const isSearchable = (items || []).length > 15;
+%>
+<div class="form-label"><%= label %>
+  <div class="search-select <%= isSearchable ? 'is-searchable' : 'is-simple' %>" data-search-select data-searchable="<%= isSearchable ? '1' : '0' %>">
+    <input type="hidden" name="<%= name %>" value="<%= selectedValue %>">
+    <div class="search-select-control" data-search-select-toggle>
+      <input class="search-select-input" type="text" value="<%= selectedLabel %>" autocomplete="off" <%= isSearchable ? '' : 'readonly' %> data-search-select-input>
+      <% if (isSearchable) { %>
+        <button class="clear-input-button search-select-clear" type="button" data-search-select-clear aria-label="清空<%= label %>">×</button>
+      <% } %>
+      <button class="search-select-arrow-button" type="button" aria-label="展开选项">⌄</button>
+    </div>
+    <div class="search-select-panel">
+      <div class="search-select-options">
+        <button class="search-select-option <%= selectedValue === '' ? 'active' : '' %>" type="button" data-search-select-option data-value="" data-label="全部">全部</button>
+        <% (items || []).forEach((item) => { %>
+          <button class="search-select-option <%= selectedValue === item ? 'active' : '' %>" type="button" data-search-select-option data-value="<%= item %>" data-label="<%= item %>"><%= item %></button>
+        <% }) %>
+      </div>
+      <div class="search-select-empty" data-search-select-empty>无匹配选项</div>
+    </div>
+  </div>
+</div>

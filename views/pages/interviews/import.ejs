@@ -1,0 +1,30 @@
+<%- include('../../partials/header') %>
+
+<% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+<section class="import-card">
+  <h2 class="h5 mb-3">面试记录导入</h2>
+  <p class="text-muted small">支持历史全量覆盖、按日追加、按日覆盖。按日覆盖以 `面试官填写反馈时间` 为覆盖范围。</p>
+  <form action="/interviews/import" method="post" enctype="multipart/form-data">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">导入模式</label>
+        <select class="form-select" name="mode">
+          <option value="daily_append">按日追加</option>
+          <option value="daily_overwrite">按日覆盖</option>
+          <option value="full_overwrite">历史全量覆盖</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">选择 Excel 文件</label>
+        <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" type="submit">导入</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<%- include('../../partials/footer') %>
