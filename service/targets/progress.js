@@ -49,14 +49,56 @@ function countActualTraining({ target, employees }) {
   return seen.size;
 }
 
-function calculateTargetProgress({ target, employees = [], cutoffDate }) {
+function getActualTrainingKey({ yearMonth, base, channel }) {
+  return `${yearMonth}::${toText(base)}::${toText(channel)}`;
+}
+
+function buildActualTrainingIndex(employees = []) {
+  const index = new Map();
+
+  employees.forEach((employee) => {
+    const trainingDate = normalizeDate(employee.trainingDate);
+    const yearMonth = trainingDate.slice(0, 7);
+    const base = toText(employee.base);
+    const channel = toText(employee.channelType);
+    const employeeKey = employee.employeeNo || employee.phone || employee.name;
+    if (!yearMonth || !base || !channel || !employeeKey) {
+      return;
+    }
+
+    const key = getActualTrainingKey({ yearMonth, base, channel });
+    if (!index.has(key)) {
+      index.set(key, new Set());
+    }
+    index.get(key).add(employeeKey);
+  });
+
+  return index;
+}
+
+function getIndexedActualTraining(target, actualTrainingIndex) {
+  if (!actualTrainingIndex) {
+    return undefined;
+  }
+  const key = getActualTrainingKey({
+    yearMonth: target.yearMonth,
+    base: target.base,
+    channel: target.channel
+  });
+  return actualTrainingIndex.get(key)?.size || 0;
+}
+
+function calculateTargetProgress({ target, employees = [], cutoffDate, actualTrainingIndex }) {
   const lastDay = getMonthLastDay(target.yearMonth);
   const cutoffDay = cutoffDate && normalizeDate(cutoffDate).startsWith(target.yearMonth)
     ? getDayOfMonth(cutoffDate)
     : lastDay;
   const monthlyTarget = sumDailyTargets(target, lastDay);
   const cutoffTarget = sumDailyTargets(target, cutoffDay);
-  const actualTraining = countActualTraining({ target, employees });
+  const indexedActualTraining = getIndexedActualTraining(target, actualTrainingIndex);
+  const actualTraining = indexedActualTraining === undefined
+    ? countActualTraining({ target, employees })
+    : indexedActualTraining;
   const gap = actualTraining - monthlyTarget;
   const achievementRate = monthlyTarget > 0 ? actualTraining / monthlyTarget : 0;
 
@@ -73,6 +115,7 @@ function calculateTargetProgress({ target, employees = [], cutoffDate }) {
 module.exports = {
   CHANNEL_ORDER,
   sumDailyTargets,
+  buildActualTrainingIndex,
   calculateTargetProgress,
   countActualTraining
 };

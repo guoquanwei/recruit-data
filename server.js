@@ -13,7 +13,10 @@ function createApp() {
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
-  app.use('/public', express.static(path.join(runtime.appRoot, 'public')));
+  app.use('/public', express.static(path.join(runtime.appRoot, 'public'), {
+    maxAge: '30d',
+    etag: true
+  }));
 
   app.use((req, res, next) => {
     res.locals.platformName = runtime.platformName;

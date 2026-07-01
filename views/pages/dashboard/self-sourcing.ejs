@@ -1,5 +1,31 @@
 <%- include('../../partials/header') %>
 
+<%
+  const detailPayload = {};
+  const detailColumns = ['状态', '工号', '姓名', '招聘渠道', '渠道名称', '入培日期', '是否在职', '离职日期', '在职天数'];
+  const toDetailRows = (rows = []) => rows.map((row) => ({
+    '状态': row.status,
+    '工号': row.employeeNo,
+    '姓名': row.name,
+    '招聘渠道': row.channelType,
+    '渠道名称': row.channelName,
+    '入培日期': row.trainingDate,
+    '是否在职': row.employeeStatus,
+    '离职日期': row.resignedDate,
+    '在职天数': row.workDays
+  }));
+  const addDetailPayload = (key, title, rows) => {
+    detailPayload[key] = {
+      title,
+      columns: detailColumns,
+      rows: toDetailRows(rows)
+    };
+  };
+  const detailButton = (key, value) => (
+    `<button type="button" class="detail-number" data-detail-key="${key}">${value}</button>`
+  );
+%>
+
 <section class="filter-card">
   <form method="get" class="row g-3 align-items-end">
     <div class="col-md-3">
@@ -93,6 +119,8 @@
           <% const values = item.months.map((month) => month.sevenDayRetainedCount); %>
           <% const maxValue = Math.max(...values, 1); %>
           <% const points = values.map((value, index) => `${values.length === 1 ? 50 : (index / (values.length - 1) * 100).toFixed(1)},${(32 - value / maxValue * 28).toFixed(1)}`).join(' '); %>
+          <% addDetailPayload(`actual-${item.name}`, `${item.name} - 实际达成明细`, item.actualDetails); %>
+          <% addDetailPayload(`seven-${item.name}`, `${item.name} - 7天留存明细`, item.sevenDayRetainedDetails); %>
           <tr>
             <td><%= item.name %></td>
             <td><%= item.employeeNo || '--' %></td>
@@ -100,14 +128,15 @@
             <td><%= item.employeeStatus %></td>
             <td>--</td>
             <td>--</td>
-            <td><%= item.actualAchievement %></td>
+            <td><%- detailButton(`actual-${item.name}`, item.actualAchievement) %></td>
             <td>--</td>
             <td>--</td>
-            <td><%= item.sevenDayRetainedCount %></td>
+            <td><%- detailButton(`seven-${item.name}`, item.sevenDayRetainedCount) %></td>
             <td><%= item.cutoffMonthlyAverageSevenDayEfficiency %></td>
             <td><%= item.cumulativeSevenDayEfficiency %></td>
             <% item.months.forEach((month) => { %>
-              <td><%= month.sevenDayRetainedCount %></td>
+              <% addDetailPayload(`month-${item.name}-${month.yearMonth}`, `${item.name} - ${month.label} 7天留存明细`, month.sevenDayRetainedDetails); %>
+              <td><%- detailButton(`month-${item.name}-${month.yearMonth}`, month.sevenDayRetainedCount) %></td>
             <% }) %>
             <td>
               <svg class="mini-sparkline" viewBox="0 0 100 36" role="img" aria-label="7天留存趋势">
@@ -120,5 +149,62 @@
     </table>
   </div>
 </section>
+
+<div id="detailModal" class="modal-mask" data-detail-modal>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="modal-head">
+      <h2 id="detailModalTitle">明细</h2>
+      <button type="button" class="modal-close" data-detail-close>关闭</button>
+    </div>
+    <div id="detailModalBody" class="modal-body"></div>
+  </div>
+</div>
+
+<script id="detailPayload" type="application/json"><%- JSON.stringify(detailPayload).replace(/</g, '\\u003c') %></script>
+<script>
+  (() => {
+    const payload = JSON.parse(document.getElementById('detailPayload').textContent);
+    const modal = document.querySelector('[data-detail-modal]');
+    const title = document.getElementById('detailModalTitle');
+    const body = document.getElementById('detailModalBody');
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+    const openDetail = (key) => {
+      const item = payload[key];
+      if (!item) return;
+      title.textContent = item.title;
+      if (!item.rows.length) {
+        body.innerHTML = '<p class="muted">暂无匹配人员明细</p>';
+      } else {
+        const head = item.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('');
+        const rows = item.rows.map((row) => {
+          const cells = item.columns.map((column) => `<td>${escapeHtml(row[column])}</td>`).join('');
+          return `<tr>${cells}</tr>`;
+        }).join('');
+        body.innerHTML = `<div class="table-responsive"><table class="table table-hover"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+      }
+      modal.classList.add('open');
+    };
+    const closeDetail = () => modal.classList.remove('open');
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-detail-key]');
+      if (button) {
+        openDetail(button.dataset.detailKey);
+        return;
+      }
+      if (event.target === modal || event.target.closest('[data-detail-close]')) {
+        closeDetail();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeDetail();
+    });
+  })();
+</script>
 
 <%- include('../../partials/footer') %>

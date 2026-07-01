@@ -1,7 +1,7 @@
 const { listAllEmployees } = require('../employees/repository');
 const { getMonthLastDay } = require('../shared/date');
 const { formatPercent, parsePage, toText } = require('../shared/format');
-const { calculateTargetProgress, CHANNEL_ORDER } = require('./progress');
+const { buildActualTrainingIndex, calculateTargetProgress, CHANNEL_ORDER } = require('./progress');
 const { getAvailableMonths, getDistinctTargetFilterOptions, listTargets, listTargetsByMonth, listTargetsForSummary } = require('./repository');
 
 function buildTargetFilters(query = {}) {
@@ -42,12 +42,13 @@ function getTargetList(query = {}) {
   const cutoffDate = getCutoffDate(displayMonth, query);
   const result = listTargets({ filters, page });
   const summaryTargets = listTargetsForSummary(filters);
+  const actualTrainingIndex = buildActualTrainingIndex(employees);
 
   return {
     ...result,
     rows: result.rows.map((target) => ({
       ...target,
-      progress: calculateTargetProgress({ target, employees, cutoffDate })
+      progress: calculateTargetProgress({ target, employees, cutoffDate, actualTrainingIndex })
     })),
     page,
     filters,
@@ -64,6 +65,7 @@ function getTargetExportRows(query = {}) {
   const hasYearMonthQuery = Object.prototype.hasOwnProperty.call(query, 'yearMonth');
   filters.yearMonth = hasYearMonthQuery ? filters.yearMonth : getDefaultMonth(query);
   const employees = listAllEmployees();
+  const actualTrainingIndex = buildActualTrainingIndex(employees);
   const cutoffDate = getCutoffDate(filters.yearMonth, query);
   const result = listTargets({
     filters,
@@ -75,7 +77,7 @@ function getTargetExportRows(query = {}) {
 
   return result.rows.map((target) => ({
     ...target,
-    progress: calculateTargetProgress({ target, employees, cutoffDate })
+    progress: calculateTargetProgress({ target, employees, cutoffDate, actualTrainingIndex })
   }));
 }
 
@@ -195,9 +197,10 @@ function summarizeTargets(targets, employees, cutoffDate) {
   let overallActual = 0;
   const targetYearMonth = targets[0]?.yearMonth || String(cutoffDate || '').slice(0, 7);
   const targetsForSummary = includeActualOnlyTargets({ targets, employees, yearMonth: targetYearMonth });
+  const actualTrainingIndex = buildActualTrainingIndex(employees);
 
   targetsForSummary.forEach((target) => {
-    const progress = calculateTargetProgress({ target, employees, cutoffDate });
+    const progress = calculateTargetProgress({ target, employees, cutoffDate, actualTrainingIndex });
     overallMonthlyTarget += progress.monthlyTarget;
     overallCutoffTarget += progress.cutoffTarget;
     overallActual += progress.actualTraining;

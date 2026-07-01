@@ -1,0 +1,540 @@
+<style>
+  .demo-shell {
+    display: grid;
+    gap: 24px;
+  }
+
+  .demo-hero {
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    border-radius: 28px;
+    padding: 28px;
+    background:
+      radial-gradient(circle at top left, rgba(37, 99, 235, 0.20), transparent 34%),
+      linear-gradient(135deg, #0f172a 0%, #172554 52%, #111827 100%);
+    color: #fff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.26);
+  }
+
+  .demo-hero p {
+    max-width: 920px;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .demo-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .demo-pill {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 8px 12px;
+    color: rgba(255, 255, 255, 0.86);
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+  }
+
+  .demo-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .demo-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 26px;
+    overflow: hidden;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 16px 42px rgba(15, 23, 42, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  .demo-card:hover {
+    transform: translateY(-4px);
+    border-color: #2563eb;
+    box-shadow: 0 24px 56px rgba(37, 99, 235, 0.16);
+  }
+
+  .demo-card.selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 24px 56px rgba(37, 99, 235, 0.16);
+  }
+
+  .demo-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 18px 0;
+  }
+
+  .demo-card-head span {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    color: #fff;
+    background: #111827;
+    font-weight: 800;
+  }
+
+  .demo-card-head em {
+    color: #64748b;
+    font-size: 12px;
+    font-style: normal;
+  }
+
+  .demo-card-body {
+    padding: 16px 18px 20px;
+  }
+
+  .demo-card-body h3 {
+    margin: 0 0 8px;
+    color: #111827;
+    font-size: 20px;
+  }
+
+  .demo-card-body p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .mock-screen {
+    margin: 18px;
+    min-height: 370px;
+    border-radius: 22px;
+    padding: 16px;
+    background: #f8fafc;
+    overflow: hidden;
+  }
+
+  .war-room {
+    color: #dbeafe;
+    background:
+      linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 58, 138, 0.92)),
+      repeating-linear-gradient(90deg, transparent 0 28px, rgba(255, 255, 255, 0.03) 28px 29px);
+  }
+
+  .war-top {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 12px;
+  }
+
+  .war-score {
+    border: 1px solid rgba(147, 197, 253, 0.24);
+    border-radius: 18px;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.66);
+  }
+
+  .war-score strong {
+    display: block;
+    color: #fff;
+    font-size: 42px;
+    line-height: 1;
+  }
+
+  .war-score span {
+    color: #93c5fd;
+    font-size: 12px;
+  }
+
+  .war-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .war-kpis div,
+  .war-action,
+  .war-base {
+    border: 1px solid rgba(147, 197, 253, 0.18);
+    border-radius: 16px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .war-kpis b {
+    display: block;
+    color: #fff;
+    font-size: 22px;
+  }
+
+  .war-kpis small,
+  .war-action small,
+  .war-base small {
+    color: #bfdbfe;
+  }
+
+  .war-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .war-action-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .war-action {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  .war-action strong {
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .war-action em {
+    color: #fca5a5;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  .war-base-map {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .war-base strong {
+    display: block;
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .war-bar {
+    height: 7px;
+    margin-top: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .war-bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f97316, #ef4444);
+  }
+
+  .flow-screen {
+    background: #fff7ed;
+  }
+
+  .flow-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .flow-node,
+  .flow-panel {
+    border: 1px solid #fed7aa;
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.84);
+  }
+
+  .flow-node strong,
+  .flow-panel strong {
+    display: block;
+    color: #7c2d12;
+  }
+
+  .flow-node b {
+    display: block;
+    margin-top: 8px;
+    color: #ea580c;
+    font-size: 30px;
+  }
+
+  .flow-lane {
+    display: grid;
+    gap: 10px;
+  }
+
+  .flow-risk {
+    border-radius: 14px;
+    padding: 10px;
+    background: #fff1f2;
+  }
+
+  .flow-risk span {
+    display: flex;
+    justify-content: space-between;
+    color: #9f1239;
+    font-size: 12px;
+  }
+
+  .flow-stage {
+    display: grid;
+    grid-template-columns: 62px 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #9a3412;
+  }
+
+  .flow-stage div {
+    height: 8px;
+    border-radius: 999px;
+    background: #ffedd5;
+  }
+
+  .flow-stage i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #fb923c;
+  }
+
+  .people-screen {
+    background:
+      radial-gradient(circle at 10% 10%, rgba(20, 184, 166, 0.22), transparent 32%),
+      #f0fdfa;
+  }
+
+  .people-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .people-panel {
+    border: 1px solid #99f6e4;
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.88);
+  }
+
+  .people-panel strong {
+    display: block;
+    color: #134e4a;
+  }
+
+  .quadrant {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .quadrant div {
+    min-height: 72px;
+    border-radius: 14px;
+    padding: 10px;
+    color: #115e59;
+    background: #ccfbf1;
+  }
+
+  .quadrant b {
+    display: block;
+    font-size: 20px;
+  }
+
+  .spark-table {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .spark-row {
+    display: grid;
+    grid-template-columns: 74px 1fr 44px;
+    gap: 8px;
+    align-items: center;
+    color: #115e59;
+    font-size: 12px;
+  }
+
+  .spark-line {
+    height: 28px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #5eead4 20%, #14b8a6 20% 48%, #2dd4bf 48% 72%, #0f766e 72%);
+  }
+
+  .demo-notes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .demo-note {
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+    background: #fff;
+  }
+
+  .demo-note strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #111827;
+  }
+
+  .demo-note p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+</style>
+
+<div class="demo-shell">
+  <section class="demo-hero">
+    <h2>运营看板展示形式 Demo</h2>
+    <p>只展示信息组织与视觉方向，不改现有网站内容。以下 3 个方向都复用当前已有维度：目标/截止目标/实际/GAP、基地风险、渠道占比、批次漏斗、到面/面通/参培、自主社招人效与 7 天留存。</p>
+    <div class="demo-pill-row">
+      <span class="demo-pill">6 月整体：目标 455 / 实际 261 / GAP -194</span>
+      <span class="demo-pill">未达成基地：8 个</span>
+      <span class="demo-pill">自主社招占比：67.82%</span>
+      <span class="demo-pill">自招整体人效：7.4</span>
+    </div>
+  </section>
+
+  <div class="demo-options">
+    <article class="demo-card" data-choice="war-room" onclick="toggleSelect(this)">
+      <div class="demo-card-head">
+        <span>A</span>
+        <em>推荐：运营负责人首页</em>
+      </div>
+      <div class="mock-screen war-room">
+        <div class="war-top">
+          <div class="war-score">
+            <span>本月目标达成</span>
+            <strong>57.36%</strong>
+            <small>当前 GAP -194，低于截止目标 119 人</small>
+          </div>
+          <div class="war-kpis">
+            <div><small>未达成基地</small><b>8</b></div>
+            <div><small>自招占比</small><b>67.82%</b></div>
+            <div><small>渠道社招</small><b>55</b></div>
+            <div><small>满 7 天人效</small><b>趋势</b></div>
+          </div>
+        </div>
+        <div class="war-grid">
+          <div class="war-action-list">
+            <div class="war-action"><strong>湖南空港 / 渠道社招</strong><em>-31</em><small>优先补量与到面确认</small></div>
+            <div class="war-action"><strong>江苏淮安 / 自主社招</strong><em>-29</em><small>检查自招人员产能</small></div>
+            <div class="war-action"><strong>联通天津 / 自主社招</strong><em>-29</em><small>单渠道依赖风险</small></div>
+          </div>
+          <div class="war-base-map">
+            <div class="war-base"><strong>湖南基地-空港</strong><small>达成 42.50%</small><div class="war-bar"><i style="width:42%"></i></div></div>
+            <div class="war-base"><strong>江苏基地-淮安</strong><small>达成 61.05%</small><div class="war-bar"><i style="width:61%"></i></div></div>
+            <div class="war-base"><strong>联通河北</strong><small>达成 72.00%</small><div class="war-bar"><i style="width:72%"></i></div></div>
+            <div class="war-base"><strong>10015升投</strong><small>达成 0.00%</small><div class="war-bar"><i style="width:8%"></i></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card-body">
+        <h3>经营战情室</h3>
+        <p>把首页从“指标陈列”改成“今天该处理什么”。首屏突出总 GAP、风险基地、TOP 动作清单，适合管理层每天巡检。</p>
+      </div>
+    </article>
+
+    <article class="demo-card" data-choice="diagnosis-flow" onclick="toggleSelect(this)">
+      <div class="demo-card-head">
+        <span>B</span>
+        <em>推荐：风险页重构</em>
+      </div>
+      <div class="mock-screen flow-screen">
+        <div class="flow-grid">
+          <div class="flow-lane">
+            <div class="flow-node"><strong>目标缺口</strong><b>-194</b><small>先按基地排序</small></div>
+            <div class="flow-node"><strong>最大基地缺口</strong><b>空港</b><small>渠道社招 -31</small></div>
+            <div class="flow-node"><strong>下一动作</strong><b>补量</b><small>到面和面通不足</small></div>
+          </div>
+          <div class="flow-panel">
+            <strong>基地 x 渠道风险热力</strong>
+            <div class="flow-risk"><span><b>湖南空港</b><em>渠道社招 -31</em></span><div class="flow-stage"><span>到面</span><div><i style="width:38%"></i></div><b>低</b></div><div class="flow-stage"><span>面通</span><div><i style="width:28%"></i></div><b>低</b></div><div class="flow-stage"><span>参培</span><div><i style="width:11%"></i></div><b>4</b></div></div>
+            <div class="flow-risk"><span><b>江苏淮安</b><em>自招 -29</em></span><div class="flow-stage"><span>到面</span><div><i style="width:62%"></i></div><b>中</b></div><div class="flow-stage"><span>面通</span><div><i style="width:46%"></i></div><b>中</b></div><div class="flow-stage"><span>参培</span><div><i style="width:42%"></i></div><b>21</b></div></div>
+          </div>
+          <div class="flow-panel">
+            <strong>批次诊断卡</strong>
+            <div class="flow-risk"><span><b>6月10日批次</b><em>整体储备不足</em></span><div class="flow-stage"><span>应到面</span><div><i style="width:70%"></i></div><b>缺</b></div><div class="flow-stage"><span>应面通</span><div><i style="width:52%"></i></div><b>缺</b></div><div class="flow-stage"><span>应入培</span><div><i style="width:34%"></i></div><b>缺</b></div></div>
+            <div class="flow-risk"><span><b>6月20日批次</b><em>入职转化不足</em></span><div class="flow-stage"><span>到面</span><div><i style="width:88%"></i></div><b>足</b></div><div class="flow-stage"><span>面通</span><div><i style="width:78%"></i></div><b>足</b></div><div class="flow-stage"><span>参培</span><div><i style="width:44%"></i></div><b>弱</b></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card-body">
+        <h3>风险诊断流</h3>
+        <p>把“基地风险”和“招聘漏斗归因”合成一条链路：总缺口 -> 基地 -> 渠道 -> 批次 -> 漏斗环节 -> 建议动作。</p>
+      </div>
+    </article>
+
+    <article class="demo-card" data-choice="people-efficiency" onclick="toggleSelect(this)">
+      <div class="demo-card-head">
+        <span>C</span>
+        <em>推荐：自招专题页</em>
+      </div>
+      <div class="mock-screen people-screen">
+        <div class="people-grid">
+          <div class="people-panel">
+            <strong>自招团队经营象限</strong>
+            <div class="quadrant">
+              <div><small>高产高留</small><b>8 人</b></div>
+              <div><small>高产低留</small><b>3 人</b></div>
+              <div><small>低产高留</small><b>5 人</b></div>
+              <div><small>低产低留</small><b>4 人</b></div>
+            </div>
+          </div>
+          <div class="people-panel">
+            <strong>人效目标进度</strong>
+            <div class="spark-table">
+              <div class="spark-row"><span>整体</span><div class="spark-line"></div><b>7.4</b></div>
+              <div class="spark-row"><span>试用期</span><div class="spark-line" style="filter:hue-rotate(35deg); width:82%"></div><b>6.8</b></div>
+              <div class="spark-row"><span>正式期</span><div class="spark-line" style="filter:hue-rotate(-25deg); width:96%"></div><b>8.1</b></div>
+            </div>
+          </div>
+          <div class="people-panel">
+            <strong>人员动作清单</strong>
+            <div class="spark-table">
+              <div class="spark-row"><span>张三</span><div class="spark-line" style="width:42%"></div><b>补量</b></div>
+              <div class="spark-row"><span>李四</span><div class="spark-line" style="width:78%"></div><b>稳留</b></div>
+              <div class="spark-row"><span>王五</span><div class="spark-line" style="width:55%"></div><b>辅导</b></div>
+            </div>
+          </div>
+          <div class="people-panel">
+            <strong>7 天留存预警</strong>
+            <div class="quadrant">
+              <div><small>待满 7 天</small><b>42</b></div>
+              <div><small>已满 7 天</small><b>119</b></div>
+              <div><small>7天留存</small><b>趋势</b></div>
+              <div><small>风险人员</small><b>12</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card-body">
+        <h3>自招效能经营</h3>
+        <p>把自主社招从长表改成“人员经营面板”：阶段目标、人效、7 天留存、人员象限和动作清单，更适合主管复盘。</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="demo-notes">
+    <div class="demo-note">
+      <strong>A 的优化空间</strong>
+      <p>更适合作为运营看板首页：减少表格，增加“风险优先级”和“动作清单”，让负责人进入页面后马上知道先处理谁。</p>
+    </div>
+    <div class="demo-note">
+      <strong>B 的优化空间</strong>
+      <p>更适合做诊断页：把现有基地风险、批次、漏斗口径串起来，解决“看到 GAP 但不知道卡在哪”的问题。</p>
+    </div>
+    <div class="demo-note">
+      <strong>C 的优化空间</strong>
+      <p>更适合做自招专题：现有人员明细很全，但可以先给主管看象限和预警，再下钻到招聘专员明细。</p>
+    </div>
+  </div>
+</div>

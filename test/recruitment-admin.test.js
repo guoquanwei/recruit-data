@@ -908,6 +908,12 @@ test('self sourcing recruiter rows summarize months through selected month', () 
   assert.equal(zhang.sevenDayTrainingTarget, 12);
   assert.equal(zhang.sevenDayCutoffTarget, 12);
   assert.equal(zhang.sevenDayRetainedCount, 1);
+  assert.deepEqual(zhang.actualDetails.map((item) => [item.employeeNo, item.name, item.employeeStatus]), [
+    ['B', '', ''],
+    ['C', '', ''],
+    ['D', '', '']
+  ]);
+  assert.deepEqual(zhang.sevenDayRetainedDetails.map((item) => item.employeeNo), ['B']);
   const lisi = rows.find((row) => row.name === '李四');
   assert.equal(lisi.monthlyTrainingTarget, 11);
   assert.equal(lisi.monthlyCutoffTarget, 11);

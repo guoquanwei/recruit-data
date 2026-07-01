@@ -179,6 +179,29 @@ function isSevenDayRetained(employee, asOfDate) {
   return sevenDayDate <= currentDate && (!resignedDate || resignedDate > sevenDayDate);
 }
 
+function getWorkDays(employee, asOfDate) {
+  const trainingDate = parseDateValue(employee.trainingDate);
+  const endDate = parseDateValue(employee.resignedDate) || parseDateValue(asOfDate) || new Date();
+  if (!trainingDate || endDate < trainingDate) {
+    return 0;
+  }
+  return Math.floor((endDate - trainingDate) / (24 * 60 * 60 * 1000)) + 1;
+}
+
+function toSelfSourcingCandidateDetail(employee, asOfDate) {
+  return {
+    status: employee.employeeStatus || '',
+    employeeNo: employee.employeeNo || '',
+    name: employee.name || '',
+    channelType: employee.channelType || '',
+    channelName: employee.channelName || '',
+    trainingDate: employee.trainingDate || '',
+    employeeStatus: employee.employeeStatus || '',
+    resignedDate: employee.resignedDate || '',
+    workDays: getWorkDays(employee, asOfDate)
+  };
+}
+
 function buildYearMonthsThrough(yearMonth) {
   const normalizedYearMonth = toText(yearMonth);
   const year = Number(normalizedYearMonth.slice(0, 4));
@@ -323,14 +346,17 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [] })
     const monthRows = months.map((month) => {
       const monthlyDetails = details.filter((employee) => employee.trainingDate.startsWith(month.yearMonth));
       const monthEnd = buildDate(month.yearMonth, getMonthLastDay(month.yearMonth));
+      const sevenDayRetainedDetails = monthlyDetails.filter((employee) => isSevenDayRetained(employee, monthEnd));
       return {
         ...month,
         actualAchievement: monthlyDetails.length,
-        sevenDayRetainedCount: monthlyDetails.filter((employee) => isSevenDayRetained(employee, monthEnd)).length
+        sevenDayRetainedCount: sevenDayRetainedDetails.length,
+        sevenDayRetainedDetails: sevenDayRetainedDetails.map((employee) => toSelfSourcingCandidateDetail(employee, monthEnd))
       };
     });
     const selectedMonthDetails = details.filter((employee) => employee.trainingDate.startsWith(selectedMonth));
-    const selectedSevenDayCount = selectedMonthDetails.filter((employee) => isSevenDayRetained(employee, currentDate)).length;
+    const selectedSevenDayDetails = selectedMonthDetails.filter((employee) => isSevenDayRetained(employee, currentDate));
+    const selectedSevenDayCount = selectedSevenDayDetails.length;
     const cumulativeSevenDayCount = monthRows.reduce((sum, month) => sum + month.sevenDayRetainedCount, 0);
     const status = recruiter.name ? getRecruiterDisplayStatus(recruiter, currentDate) : '未匹配';
     const stage = recruiter.name ? getRecruiterStage(recruiter, currentDate) : 'probation';
@@ -344,9 +370,11 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [] })
       monthlyTrainingTarget: targets.monthlyTrainingTarget,
       monthlyCutoffTarget: calculateMonthlyCutoffTarget(targets.monthlyTrainingTarget, selectedMonth, currentDate),
       actualAchievement: selectedMonthDetails.length,
+      actualDetails: selectedMonthDetails.map((employee) => toSelfSourcingCandidateDetail(employee, currentDate)),
       sevenDayTrainingTarget: targets.sevenDayTrainingTarget,
       sevenDayCutoffTarget: calculateMonthlyCutoffTarget(targets.sevenDayTrainingTarget, selectedMonth, currentDate),
       sevenDayRetainedCount: selectedSevenDayCount,
+      sevenDayRetainedDetails: selectedSevenDayDetails.map((employee) => toSelfSourcingCandidateDetail(employee, currentDate)),
       cutoffMonthlyAverageSevenDayEfficiency: (cumulativeSevenDayCount / (months.length || 1)).toFixed(1),
       cumulativeSevenDayEfficiency: cumulativeSevenDayCount.toFixed(1),
       months: monthRows
