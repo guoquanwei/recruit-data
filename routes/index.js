@@ -240,7 +240,7 @@ router.get('/dashboard/overview', (req, res) => {
   renderPage(res, 'pages/dashboard/overview', {
     active: 'dashboard-overview',
     moduleActive: 'dashboard',
-    pageTitle: '招聘负责人看板',
+    pageTitle: '人才开发运营看板',
     dashboard: getDashboardOverview(req.query)
   });
 });
@@ -250,7 +250,7 @@ router.get('/dashboard/base-risk', (req, res) => {
     active: 'dashboard-base-risk',
     moduleActive: 'dashboard',
     pageTitle: '基地风险分析',
-    dashboard: getDashboardOverview(req.query)
+    dashboard: getDashboardOverview({ ...req.query, tab: 'base' })
   });
 });
 
@@ -259,7 +259,7 @@ router.get('/dashboard/self-sourcing', (req, res) => {
     active: 'dashboard-self-sourcing',
     moduleActive: 'dashboard',
     pageTitle: '自主社招人效',
-    dashboard: getDashboardOverview(req.query)
+    dashboard: getDashboardOverview({ ...req.query, tab: 'self' })
   });
 });
 

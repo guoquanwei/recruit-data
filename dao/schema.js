@@ -79,6 +79,14 @@ function initializeBusinessSchema(database) {
     CREATE INDEX IF NOT EXISTS idx_interviews_feedback_date ON interview_records(feedback_date);
     CREATE INDEX IF NOT EXISTS idx_interviews_result_channel ON interview_records(feedback_result, channel_tag);
     CREATE INDEX IF NOT EXISTS idx_interviews_phone ON interview_records(phone);
+
+    CREATE TABLE IF NOT EXISTS recruiter_monthly_scales (
+      year_month TEXT NOT NULL,
+      stage TEXT NOT NULL,
+      recruiter_count INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (year_month, stage)
+    );
   `);
 
   ensureColumn(database, 'interview_records', 'base', 'TEXT');

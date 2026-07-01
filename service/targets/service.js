@@ -370,11 +370,11 @@ function includeActualOnlyTargets({ targets, employees, yearMonth }) {
   return [...targets, ...additions.values()];
 }
 
-function getTargetProgress(query = {}) {
+function getTargetProgress(query = {}, preloadedEmployees) {
   const yearMonth = getDefaultMonth(query);
   const cutoffDate = getCutoffDate(yearMonth, query);
   const targets = yearMonth ? listTargetsByMonth(yearMonth) : [];
-  const employees = listAllEmployees();
+  const employees = preloadedEmployees || listAllEmployees();
 
   return {
     yearMonth,

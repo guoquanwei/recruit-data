@@ -4,11 +4,24 @@ const { formatDate, getMonthLastDay, normalizeDate } = require('../shared/date')
 const { formatPercent, maskPhone, toText } = require('../shared/format');
 const { getTargetProgress } = require('../targets/service');
 const { getDistinctTargetFilterOptions, listTargetsByMonth } = require('../targets/repository');
+const { getDatabase } = require('../../dao/db');
 
 const PASSED_INTERVIEW_RESULTS = new Set(['推荐', '强烈推荐']);
 const EXPECTED_INTERVIEW_PASS_RATE = 0.6;
 const EXPECTED_ENTRY_RATE = 2 / 3;
 const CHANNEL_DISPLAY_ORDER = ['回流', '内推', '渠道社招', '渠道校招', '自主社招'];
+const EXCLUDED_FUNNEL_DIAGNOSIS_CHANNELS = new Set(['回流', '渠道校招']);
+const OVERVIEW_TABS = new Set(['overview', 'base', 'channel', 'self']);
+const SELF_SOURCING_STAGE_TARGETS = {
+  formal: {
+    monthlyTrainingTarget: 19,
+    sevenDayTrainingTarget: 12
+  },
+  probation: {
+    monthlyTrainingTarget: 11,
+    sevenDayTrainingTarget: 8
+  }
+};
 
 function calculateWorkDaysInMonth(employee, yearMonth) {
   if (!employee.entryDate || !employee.entryDate.startsWith(yearMonth)) {
@@ -18,9 +31,14 @@ function calculateWorkDaysInMonth(employee, yearMonth) {
   return 1;
 }
 
-function getTrainingDetails(query = {}) {
+function normalizeOverviewTab(tab) {
+  const normalizedTab = toText(tab);
+  return OVERVIEW_TABS.has(normalizedTab) ? normalizedTab : 'overview';
+}
+
+function getTrainingDetails(query = {}, preloadedEmployees) {
   const yearMonth = toText(query.yearMonth);
-  return listAllEmployees()
+  return (preloadedEmployees || listAllEmployees())
     .filter((employee) => !yearMonth || employee.trainingDate.startsWith(yearMonth))
     .map((employee) => ({
       base: employee.base,
@@ -36,13 +54,183 @@ function getTrainingDetails(query = {}) {
     }));
 }
 
-function getSelfSourcingEfficiency(query = {}) {
-  const yearMonth = toText(query.yearMonth);
-  const employees = listAllEmployees();
-  const recruiters = employees.filter((employee) => employee.position === '招聘专员');
+function getSelfSourcingRecruiterName(item) {
+  return toText(item.channelName).split('+')[0].trim();
+}
+
+function filterSelfSourcingTrainingDetails(details = [], filters = {}) {
+  const recruiter = toText(filters.recruiter);
+  return details.filter((item) => {
+    if (item.channelType !== '自主社招') {
+      return false;
+    }
+    if (!recruiter) {
+      return true;
+    }
+    return getSelfSourcingRecruiterName(item) === recruiter;
+  });
+}
+
+function buildSelfSourcingRecruiterOptions(details = []) {
+  return Array.from(new Set(
+    details
+      .filter((item) => item.channelType === '自主社招')
+      .map(getSelfSourcingRecruiterName)
+      .filter(Boolean)
+  )).sort((left, right) => left.localeCompare(right, 'zh-Hans-CN'));
+}
+
+function parseDateValue(value) {
+  const normalized = normalizeDate(value);
+  if (!normalized) {
+    return undefined;
+  }
+  const date = new Date(`${normalized}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function addMonths(date, months) {
+  const result = new Date(date.getTime());
+  const originalDay = result.getDate();
+  result.setMonth(result.getMonth() + months);
+  if (result.getDate() !== originalDay) {
+    result.setDate(0);
+  }
+  return result;
+}
+
+function addDays(date, days) {
+  const result = new Date(date.getTime());
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function getMonthRange(yearMonth) {
+  return {
+    monthStart: `${yearMonth}-01`,
+    monthEnd: buildDate(yearMonth, getMonthLastDay(yearMonth))
+  };
+}
+
+function getRecruiterBaseDate(recruiter) {
+  return normalizeDate(recruiter.trainingDate) || normalizeDate(recruiter.entryDate);
+}
+
+function isRecruiterActiveInMonth(recruiter, yearMonth) {
+  const { monthStart, monthEnd } = getMonthRange(yearMonth);
+  const startDate = normalizeDate(recruiter.entryDate) || normalizeDate(recruiter.trainingDate);
+  const resignedDate = normalizeDate(recruiter.resignedDate);
+
+  if (!startDate) {
+    return false;
+  }
+
+  return startDate <= monthEnd && (!resignedDate || resignedDate >= monthStart);
+}
+
+function isRecruiterInYear(recruiter, year) {
+  const startDate = normalizeDate(recruiter.entryDate) || normalizeDate(recruiter.trainingDate);
+  const resignedDate = normalizeDate(recruiter.resignedDate);
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+
+  if (!startDate) {
+    return false;
+  }
+
+  return startDate <= yearEnd && (!resignedDate || resignedDate >= yearStart);
+}
+
+function getRecruiterDisplayStatus(recruiter, asOfDate) {
+  const resignedDate = normalizeDate(recruiter.resignedDate);
+  const currentDate = normalizeDate(asOfDate);
+  return resignedDate && (!currentDate || resignedDate <= currentDate) ? '离职' : '在职';
+}
+
+function getRecruiterStage(recruiter, asOfDate) {
+  const baseDate = parseDateValue(getRecruiterBaseDate(recruiter));
+  const currentDate = parseDateValue(asOfDate) || new Date();
+  if (!baseDate) {
+    return 'probation';
+  }
+
+  return addMonths(baseDate, 6) <= currentDate ? 'formal' : 'probation';
+}
+
+function isSevenDayMatured(employee, asOfDate) {
+  const trainingDate = parseDateValue(employee.trainingDate);
+  const currentDate = parseDateValue(asOfDate) || new Date();
+  if (!trainingDate) {
+    return false;
+  }
+
+  return addDays(trainingDate, 7) <= currentDate;
+}
+
+function isSevenDayRetained(employee, asOfDate) {
+  const trainingDate = parseDateValue(employee.trainingDate);
+  const currentDate = parseDateValue(asOfDate) || new Date();
+  if (!trainingDate) {
+    return false;
+  }
+  const sevenDayDate = addDays(trainingDate, 7);
+  const resignedDate = parseDateValue(employee.resignedDate);
+
+  return sevenDayDate <= currentDate && (!resignedDate || resignedDate > sevenDayDate);
+}
+
+function buildYearMonthsThrough(yearMonth) {
+  const normalizedYearMonth = toText(yearMonth);
+  const year = Number(normalizedYearMonth.slice(0, 4));
+  const month = Number(normalizedYearMonth.slice(5, 7));
+  if (!year || !month) {
+    return [];
+  }
+
+  return Array.from({ length: month }, (_, index) => {
+    const monthNumber = index + 1;
+    return {
+      yearMonth: `${year}-${String(monthNumber).padStart(2, '0')}`,
+      label: `${monthNumber}月`
+    };
+  });
+}
+
+function calculateMonthlyCutoffTarget(target, yearMonth, asOfDate) {
+  const normalizedYearMonth = toText(yearMonth);
+  const normalizedAsOfDate = normalizeDate(asOfDate);
+  if (!target || !normalizedYearMonth || !normalizedAsOfDate) {
+    return target || 0;
+  }
+  const asOfYearMonth = normalizedAsOfDate.slice(0, 7);
+  if (asOfYearMonth < normalizedYearMonth) {
+    return 0;
+  }
+  if (asOfYearMonth > normalizedYearMonth) {
+    return target;
+  }
+
+  const day = Number(normalizedAsOfDate.slice(8, 10));
+  const lastDay = getMonthLastDay(normalizedYearMonth);
+  return Math.ceil(target * Math.min(day, lastDay) / lastDay);
+}
+
+function isTalentRecruiter(employee) {
+  return employee.position === '招聘专员'
+    && toText(employee.department).includes('人才开发部');
+}
+
+function buildSelfSourcingEfficiency({ yearMonth, asOfDate, employees = [] }) {
+  const normalizedYearMonth = toText(yearMonth);
+  const currentDate = normalizeDate(asOfDate) || (normalizedYearMonth ? buildDate(normalizedYearMonth, getMonthLastDay(normalizedYearMonth)) : formatDate(new Date()));
+  const recruiters = employees.filter((employee) => (
+    isTalentRecruiter(employee)
+      && (!normalizedYearMonth || isRecruiterActiveInMonth(employee, normalizedYearMonth))
+  ));
+  const recruiterByName = new Map(recruiters.map((recruiter) => [recruiter.name, recruiter]));
   const selfSourcingEmployees = employees.filter((employee) => (
     employee.channelType === '自主社招'
-      && (!yearMonth || employee.trainingDate.startsWith(yearMonth))
+      && (!normalizedYearMonth || employee.trainingDate.startsWith(normalizedYearMonth))
   ));
   const summary = {
     probation: { stage: '试用期', recruiterCount: 0, trainingCount: 0, sevenDayCount: 0 },
@@ -51,24 +239,152 @@ function getSelfSourcingEfficiency(query = {}) {
   };
 
   recruiters.forEach((recruiter) => {
-    const entryYearMonth = recruiter.entryDate ? recruiter.entryDate.slice(0, 7) : '';
-    const stage = entryYearMonth && yearMonth && entryYearMonth <= yearMonth ? 'formal' : 'probation';
+    const stage = getRecruiterStage(recruiter, currentDate);
     summary[stage].recruiterCount += 1;
   });
 
   selfSourcingEmployees.forEach((employee) => {
     const recruiterName = toText(employee.channelName).split('+')[0];
-    const recruiter = recruiters.find((item) => item.name === recruiterName);
-    const stage = recruiter && recruiter.entryDate && yearMonth && recruiter.entryDate.slice(0, 7) <= yearMonth ? 'formal' : 'probation';
-    summary[stage].trainingCount += 1;
-    summary.overall.sevenDayCount += 1;
-    summary[stage].sevenDayCount += 1;
+    const recruiter = recruiterByName.get(recruiterName);
+    const sevenDayMatured = isSevenDayRetained(employee, currentDate);
+    if (recruiter) {
+      const stage = getRecruiterStage(recruiter, currentDate);
+      summary[stage].trainingCount += 1;
+      if (sevenDayMatured) {
+        summary[stage].sevenDayCount += 1;
+      }
+    }
+    if (sevenDayMatured) {
+      summary.overall.sevenDayCount += 1;
+    }
   });
 
-  return Object.values(summary).map((item) => ({
+  const rows = [summary.overall, summary.probation, summary.formal].map((item) => ({
     ...item,
-    efficiency: item.recruiterCount > 0 ? (item.trainingCount / item.recruiterCount).toFixed(1) : '0.0'
+    efficiency: item.recruiterCount > 0 ? (item.trainingCount / item.recruiterCount).toFixed(1) : '0.0',
+    sevenDayEfficiency: item.recruiterCount > 0 ? (item.sevenDayCount / item.recruiterCount).toFixed(1) : '0.0'
   }));
+  rows.scales = rows.map((item) => ({
+    stage: item.stage,
+    recruiterCount: item.recruiterCount
+  }));
+  return rows;
+}
+
+function getSelfSourcingRecruitersForYear(employees = [], yearMonth = '') {
+  const normalizedYearMonth = toText(yearMonth);
+  const year = Number(normalizedYearMonth.slice(0, 4));
+  return employees
+    .filter((employee) => isTalentRecruiter(employee))
+    .filter((employee) => !year || isRecruiterInYear(employee, year));
+}
+
+function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [] }) {
+  const normalizedYearMonth = toText(yearMonth);
+  const currentDate = normalizeDate(asOfDate) || (normalizedYearMonth ? buildDate(normalizedYearMonth, getMonthLastDay(normalizedYearMonth)) : formatDate(new Date()));
+  const months = buildYearMonthsThrough(normalizedYearMonth);
+  const selectedMonth = months[months.length - 1]?.yearMonth || normalizedYearMonth;
+  const recruiters = getSelfSourcingRecruitersForYear(employees, normalizedYearMonth);
+  const selfSourcingEmployees = employees.filter((employee) => (
+    employee.channelType === '自主社招'
+      && months.some((month) => employee.trainingDate.startsWith(month.yearMonth))
+  ));
+  const recruiterMap = new Map(recruiters.map((recruiter) => [recruiter.name, recruiter]));
+  const employeeMap = new Map();
+
+  selfSourcingEmployees.forEach((employee) => {
+    const recruiterName = getSelfSourcingRecruiterName(employee);
+    if (!recruiterName) {
+      return;
+    }
+    if (!employeeMap.has(recruiterName)) {
+      employeeMap.set(recruiterName, []);
+    }
+    employeeMap.get(recruiterName).push(employee);
+  });
+
+  const recruiterNames = Array.from(recruiterMap.keys())
+    .sort((left, right) => {
+      const leftRecruiter = recruiterMap.get(left);
+      const rightRecruiter = recruiterMap.get(right);
+      const leftStatus = getRecruiterDisplayStatus(leftRecruiter, currentDate);
+      const rightStatus = getRecruiterDisplayStatus(rightRecruiter, currentDate);
+      const statusWeight = { 在职: 0, 离职: 1 };
+      const statusDiff = (statusWeight[leftStatus] ?? 9) - (statusWeight[rightStatus] ?? 9);
+      if (statusDiff !== 0) {
+        return statusDiff;
+      }
+      return left.localeCompare(right, 'zh-Hans-CN');
+    });
+
+  return recruiterNames.map((name) => {
+    const recruiter = recruiterMap.get(name) || {};
+    const details = employeeMap.get(name) || [];
+    const monthRows = months.map((month) => {
+      const monthlyDetails = details.filter((employee) => employee.trainingDate.startsWith(month.yearMonth));
+      const monthEnd = buildDate(month.yearMonth, getMonthLastDay(month.yearMonth));
+      return {
+        ...month,
+        actualAchievement: monthlyDetails.length,
+        sevenDayRetainedCount: monthlyDetails.filter((employee) => isSevenDayRetained(employee, monthEnd)).length
+      };
+    });
+    const selectedMonthDetails = details.filter((employee) => employee.trainingDate.startsWith(selectedMonth));
+    const selectedSevenDayCount = selectedMonthDetails.filter((employee) => isSevenDayRetained(employee, currentDate)).length;
+    const cumulativeSevenDayCount = monthRows.reduce((sum, month) => sum + month.sevenDayRetainedCount, 0);
+    const status = recruiter.name ? getRecruiterDisplayStatus(recruiter, currentDate) : '未匹配';
+    const stage = recruiter.name ? getRecruiterStage(recruiter, currentDate) : 'probation';
+    const targets = SELF_SOURCING_STAGE_TARGETS[stage];
+
+    return {
+      name,
+      employeeNo: recruiter.employeeNo || '',
+      entryDate: normalizeDate(recruiter.entryDate) || normalizeDate(recruiter.trainingDate) || '',
+      employeeStatus: recruiter.name ? status : '未匹配',
+      monthlyTrainingTarget: targets.monthlyTrainingTarget,
+      monthlyCutoffTarget: calculateMonthlyCutoffTarget(targets.monthlyTrainingTarget, selectedMonth, currentDate),
+      actualAchievement: selectedMonthDetails.length,
+      sevenDayTrainingTarget: targets.sevenDayTrainingTarget,
+      sevenDayCutoffTarget: calculateMonthlyCutoffTarget(targets.sevenDayTrainingTarget, selectedMonth, currentDate),
+      sevenDayRetainedCount: selectedSevenDayCount,
+      cutoffMonthlyAverageSevenDayEfficiency: (cumulativeSevenDayCount / (months.length || 1)).toFixed(1),
+      cumulativeSevenDayEfficiency: cumulativeSevenDayCount.toFixed(1),
+      months: monthRows
+    };
+  });
+}
+
+function saveRecruiterMonthlyScales(yearMonth, scales = []) {
+  if (!yearMonth) {
+    return;
+  }
+  const database = getDatabase();
+  const statement = database.prepare(`
+    INSERT INTO recruiter_monthly_scales (year_month, stage, recruiter_count, updated_at)
+    VALUES (@yearMonth, @stage, @recruiterCount, CURRENT_TIMESTAMP)
+    ON CONFLICT(year_month, stage) DO UPDATE SET
+      recruiter_count = excluded.recruiter_count,
+      updated_at = CURRENT_TIMESTAMP
+  `);
+
+  scales.forEach((scale) => {
+    statement.run({
+      yearMonth,
+      stage: scale.stage,
+      recruiterCount: scale.recruiterCount
+    });
+  });
+}
+
+function getSelfSourcingEfficiency(query = {}, preloadedEmployees) {
+  const yearMonth = toText(query.yearMonth);
+  const rows = buildSelfSourcingEfficiency({
+    yearMonth,
+    asOfDate: query.cutoffDate,
+    employees: preloadedEmployees || listAllEmployees()
+  });
+  saveRecruiterMonthlyScales(yearMonth, rows.scales);
+  return rows;
 }
 
 function getCellStatus(achievementRate, hasData = true) {
@@ -479,6 +795,10 @@ function toMatrixStatus(batchStatus) {
   return batchStatus;
 }
 
+function shouldDiagnoseFunnel(channel) {
+  return !EXCLUDED_FUNNEL_DIAGNOSIS_CHANNELS.has(toText(channel));
+}
+
 function buildBatchMatrix({ yearMonth, matrix, targets = [], employees = [], interviews = [], filters = {}, asOfDate = '' }) {
   const batchDays = getAllBatchDays(targets, yearMonth, filters);
   const statusFilter = toText(filters.status);
@@ -501,6 +821,9 @@ function buildBatchMatrix({ yearMonth, matrix, targets = [], employees = [], int
   const rows = [];
   matrix.rows.forEach((baseRow) => {
     matrix.channels.forEach((channel) => {
+      if (!shouldDiagnoseFunnel(channel)) {
+        return;
+      }
       const batches = buildBatchDrilldown({
         yearMonth,
         base: baseRow.base,
@@ -755,19 +1078,20 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
     achievementRate: 0,
     achievementRateText: '0.00%'
   };
-  const channels = baseRows
+  const channels = (baseProgress?.channelRows || [])
+    .filter((row) => row.channel !== '合计')
     .map((row) => ({
       channel: row.channel,
-      monthlyTarget: row.total.monthlyTarget,
-      cutoffTarget: row.total.cutoffTarget,
-      actualTraining: row.total.actualTraining,
-      gap: row.total.gap,
-      achievementRate: row.total.achievementRate,
-      achievementRateText: row.total.achievementRateText,
-      status: row.total.status,
-      statusText: row.total.statusText,
-      targetShareText: row.total.targetShareText,
-      actualShareText: row.total.actualShareText
+      monthlyTarget: row.monthlyTarget,
+      cutoffTarget: row.cutoffTarget,
+      actualTraining: row.actualTraining,
+      gap: row.gap,
+      achievementRate: row.achievementRate,
+      achievementRateText: row.achievementRateText,
+      status: getCellStatus(row.achievementRate, row.monthlyTarget > 0 || row.actualTraining > 0),
+      statusText: getStatusText(getCellStatus(row.achievementRate, row.monthlyTarget > 0 || row.actualTraining > 0)),
+      targetShareText: row.targetShareText,
+      actualShareText: row.actualShareText
     }))
     .filter((row) => row.monthlyTarget > 0 || row.actualTraining > 0)
     .sort(sortChannels);
@@ -945,6 +1269,28 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
       return left.channelName.localeCompare(right.channelName, 'zh-Hans-CN');
     })
     .slice(0, 3);
+  const riskBases = baseAchievements
+    .filter((base) => base.status === 'risk')
+    .sort((left, right) => {
+      if (left.gap !== right.gap) {
+        return left.gap - right.gap;
+      }
+      return left.achievementRate - right.achievementRate;
+    });
+  const overallEfficiencySummary = selfSourcingEfficiency.find((item) => item.stage === '整体') || {};
+  const riskBaseText = riskBases.slice(0, 3)
+    .map((base) => `${base.base}${base.achievementRateText}`)
+    .join('、') || '暂无风险基地';
+  const largestGapBase = riskBases[0];
+  const operationsSummary = {
+    text: `当月达成进度：本月目标${overall.monthlyTarget || 0}，截止目标${overall.cutoffTarget || 0}，当前已入培${overall.actualTraining || 0}，达成率${overall.achievementRateText || '0.00%'}，GAP ${overall.gap || 0}；未达成基地${riskBases.length}个（${riskBaseText}）；自主社招占比${overall.selfSourcingShareText || '0.00%'}，整体人效${overallEfficiencySummary.efficiency || '0.0'}。`,
+    riskBases: riskBases.slice(0, 5),
+    suggestions: [
+      largestGapBase ? `优先跟进${largestGapBase.base}，当前GAP ${largestGapBase.gap}，建议进入基地风险分析确认卡点。` : '当前无风险基地，建议保持日常监控。',
+      socialChannelTop3[0] ? `关注渠道社招主力供应商${socialChannelTop3[0].channelName}的交付质量和7天留存。` : '渠道社招暂无明显集中供应商，建议继续观察渠道结构。',
+      '对自主社招团队同时看入培人效和满7天人效，避免只追数量忽略留存质量。'
+    ]
+  };
 
   return {
     cards: {
@@ -968,67 +1314,108 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
     baseAchievements,
     channelShares,
     socialChannelTop3,
-    selfSourcingEfficiency: [overallEfficiency, probationEfficiency, formalEfficiency]
+    selfSourcingEfficiency: [overallEfficiency, probationEfficiency, formalEfficiency],
+    operationsSummary
   };
 }
 
 function getDashboardOverview(query = {}) {
-  const progress = getTargetProgress(query);
+  const employees = listAllEmployees();
+  const progress = getTargetProgress(query, employees);
   const yearMonth = progress.yearMonth;
+  const asOfDate = query.cutoffDate || formatDate(new Date());
   const filters = {
     base: toText(query.base),
     channel: toText(query.channel),
-    status: toText(query.status)
+    status: toText(query.status),
+    recruiter: toText(query.recruiter)
   };
+  const overviewTab = normalizeOverviewTab(query.tab);
   const selectedFromQuery = {
     base: toText(query.selectedBase),
     channel: toText(query.selectedChannel),
     selectedBatchDay: toText(query.selectedBatchDay)
   };
   const targets = yearMonth ? listTargetsByMonth(yearMonth) : [];
-  const employees = listAllEmployees();
-  const interviews = yearMonth ? listAllInterviewRecords({ yearMonth }) : [];
-  const matrix = buildDashboardMatrix(progress, filters);
-  const batchMatrix = buildBatchMatrix({
-    yearMonth,
-    matrix,
-    targets,
-    employees,
-    interviews,
-    filters,
-    asOfDate: query.cutoffDate || formatDate(new Date())
-  });
-  const defaultCell = findDefaultMatrixSelection(batchMatrix);
-  const selectedCell = {
-    base: selectedFromQuery.base || defaultCell.base,
-    channel: selectedFromQuery.channel || defaultCell.channel,
-    selectedBatchDay: selectedFromQuery.selectedBatchDay || defaultCell.selectedBatchDay
-  };
-  const positionBoard = buildPositionChannelBoard({
-    progress,
-    batchMatrix,
-    selectedBase: filters.base,
-    selectedBatchDay: selectedCell.selectedBatchDay
-  });
-  const details = getTrainingDetails({ yearMonth });
+  const details = getTrainingDetails({ yearMonth }, employees);
   const selfSourcingCount = details.filter((item) => item.channelType === '自主社招').length;
-  const selfSourcingEfficiency = getSelfSourcingEfficiency({ yearMonth });
+  const selfSourcingEfficiency = getSelfSourcingEfficiency({
+    yearMonth,
+    cutoffDate: asOfDate
+  }, employees);
   const overallEfficiency = selfSourcingEfficiency.find((item) => item.stage === '整体');
   const overviewInsights = buildOverviewInsights({
     progress,
     trainingDetails: details,
     selfSourcingEfficiency
   });
+  const matrix = overviewTab === 'base' ? buildDashboardMatrix(progress, filters) : { channels: [], rows: [] };
+  const interviews = overviewTab === 'base' ? (yearMonth ? listAllInterviewRecords({ yearMonth }) : []) : [];
+  const batchMatrix = overviewTab === 'base'
+    ? buildBatchMatrix({
+      yearMonth,
+      matrix,
+      targets,
+      employees,
+      interviews,
+      filters,
+      asOfDate
+    })
+    : { columns: [], rows: [], summary: { risk: 0, warning: 0, achieved: 0, empty: 0 }, riskItems: [] };
+  const defaultCell = overviewTab === 'base'
+    ? findDefaultMatrixSelection(batchMatrix)
+    : { base: '', channel: '', selectedBatchDay: '' };
+  const selectedCell = {
+    base: selectedFromQuery.base || defaultCell.base,
+    channel: selectedFromQuery.channel || defaultCell.channel,
+    selectedBatchDay: selectedFromQuery.selectedBatchDay || defaultCell.selectedBatchDay
+  };
+  const positionBoard = overviewTab === 'base'
+    ? buildPositionChannelBoard({
+      progress,
+      batchMatrix,
+      selectedBase: filters.base,
+      selectedBatchDay: selectedCell.selectedBatchDay
+    })
+    : undefined;
+  const selfSourcingDetails = overviewTab === 'self'
+    ? filterSelfSourcingTrainingDetails(details, {
+      recruiter: filters.recruiter
+    })
+    : [];
+  const selfSourcingRecruiterRows = overviewTab === 'self'
+    ? buildSelfSourcingRecruiterRows({
+      yearMonth,
+      asOfDate,
+      employees
+    }).filter((row) => !filters.recruiter || row.name === filters.recruiter)
+    : [];
+  const selfSourcingRecruiterOptions = overviewTab === 'self'
+    ? getSelfSourcingRecruitersForYear(employees, yearMonth)
+      .sort((left, right) => {
+        const leftStatus = getRecruiterDisplayStatus(left, asOfDate);
+        const rightStatus = getRecruiterDisplayStatus(right, asOfDate);
+        const statusWeight = { 在职: 0, 离职: 1 };
+        const statusDiff = (statusWeight[leftStatus] ?? 9) - (statusWeight[rightStatus] ?? 9);
+        if (statusDiff !== 0) {
+          return statusDiff;
+        }
+        return left.name.localeCompare(right.name, 'zh-Hans-CN');
+      })
+      .map((recruiter) => recruiter.name)
+    : [];
 
-  const batches = buildBatchDrilldown({
-    yearMonth,
-    base: selectedCell.base,
-    channel: selectedCell.channel,
-    targets,
-    employees,
-    interviews,
-    asOfDate: query.cutoffDate || formatDate(new Date())
-  });
+  const batches = overviewTab === 'base'
+    ? buildBatchDrilldown({
+      yearMonth,
+      base: selectedCell.base,
+      channel: selectedCell.channel,
+      targets,
+      employees,
+      interviews,
+      asOfDate
+    })
+    : [];
   const selectedBatchDay = selectedCell.selectedBatchDay === 'total'
     ? 'total'
     : Number(selectedCell.selectedBatchDay || batches[0]?.day || 0);
@@ -1043,8 +1430,12 @@ function getDashboardOverview(query = {}) {
         : 0
     },
     trainingDetails: details,
+    selfSourcingDetails,
+    selfSourcingRecruiterRows,
+    selfSourcingRecruiterOptions,
     selfSourcingEfficiency,
     overviewInsights,
+    overviewTab,
     filters,
     options: getDistinctTargetFilterOptions(),
     matrix,
@@ -1068,6 +1459,11 @@ module.exports = {
   buildDashboardMatrix,
   buildOverviewInsights,
   buildPositionChannelBoard,
+  buildSelfSourcingEfficiency,
+  buildSelfSourcingRecruiterRows,
+  buildSelfSourcingRecruiterOptions,
+  filterSelfSourcingTrainingDetails,
+  normalizeOverviewTab,
   getDashboardOverview,
   getTrainingDetails,
   getSelfSourcingEfficiency

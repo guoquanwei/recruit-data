@@ -38,6 +38,12 @@
           <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="收起导航">☰</button>
         </div>
         <nav class="sidebar-nav" aria-label="主导航">
+          <section class="nav-group <%= moduleActive === 'dashboard' ? 'open' : '' %>">
+            <div class="nav-group-title">综合分析看板</div>
+            <a class="<%= active === 'dashboard-overview' ? 'active' : '' %>" href="/dashboard/overview" title="人才开发运营看板"><%- navIcon('chart') %><span class="nav-label">人才开发运营看板</span></a>
+            <a class="<%= active === 'dashboard-base-risk' ? 'active' : '' %>" href="/dashboard/base-risk" title="基地风险分析"><%- navIcon('alert') %><span class="nav-label">基地风险分析</span></a>
+            <a class="<%= active === 'dashboard-self-sourcing' ? 'active' : '' %>" href="/dashboard/self-sourcing" title="自主社招人效"><%- navIcon('gauge') %><span class="nav-label">自主社招人效</span></a>
+          </section>
           <section class="nav-group <%= moduleActive === 'employees' ? 'open' : '' %>">
             <div class="nav-group-title">员工数据管理</div>
             <a class="<%= active === 'employees-import' ? 'active' : '' %>" href="/employees/import" title="全量数据导入"><%- navIcon('upload') %><span class="nav-label">全量数据导入</span></a>
@@ -54,12 +60,6 @@
             <a class="<%= active === 'interviews-import' ? 'active' : '' %>" href="/interviews/import" title="数据导入"><%- navIcon('upload') %><span class="nav-label">数据导入</span></a>
             <a class="<%= active === 'interviews-list' ? 'active' : '' %>" href="/interviews" title="面试记录列表"><%- navIcon('calendar') %><span class="nav-label">面试记录列表</span></a>
             <a class="<%= active === 'interviews-funnel' ? 'active' : '' %>" href="/interviews/funnel" title="招聘漏斗分析"><%- navIcon('funnel') %><span class="nav-label">招聘漏斗分析</span></a>
-          </section>
-          <section class="nav-group <%= moduleActive === 'dashboard' ? 'open' : '' %>">
-            <div class="nav-group-title">综合分析看板</div>
-            <a class="<%= active === 'dashboard-overview' ? 'active' : '' %>" href="/dashboard/overview" title="招聘负责人看板"><%- navIcon('chart') %><span class="nav-label">招聘负责人看板</span></a>
-            <a class="<%= active === 'dashboard-base-risk' ? 'active' : '' %>" href="/dashboard/base-risk" title="基地风险分析"><%- navIcon('alert') %><span class="nav-label">基地风险分析</span></a>
-            <a class="<%= active === 'dashboard-self-sourcing' ? 'active' : '' %>" href="/dashboard/self-sourcing" title="自主社招人效"><%- navIcon('gauge') %><span class="nav-label">自主社招人效</span></a>
           </section>
         </nav>
       </aside>

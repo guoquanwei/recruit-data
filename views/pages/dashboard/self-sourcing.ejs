@@ -1,5 +1,27 @@
 <%- include('../../partials/header') %>
 
+<section class="filter-card">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">月份</label>
+      <input class="form-control" type="month" name="yearMonth" value="<%= dashboard.yearMonth %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">招聘专员</label>
+      <select class="form-select" name="recruiter">
+        <option value="">全部招聘专员</option>
+        <% dashboard.selfSourcingRecruiterOptions.forEach((recruiter) => { %>
+          <option value="<%= recruiter %>" <%= dashboard.filters.recruiter === recruiter ? 'selected' : '' %>><%= recruiter %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary" type="submit">查询</button>
+      <a class="btn btn-outline-secondary" href="/dashboard/self-sourcing">重置</a>
+    </div>
+  </form>
+</section>
+
 <section class="table-card mb-3">
   <h2 class="h5">自主社招人效</h2>
   <div class="table-responsive">
@@ -12,7 +34,7 @@
             <td><%= item.recruiterCount %></td>
             <td><%= item.trainingCount %></td>
             <td><%= item.sevenDayCount %></td>
-            <td><%= item.efficiency %></td>
+            <td><%= item.efficiency %> / 满7天 <%= item.sevenDayEfficiency %></td>
           </tr>
         <% }) %>
       </tbody>
@@ -21,22 +43,77 @@
 </section>
 
 <section class="table-card">
-  <h2 class="h5">自主社招入培明细</h2>
+  <h2 class="h5">自主社招招聘专员达成</h2>
   <div class="table-responsive">
-    <table class="table table-hover">
-      <thead><tr><th>基地</th><th>工号</th><th>姓名</th><th>手机号</th><th>渠道</th><th>渠道名称</th><th>入培日期</th><th>状态</th><th>离职日期</th></tr></thead>
+    <table class="table table-hover align-middle self-sourcing-recruiter-table">
+      <colgroup>
+        <col class="col-name">
+        <col class="col-employee-no">
+        <col class="col-date">
+        <col class="col-status">
+        <col class="col-target">
+        <col class="col-target">
+        <col class="col-count">
+        <col class="col-target">
+        <col class="col-target">
+        <col class="col-count">
+        <col class="col-efficiency">
+        <col class="col-efficiency">
+        <% const monthColumns = dashboard.selfSourcingRecruiterRows[0]?.months || []; %>
+        <% monthColumns.forEach(() => { %>
+          <col class="col-month">
+        <% }) %>
+        <col class="col-trend">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>姓名</th>
+          <th>工号</th>
+          <th>入职日期</th>
+          <th>是否在职</th>
+          <th>当月入培目标</th>
+          <th>当月截止目标</th>
+          <th>实际达成</th>
+          <th>7天入培目标</th>
+          <th>7天截止目标</th>
+          <th>7天实际留存</th>
+          <th>截止月均7天人效</th>
+          <th>累计7天人效</th>
+          <% monthColumns.forEach((month) => { %>
+            <th><%= month.label %></th>
+          <% }) %>
+          <th>趋势</th>
+        </tr>
+      </thead>
       <tbody>
-        <% dashboard.trainingDetails.filter((item) => item.channelType === '自主社招').forEach((item) => { %>
+        <% if (dashboard.selfSourcingRecruiterRows.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="<%= 13 + (dashboard.selfSourcingRecruiterRows[0]?.months.length || 0) %>">暂无符合筛选条件的招聘专员达成数据。</td></tr>
+        <% } %>
+        <% dashboard.selfSourcingRecruiterRows.forEach((item) => { %>
+          <% const values = item.months.map((month) => month.sevenDayRetainedCount); %>
+          <% const maxValue = Math.max(...values, 1); %>
+          <% const points = values.map((value, index) => `${values.length === 1 ? 50 : (index / (values.length - 1) * 100).toFixed(1)},${(32 - value / maxValue * 28).toFixed(1)}`).join(' '); %>
           <tr>
-            <td><%= item.base %></td>
-            <td><%= item.employeeNo %></td>
             <td><%= item.name %></td>
-            <td><%= item.maskedPhone %></td>
-            <td><%= item.channelType %></td>
-            <td><%= item.channelName %></td>
-            <td><%= item.trainingDate %></td>
+            <td><%= item.employeeNo || '--' %></td>
+            <td><%= item.entryDate || '--' %></td>
             <td><%= item.employeeStatus %></td>
-            <td><%= item.resignedDate %></td>
+            <td>--</td>
+            <td>--</td>
+            <td><%= item.actualAchievement %></td>
+            <td>--</td>
+            <td>--</td>
+            <td><%= item.sevenDayRetainedCount %></td>
+            <td><%= item.cutoffMonthlyAverageSevenDayEfficiency %></td>
+            <td><%= item.cumulativeSevenDayEfficiency %></td>
+            <% item.months.forEach((month) => { %>
+              <td><%= month.sevenDayRetainedCount %></td>
+            <% }) %>
+            <td>
+              <svg class="mini-sparkline" viewBox="0 0 100 36" role="img" aria-label="7天留存趋势">
+                <polyline points="<%= points %>" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+              </svg>
+            </td>
           </tr>
         <% }) %>
       </tbody>

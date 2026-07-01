@@ -36,6 +36,34 @@
     : 'background: #edf2f8;';
 %>
 
+<section class="table-card operations-summary-card">
+  <div class="table-actions">
+    <div>
+      <h2 class="h5 mb-1">运营风险摘要</h2>
+      <p class="section-note mb-0">结合目标达成、基地风险、渠道结构和自招人效生成的管理摘要。</p>
+    </div>
+    <a class="btn btn-sm btn-outline-primary" href="/dashboard/base-risk?yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>&cutoffDate=<%= encodeURIComponent(dashboard.cutoffDate) %>">进入风险诊断</a>
+  </div>
+  <p class="operations-summary-text"><%= insights.operationsSummary.text %></p>
+  <div class="operations-summary-grid">
+    <div>
+      <span>重点风险基地</span>
+      <% if (insights.operationsSummary.riskBases.length === 0) { %>
+        <strong>暂无风险基地</strong>
+      <% } %>
+      <% insights.operationsSummary.riskBases.slice(0, 3).forEach((base) => { %>
+        <a href="/dashboard/base-risk?base=<%= encodeURIComponent(base.base) %>&yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>&cutoffDate=<%= encodeURIComponent(dashboard.cutoffDate) %>"><%= base.base %> · GAP <%= base.gap %></a>
+      <% }) %>
+    </div>
+    <div>
+      <span>建议动作</span>
+      <% insights.operationsSummary.suggestions.forEach((suggestion) => { %>
+        <p><%= suggestion %></p>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
 <div class="metric-grid overview-metric-grid">
   <div class="metric-card"><span>目标达成率</span><strong><%= insights.cards.targetAchievementRateText %></strong></div>
   <div class="metric-card"><span>自主社招占比</span><strong><%= insights.cards.selfSourcingShareText %></strong></div>
@@ -139,7 +167,9 @@
           <div>
             <span><%= item.stage %></span>
             <strong><%= item.efficiency %></strong>
-            <em><%= item.trainingCount %> 入培 / <%= item.recruiterCount %> 人</em>
+            <em>入培人效：<%= item.trainingCount %> / <%= item.recruiterCount %></em>
+            <strong class="efficiency-secondary"><%= item.sevenDayEfficiency %></strong>
+            <em>满7天人效：<%= item.sevenDayCount %> / <%= item.recruiterCount %></em>
           </div>
         <% }) %>
       </div>

@@ -1022,6 +1022,71 @@ body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.overview-metric-grid .metric-card {
+  border-top: 3px solid #e5e7eb;
+  min-height: 132px;
+}
+
+.overview-metric-grid .metric-card:nth-child(1) {
+  border-top-color: #2f80ed;
+}
+
+.overview-metric-grid .metric-card:nth-child(2) {
+  border-top-color: #22a6b3;
+}
+
+.overview-metric-grid .metric-card:nth-child(3) {
+  border-top-color: #16a36a;
+}
+
+.overview-metric-grid .metric-card:nth-child(4) {
+  border-top-color: #f59e0b;
+}
+
+.operations-summary-card {
+  border-top: 4px solid #2f80ed;
+}
+
+.operations-summary-text {
+  margin: 12px 0 14px;
+  color: var(--text-main);
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.operations-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+}
+
+.operations-summary-grid > div {
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #f6f8fb;
+}
+
+.operations-summary-grid span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.operations-summary-grid a {
+  color: #2f80ed;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.operations-summary-grid p {
+  margin: 0;
+  color: #344054;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .overview-dashboard-grid {
   display: grid;
   grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.35fr);
@@ -1369,10 +1434,60 @@ body {
   margin-bottom: 8px;
 }
 
+.overview-efficiency-grid .efficiency-secondary {
+  margin-top: 12px;
+  color: #2f80ed;
+  font-size: 22px;
+}
+
 .overview-efficiency-grid em {
+  display: block;
   color: var(--text-muted);
   font-size: 12px;
   font-style: normal;
+}
+
+.self-sourcing-recruiter-table {
+  table-layout: fixed;
+  min-width: 1720px;
+  font-size: 13px;
+}
+
+.self-sourcing-recruiter-table .col-name { width: 96px; }
+.self-sourcing-recruiter-table .col-employee-no { width: 96px; }
+.self-sourcing-recruiter-table .col-date { width: 112px; }
+.self-sourcing-recruiter-table .col-status { width: 82px; }
+.self-sourcing-recruiter-table .col-target { width: 104px; }
+.self-sourcing-recruiter-table .col-count { width: 92px; }
+.self-sourcing-recruiter-table .col-efficiency { width: 118px; }
+.self-sourcing-recruiter-table .col-month { width: 58px; }
+.self-sourcing-recruiter-table .col-trend { width: 110px; }
+
+.self-sourcing-recruiter-table th {
+  white-space: nowrap;
+}
+
+.self-sourcing-recruiter-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.self-sourcing-recruiter-table th:nth-child(n + 5),
+.self-sourcing-recruiter-table td:nth-child(n + 5) {
+  text-align: center;
+}
+
+.self-sourcing-recruiter-table th:last-child,
+.self-sourcing-recruiter-table td:last-child {
+  text-align: center;
+}
+
+.mini-sparkline {
+  width: 96px;
+  height: 36px;
+  color: #2f80ed;
+  display: block;
 }
 
 .position-metric-grid {

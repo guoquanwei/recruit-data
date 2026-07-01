@@ -9,7 +9,7 @@ const { maskPhone, parsePage, formatPercent } = require('../service/shared/forma
 const { inferBase, isRecruiterEmployee, normalizeActiveEmployee, normalizeResignedEmployee } = require('../service/employees/normalize');
 const { calculateTargetProgress } = require('../service/targets/progress');
 const { includeActualOnlyTargets, summarizeTargetPlan, summarizeTargets } = require('../service/targets/service');
-const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOverviewInsights, buildPositionChannelBoard } = require('../service/dashboard/service');
+const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOverviewInsights, buildPositionChannelBoard, buildSelfSourcingEfficiency, buildSelfSourcingRecruiterOptions, buildSelfSourcingRecruiterRows, filterSelfSourcingTrainingDetails, normalizeOverviewTab } = require('../service/dashboard/service');
 const { inferInterviewBase, normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('../service/interviews/normalize');
 const { buildFunnelRows, buildMonthlyFunnelRows } = require('../service/interviews/service');
 
@@ -434,6 +434,49 @@ test('dashboard batch matrix uses base channel rows and batch columns', () => {
   ]);
 });
 
+test('dashboard funnel diagnosis excludes return and campus channels', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '回流', dailyTargets: { 10: 2 } },
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道校招', dailyTargets: { 10: 2 } },
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '内推', dailyTargets: { 10: 2 } },
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道社招', dailyTargets: { 10: 2 } },
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '自主社招', dailyTargets: { 10: 2 } }
+  ], [
+    { employeeNo: 'JZ001', base: '江苏基地-淮安', channelType: '回流', trainingDate: '2026-06-09' },
+    { employeeNo: 'JZ002', base: '江苏基地-淮安', channelType: '渠道校招', trainingDate: '2026-06-09' },
+    { employeeNo: 'JZ003', base: '江苏基地-淮安', channelType: '内推', trainingDate: '2026-06-09' }
+  ], '2026-06-20');
+  const matrix = buildDashboardMatrix(summary, { base: '江苏基地-淮安' });
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-06',
+    matrix,
+    targets: [
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '回流', dailyTargets: { 10: 2 } },
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道校招', dailyTargets: { 10: 2 } },
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '内推', dailyTargets: { 10: 2 } },
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道社招', dailyTargets: { 10: 2 } },
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '自主社招', dailyTargets: { 10: 2 } }
+    ],
+    employees: [
+      { employeeNo: 'JZ001', base: '江苏基地-淮安', channelType: '回流', trainingDate: '2026-06-09' },
+      { employeeNo: 'JZ002', base: '江苏基地-淮安', channelType: '渠道校招', trainingDate: '2026-06-09' },
+      { employeeNo: 'JZ003', base: '江苏基地-淮安', channelType: '内推', trainingDate: '2026-06-09' }
+    ],
+    interviews: [],
+    asOfDate: '2026-06-20'
+  });
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '江苏基地-淮安'
+  });
+
+  assert.deepEqual(batchMatrix.rows.map((row) => row.channel), ['内推', '渠道社招', '自主社招']);
+  assert.equal(batchMatrix.riskItems.some((item) => item.channel === '回流' || item.channel === '渠道校招'), false);
+  assert.deepEqual(board.channels.map((item) => item.channel), ['回流', '内推', '渠道社招', '渠道校招', '自主社招']);
+  assert.deepEqual(board.selectedBatch.channels.map((item) => item.channel), ['内推', '渠道社招', '自主社招']);
+});
+
 test('dashboard position channel board summarizes one base across channels and batches', () => {
   const summary = summarizeTargets([
     { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '回流', dailyTargets: { 10: 2 } },
@@ -484,12 +527,11 @@ test('dashboard position channel board summarizes one base across channels and b
     ['自主社招', 9, 1, -8]
   ]);
   assert.deepEqual(board.batchRisks.map((item) => [item.label, item.target, item.actualTraining, item.gap]), [
-    ['6月10日批次', 14, 3, -11],
+    ['6月10日批次', 12, 2, -10],
     ['6月20日批次', 6, 1, -5]
   ]);
   assert.equal(board.selectedBatch.day, 10);
   assert.deepEqual(board.selectedBatch.channels.map((item) => [item.channel, item.target, item.actualTraining, item.gap]), [
-    ['回流', 2, 1, -1],
     ['内推', 3, 1, -2],
     ['渠道社招', 4, 1, -3],
     ['自主社招', 5, 0, -5]
@@ -659,6 +701,222 @@ test('dashboard overview insights expose executive cards, channel shares and ven
     ['试用期', '1.0', 2],
     ['正式期', '2.0', 3]
   ]);
+});
+
+test('dashboard overview tab normalizes unknown tab to overview', () => {
+  assert.equal(normalizeOverviewTab('base'), 'base');
+  assert.equal(normalizeOverviewTab('channel'), 'channel');
+  assert.equal(normalizeOverviewTab('self'), 'self');
+  assert.equal(normalizeOverviewTab('unknown'), 'overview');
+  assert.equal(normalizeOverviewTab(''), 'overview');
+});
+
+test('self sourcing efficiency uses monthly active recruiter scale by stage', () => {
+  const result = buildSelfSourcingEfficiency({
+    yearMonth: '2026-06',
+    asOfDate: '2026-06-30',
+    employees: [
+      {
+        name: '正式招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2025-11-01',
+        entryDate: '2025-11-01',
+        resignedDate: ''
+      },
+      {
+        name: '试用招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2026-02-01',
+        entryDate: '2026-02-01',
+        resignedDate: ''
+      },
+      {
+        name: '离职招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'resigned',
+        employeeStatus: '离职',
+        trainingDate: '2026-01-01',
+        entryDate: '2026-01-01',
+        resignedDate: '2026-05-31'
+      },
+      {
+        name: '月内离职招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'resigned',
+        employeeStatus: '离职',
+        trainingDate: '2025-09-01',
+        entryDate: '2025-09-01',
+        resignedDate: '2026-06-26'
+      },
+      {
+        name: '非人才开发招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 长春基地 / 招聘服务组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2024-10-18',
+        entryDate: '2024-10-22',
+        resignedDate: ''
+      },
+      {
+        employeeNo: 'SELF1',
+        channelType: '自主社招',
+        channelName: '正式招聘+JZ001',
+        trainingDate: '2026-06-10'
+      },
+      {
+        employeeNo: 'SELF2',
+        channelType: '自主社招',
+        channelName: '试用招聘+JZ002',
+        trainingDate: '2026-06-11'
+      },
+      {
+        employeeNo: 'SELF3',
+        channelType: '自主社招',
+        channelName: '未匹配招聘+JZ003',
+        trainingDate: '2026-06-12'
+      },
+      {
+        employeeNo: 'SELF4',
+        channelType: '自主社招',
+        channelName: '月内离职招聘+JZ004',
+        trainingDate: '2026-06-13'
+      },
+      {
+        employeeNo: 'SELF5',
+        channelType: '自主社招',
+        channelName: '非人才开发招聘+JZ005',
+        trainingDate: '2026-06-14'
+      },
+      {
+        employeeNo: 'SELF6',
+        channelType: '自主社招',
+        channelName: '正式招聘+JZ001',
+        trainingDate: '2026-06-29'
+      }
+    ]
+  });
+
+  assert.deepEqual(result.map((item) => [item.stage, item.recruiterCount, item.trainingCount, item.sevenDayCount, item.efficiency, item.sevenDayEfficiency]), [
+    ['整体', 3, 6, 5, '2.0', '1.7'],
+    ['试用期', 1, 1, 1, '1.0', '1.0'],
+    ['正式期', 2, 3, 2, '1.5', '1.0']
+  ]);
+  assert.deepEqual(result.scales, [
+    { stage: '整体', recruiterCount: 3 },
+    { stage: '试用期', recruiterCount: 1 },
+    { stage: '正式期', recruiterCount: 2 }
+  ]);
+});
+
+test('self sourcing details expose recruiter options and support recruiter filter', () => {
+  const details = [
+    { channelType: '自主社招', channelName: '张三+JZ001', employeeNo: 'A' },
+    { channelType: '自主社招', channelName: '李四+JZ002', employeeNo: 'B' },
+    { channelType: '自主社招', channelName: '张三+JZ001', employeeNo: 'C' },
+    { channelType: '内推', channelName: '王五+JZ003', employeeNo: 'D' },
+    { channelType: '自主社招', channelName: '', employeeNo: 'E' }
+  ];
+
+  assert.deepEqual(buildSelfSourcingRecruiterOptions(details), ['李四', '张三']);
+  assert.deepEqual(
+    filterSelfSourcingTrainingDetails(details, { recruiter: '张三' }).map((item) => item.employeeNo),
+    ['A', 'C']
+  );
+  assert.deepEqual(
+    filterSelfSourcingTrainingDetails(details, {}).map((item) => item.employeeNo),
+    ['A', 'B', 'C', 'E']
+  );
+});
+
+test('self sourcing recruiter rows summarize months through selected month', () => {
+  const rows = buildSelfSourcingRecruiterRows({
+    yearMonth: '2026-05',
+    asOfDate: '2026-05-31',
+    employees: [
+      {
+        employeeNo: 'R001',
+        name: '张三',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2025-01-01',
+        entryDate: '2025-01-01',
+        resignedDate: ''
+      },
+      {
+        employeeNo: 'R002',
+        name: '李四',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2026-05-10',
+        entryDate: '2026-05-10',
+        resignedDate: ''
+      },
+      {
+        employeeNo: 'R003',
+        name: '王五',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'resigned',
+        employeeStatus: '离职',
+        trainingDate: '2026-02-01',
+        entryDate: '2026-02-01',
+        resignedDate: '2026-03-15'
+      },
+      {
+        employeeNo: 'R004',
+        name: '去年离职',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'resigned',
+        employeeStatus: '离职',
+        trainingDate: '2025-01-01',
+        entryDate: '2025-01-01',
+        resignedDate: '2025-12-31'
+      },
+      { employeeNo: 'A', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-01-10', resignedDate: '' },
+      { employeeNo: 'B', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-01', resignedDate: '' },
+      { employeeNo: 'C', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-25', resignedDate: '' },
+      { employeeNo: 'D', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-03', resignedDate: '2026-05-05' },
+      { employeeNo: 'E', channelType: '自主社招', channelName: '李四+R002', trainingDate: '2026-05-12', resignedDate: '' },
+      { employeeNo: 'F', channelType: '自主社招', channelName: '未匹配招聘+R999', trainingDate: '2026-05-12', resignedDate: '' }
+    ]
+  });
+  const zhang = rows.find((row) => row.name === '张三');
+
+  assert.deepEqual(rows.map((row) => [row.name, row.employeeStatus]), [
+    ['李四', '在职'],
+    ['张三', '在职'],
+    ['王五', '离职']
+  ]);
+  assert.deepEqual(zhang.months.map((month) => month.label), ['1月', '2月', '3月', '4月', '5月']);
+  assert.equal(zhang.actualAchievement, 3);
+  assert.equal(zhang.monthlyTrainingTarget, 19);
+  assert.equal(zhang.monthlyCutoffTarget, 19);
+  assert.equal(zhang.sevenDayTrainingTarget, 12);
+  assert.equal(zhang.sevenDayCutoffTarget, 12);
+  assert.equal(zhang.sevenDayRetainedCount, 1);
+  const lisi = rows.find((row) => row.name === '李四');
+  assert.equal(lisi.monthlyTrainingTarget, 11);
+  assert.equal(lisi.monthlyCutoffTarget, 11);
+  assert.equal(lisi.sevenDayTrainingTarget, 8);
+  assert.equal(lisi.sevenDayCutoffTarget, 8);
+  assert.deepEqual(zhang.months.map((month) => month.sevenDayRetainedCount), [1, 0, 0, 0, 1]);
+  assert.equal(zhang.cutoffMonthlyAverageSevenDayEfficiency, '0.4');
+  assert.equal(zhang.cumulativeSevenDayEfficiency, '2.0');
+  assert.equal(rows.some((row) => row.name === '未匹配招聘'), false);
 });
 
 test('interview normalization resolves feedback dates for daily overwrite', () => {

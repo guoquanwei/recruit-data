@@ -41,6 +41,12 @@ const BASE_OPTION_ORDER = [
   'ITO项目'
 ];
 
+let allEmployeesCache;
+
+function clearEmployeeCache() {
+  allEmployeesCache = undefined;
+}
+
 function toDatabaseRow(employee) {
   return {
     source_type: employee.sourceType,
@@ -90,6 +96,7 @@ function fromDatabaseRow(row) {
 
 function replaceEmployeesBySource(database, sourceType, employees) {
   database.prepare('DELETE FROM employees WHERE source_type = ?').run(sourceType);
+  clearEmployeeCache();
 
   const placeholders = EMPLOYEE_COLUMNS.map((column) => `@${column}`).join(', ');
   const statement = database.prepare(`
@@ -183,8 +190,12 @@ function listEmployees({ filters = {}, page }) {
 }
 
 function listAllEmployees() {
+  if (allEmployeesCache) {
+    return allEmployeesCache;
+  }
   const database = getDatabase();
-  return database.prepare('SELECT * FROM employees').all().map(fromDatabaseRow);
+  allEmployeesCache = database.prepare('SELECT * FROM employees').all().map(fromDatabaseRow);
+  return allEmployeesCache;
 }
 
 function formatBaseOptions(bases) {
@@ -224,6 +235,7 @@ function isFrontlineRecord(row) {
 module.exports = {
   replaceEmployeesBySource,
   buildEmployeeFilters,
+  clearEmployeeCache,
   countEmployees,
   formatBaseOptions,
   listEmployees,
