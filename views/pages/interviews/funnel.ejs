@@ -1,40 +1,38 @@
 <%- include('../../partials/header') %>
 
-<div class="alert alert-info">当前漏斗仅覆盖面试反馈到入培的后段分析，不包含投递、邀约和到面前链路。</div>
-
-<section class="table-card mb-3">
-  <h2 class="h5">面试反馈结果</h2>
-  <div class="table-responsive">
-    <table class="table table-hover">
-      <thead><tr><th>反馈结果</th><th>人数</th></tr></thead>
-      <tbody>
-        <% if (funnel.feedbackResults.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="2">暂无面试反馈数据。</td></tr>
-        <% } %>
-        <% funnel.feedbackResults.forEach((item) => { %>
-          <tr><td><%= item.name %></td><td><%= item.count %></td></tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+<section class="filter-card">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">月份</label>
+      <input class="form-control" type="month" name="yearMonth" value="<%= funnel.filters.yearMonth %>">
+    </div>
+    <div class="col-md-3">
+      <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: funnel.filters.base, items: funnel.options.bases }) %>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-primary" type="submit">查询</button>
+        <button class="btn btn-outline-secondary" type="button" data-reset-form>重置</button>
+    </div>
+  </form>
 </section>
 
 <section class="table-card">
-  <h2 class="h5">渠道维度后段转化</h2>
+  <h2 class="h5">月度招聘漏斗转化数据</h2>
   <div class="table-responsive">
-    <table class="table table-hover">
-      <thead><tr><th>渠道标签</th><th>面试人数</th><th>推荐人数</th><th>入培人数</th><th>推荐到入培转化率</th></tr></thead>
+    <table class="table table-hover target-progress-detail-table">
+      <thead><tr class="frozen-header-row"><th>基地</th><th>到面数</th><th>面通数</th><th>参培数</th><th>面通率</th><th>参培率</th></tr></thead>
       <tbody>
-        <% if (funnel.channels.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="5">暂无渠道转化数据。</td></tr>
+        <% if (funnel.monthlyRows.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="6">暂无月度招聘漏斗转化数据。</td></tr>
         <% } %>
-        <% funnel.channels.forEach((item) => { %>
+        <% funnel.monthlyRows.forEach((item) => { %>
           <tr>
-            <td><%= item.channel %></td>
-            <td><%= item.interviewCount %></td>
-            <td><%= item.recommendedCount %></td>
+            <td><%= item.base %></td>
+            <td><%= item.arrivedCount %></td>
+            <td><%= item.passedCount %></td>
             <td><%= item.trainingCount %></td>
-            <td><%= item.conversionRateText %></td>
+            <td><%= item.passRateText %></td>
+            <td><%= item.trainingRateText %></td>
           </tr>
         <% }) %>
       </tbody>

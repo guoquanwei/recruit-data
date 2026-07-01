@@ -108,6 +108,18 @@ function listTargetsByMonth(yearMonth) {
   `).all(yearMonth).map(fromDatabaseRow);
 }
 
+function listTargetsForSummary(filters = {}) {
+  const database = getDatabase();
+  const { whereSql, params } = buildTargetFilters(filters);
+
+  return database.prepare(`
+    SELECT *
+    FROM recruitment_targets
+    ${whereSql}
+    ORDER BY year_month DESC, base ASC, channel ASC
+  `).all(params).map(fromDatabaseRow);
+}
+
 function getAvailableMonths() {
   const database = getDatabase();
   return database.prepare(`
@@ -132,6 +144,7 @@ module.exports = {
   replaceTargetsByMonth,
   listTargets,
   listTargetsByMonth,
+  listTargetsForSummary,
   getAvailableMonths,
   getDistinctTargetFilterOptions,
   fromDatabaseRow

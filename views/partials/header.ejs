@@ -45,7 +45,7 @@
             <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><%- navIcon('users') %><span class="nav-label">一线员工列表</span></a>
           </section>
           <section class="nav-group <%= moduleActive === 'targets' ? 'open' : '' %>">
-            <div class="nav-group-title">招聘目标管理</div>
+            <div class="nav-group-title">需求管理</div>
             <a class="<%= active === 'targets-list' ? 'active' : '' %>" href="/targets" title="目标列表"><%- navIcon('list') %><span class="nav-label">目标列表</span></a>
             <a class="<%= active === 'targets-progress' ? 'active' : '' %>" href="/targets/progress" title="目标达成进度"><%- navIcon('target') %><span class="nav-label">目标达成进度</span></a>
           </section>
@@ -67,7 +67,7 @@
         <%
           const moduleTitleMap = {
             employees: '员工数据管理',
-            targets: '招聘目标管理',
+            targets: '需求管理',
             interviews: '面试记录管理',
             dashboard: '综合分析看板'
           };

@@ -55,7 +55,21 @@ function getEmployeeList(query = {}, role) {
   };
 }
 
+function getEmployeeExportRows(query = {}, role) {
+  const filters = buildEmployeeFilters(query, role);
+  const result = listEmployees({
+    filters,
+    page: {
+      limit: 1_000_000,
+      offset: 0
+    }
+  });
+
+  return result.rows.map(toEmployeeViewModel);
+}
+
 module.exports = {
   getEmployeeList,
+  getEmployeeExportRows,
   toEmployeeViewModel
 };

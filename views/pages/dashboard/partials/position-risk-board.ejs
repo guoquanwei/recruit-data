@@ -1,0 +1,192 @@
+<%
+  const boardPath = typeof dashboardPath !== 'undefined' ? dashboardPath : '/dashboard/base-risk';
+  const buildDashboardUrl = (overrides = {}) => {
+    const params = new URLSearchParams();
+    const values = {
+      yearMonth: dashboard.yearMonth,
+      cutoffDate: dashboard.cutoffDate,
+      base: dashboard.filters.base,
+      channel: dashboard.filters.channel,
+      selectedBase: dashboard.selectedCell.base,
+      selectedChannel: dashboard.selectedCell.channel,
+      selectedBatchDay: dashboard.selectedCell.selectedBatchDay,
+      ...overrides
+    };
+
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.set(key, value);
+      }
+    });
+
+    return `${boardPath}?${params.toString()}`;
+  };
+  const positionBoard = dashboard.positionBoard;
+  const isBaseOverview = positionBoard.mode === 'baseOverview';
+  const riskBatchCount = isBaseOverview
+    ? positionBoard.riskBaseCount
+    : positionBoard.batchRisks.filter((batch) => batch.status === 'risk' || batch.status === 'warning').length;
+  const contributionTotal = Math.max(
+    positionBoard.total.monthlyTarget,
+    isBaseOverview
+      ? positionBoard.baseAchievements.reduce((sum, base) => sum + base.actualTraining, 0)
+      : positionBoard.channels.reduce((sum, channel) => sum + channel.actualTraining, 0),
+    1
+  );
+%>
+
+<div class="metric-grid position-metric-grid">
+  <div class="metric-card"><span><%= isBaseOverview ? '整体月目标' : '岗位月目标' %></span><strong><%= positionBoard.total.monthlyTarget %></strong></div>
+  <div class="metric-card"><span>已入职</span><strong><%= positionBoard.total.actualTraining %></strong></div>
+  <div class="metric-card <%= positionBoard.total.gap < 0 ? 'danger' : '' %>"><span>GAP</span><strong><%= positionBoard.total.gap %></strong></div>
+  <div class="metric-card <%= positionBoard.total.achievementRate < 1 ? 'danger' : '' %>"><span>达成率</span><strong><%= positionBoard.total.achievementRateText %></strong></div>
+  <div class="metric-card danger"><span><%= isBaseOverview ? '风险基地' : '风险批次' %></span><strong><%= riskBatchCount %></strong></div>
+</div>
+
+<div class="position-board-grid">
+  <section class="table-card position-goal-card">
+    <div class="table-actions">
+      <div>
+        <h2 class="h5 mb-1"><%= positionBoard.title %></h2>
+        <p class="section-note"><%= isBaseOverview ? '基地选择全部时，先按目标达成率判断各基地是否风险或预警。' : '多渠道共同满足同一个岗位目标，先看整体 GAP，再判断批次和渠道漏斗。' %></p>
+      </div>
+      <span class="position-status position-status-<%= positionBoard.total.status %>"><%= positionBoard.total.statusText %></span>
+    </div>
+
+    <% if (isBaseOverview) { %>
+      <div class="base-achievement-list">
+        <% positionBoard.baseAchievements.forEach((base) => { %>
+          <a class="base-achievement-item base-achievement-<%= base.status %>" href="<%= buildDashboardUrl({ base: base.base, selectedBase: base.base, selectedChannel: '', selectedBatchDay: '' }) %>">
+            <div>
+              <strong><%= base.base %></strong>
+              <span>目标 <%= base.monthlyTarget %> · 已入职 <%= base.actualTraining %> · GAP <%= base.gap %></span>
+            </div>
+            <div class="base-achievement-progress">
+              <i style="width: <%= Math.min(100, Math.max(0, base.achievementRate * 100)) %>%"></i>
+            </div>
+            <span class="position-status position-status-<%= base.status %>"><%= base.statusText %></span>
+            <b><%= base.achievementRateText %></b>
+          </a>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="channel-stack-head">
+        <span>多渠道入职贡献（单位：人）</span>
+        <strong>目标 <%= positionBoard.total.monthlyTarget %> 人</strong>
+      </div>
+      <div class="channel-stack-bar" aria-label="多渠道入职贡献">
+        <% positionBoard.channels.forEach((channel, index) => { %>
+          <% const width = channel.actualTraining > 0 ? Math.max(5, channel.actualTraining / contributionTotal * 100) : 0; %>
+          <span class="channel-stack-segment channel-color-<%= index % 5 %>" style="width: <%= width %>%">
+            <%= channel.actualTraining %>
+          </span>
+        <% }) %>
+        <em class="channel-target-marker"><%= positionBoard.total.monthlyTarget %></em>
+      </div>
+      <div class="channel-stack-legend">
+        <% positionBoard.channels.forEach((channel, index) => { %>
+          <span><i class="channel-color-<%= index % 5 %>"></i><%= channel.channel %>（<%= channel.actualTraining %>）</span>
+        <% }) %>
+      </div>
+
+      <div class="table-responsive mt-3">
+        <table class="table channel-health-table">
+          <thead>
+            <tr>
+              <th>渠道</th>
+              <th>月目标</th>
+              <th>已入职</th>
+              <th>GAP</th>
+              <th>漏斗健康度</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% positionBoard.channels.forEach((channel) => { %>
+              <tr>
+                <td><span class="channel-dot channel-dot-<%= channel.status %>"></span><%= channel.channel %></td>
+                <td><%= channel.monthlyTarget %></td>
+                <td><%= channel.actualTraining %></td>
+                <td class="<%= channel.gap < 0 ? 'danger-text strong-text' : '' %>"><%= channel.gap %></td>
+                <td><span class="position-status position-status-<%= channel.status %>"><%= channel.statusText %></span></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="table-card batch-risk-panel">
+    <div class="table-actions">
+      <div>
+        <h2 class="h5 mb-1"><%= isBaseOverview ? '基地风险预警' : '批次风险诊断' %></h2>
+        <p class="section-note"><%= isBaseOverview ? '根据目标达成率判断风险，点击基地进入多渠道批次诊断。' : '按入职批次看缺口，点击后查看该批次下各渠道漏斗。' %></p>
+      </div>
+    </div>
+    <% if (isBaseOverview) { %>
+      <div class="base-risk-preview-list">
+        <% positionBoard.baseAchievements.slice(0, 8).forEach((base) => { %>
+          <a class="base-risk-preview base-risk-preview-<%= base.status %>" href="<%= buildDashboardUrl({ base: base.base, selectedBase: base.base, selectedChannel: '', selectedBatchDay: '' }) %>">
+            <span class="position-status position-status-<%= base.status %>"><%= base.statusText %></span>
+            <strong><%= base.base %></strong>
+            <em>达成率 <%= base.achievementRateText %></em>
+            <b class="<%= base.gap < 0 ? 'danger-text' : '' %>">GAP <%= base.gap %></b>
+          </a>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="batch-risk-grid">
+        <% if (positionBoard.batchRisks.length === 0) { %>
+          <div class="empty-card">暂无批次数据。</div>
+        <% } %>
+        <% positionBoard.batchRisks.forEach((batch) => { %>
+          <a class="batch-risk-card batch-risk-<%= batch.status %> <%= positionBoard.selectedBatch && positionBoard.selectedBatch.day === batch.day ? 'active' : '' %>" href="<%= buildDashboardUrl({ selectedBase: positionBoard.base, selectedBatchDay: batch.day }) %>">
+            <div class="batch-risk-title">
+              <strong><%= batch.label %></strong>
+              <span><%= batch.statusText %></span>
+            </div>
+            <small>GAP</small>
+            <b class="<%= batch.gap < 0 ? 'danger-text' : '' %>"><%= batch.gap %></b>
+            <em>原因：<%= batch.reason %></em>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+</div>
+
+<section class="table-card mt-3">
+  <div class="selected-batch-head">
+    <div>
+      <h2 class="h5 mb-1">批次详情 <span>已选择：<%= positionBoard.selectedBatch ? positionBoard.selectedBatch.label : '暂无批次' %></span></h2>
+      <p class="section-note mb-0"><%= positionBoard.mainRiskText %></p>
+    </div>
+  </div>
+  <% if (isBaseOverview) { %>
+    <div class="empty-card mt-3">选择具体基地后，可查看该基地下各渠道和批次的漏斗风险。</div>
+  <% } else if (!positionBoard.selectedBatch) { %>
+    <div class="empty-card mt-3">暂无批次漏斗数据。</div>
+  <% } else { %>
+    <div class="selected-batch-channel-grid mt-3">
+      <% positionBoard.selectedBatch.channels.forEach((channel) => { %>
+        <% const stages = channel.diagnosis?.stages || []; %>
+        <% const maxStageValue = Math.max(...stages.map((stage) => stage.expected), ...stages.map((stage) => stage.actual), 1); %>
+        <article class="channel-funnel-card channel-funnel-<%= channel.status %>">
+          <div class="channel-funnel-head">
+            <strong><%= channel.channel %></strong>
+            <span>目标 <%= channel.target %> · 入职 <%= channel.actualTraining %> · GAP <%= channel.gap %></span>
+          </div>
+          <p><%= channel.diagnosis?.reason || '暂无漏斗诊断' %></p>
+          <% stages.forEach((stage) => { %>
+            <div class="funnel-stage-row funnel-stage-<%= stage.status %>">
+              <span><%= stage.name.replace('环节', '') %></span>
+              <div><i style="width: <%= Math.max(6, stage.actual / maxStageValue * 100) %>%"></i></div>
+              <strong><%= stage.actual %></strong>
+              <em><%= stage.text %></em>
+            </div>
+          <% }) %>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>

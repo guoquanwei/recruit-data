@@ -18,6 +18,73 @@
   </form>
 </section>
 
+<section class="table-card target-summary-card">
+  <div class="table-actions">
+    <h2 class="h5 mb-0">当月目标汇总</h2>
+    <span class="text-muted small"><%= result.summary.yearMonth || '全部' %></span>
+  </div>
+  <div class="target-summary-grid">
+    <div class="target-summary-metric">
+      <span>需求总数</span>
+      <strong><%= result.summary.totalTarget %></strong>
+    </div>
+    <div class="target-summary-metric">
+      <span>基地数</span>
+      <strong><%= result.summary.baseCount %></strong>
+    </div>
+    <div class="target-summary-metric">
+      <span>有效渠道数</span>
+      <strong><%= result.summary.channelCount %></strong>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle target-summary-table">
+      <thead>
+        <tr><th>渠道</th><th>渠道目标</th><th>渠道目标占比</th></tr>
+      </thead>
+      <tbody>
+        <% if (result.summary.channels.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="3">暂无目标汇总数据。</td></tr>
+        <% } %>
+        <% result.summary.channels.forEach((channel) => { %>
+          <tr>
+            <td><%= channel.channel %></td>
+            <td><%= channel.target %></td>
+            <td><%= channel.shareText %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="base-summary-list">
+    <% if (result.summary.bases.length === 0) { %>
+      <div class="base-summary-empty">暂无基地目标汇总。</div>
+    <% } %>
+    <% result.summary.bases.forEach((base) => { %>
+      <div class="base-summary-card">
+        <div class="base-summary-head">
+          <span><%= base.base %></span>
+          <strong><%= base.totalTarget %></strong>
+        </div>
+        <div class="base-summary-dates">
+          <% const targetBreakdowns = result.summary.yearMonth ? base.dateTargets : base.monthTargets; %>
+          <% if (targetBreakdowns.length === 0) { %>
+            <span class="base-summary-muted"><%= result.summary.yearMonth ? '暂无日期拆解' : '暂无月份拆解' %></span>
+          <% } %>
+          <% targetBreakdowns.forEach((item) => { %>
+            <span><%= item.label %> <strong><%= item.target %></strong></span>
+          <% }) %>
+        </div>
+        <div class="base-summary-channels">
+          <% base.channels.forEach((channel) => { %>
+            <span><%= channel.label %> <%= channel.target %></span>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
 <section class="import-card">
   <form class="row g-2 align-items-end" action="/targets/import" method="post" enctype="multipart/form-data">
     <div class="col-md-8">
@@ -31,9 +98,18 @@
 </section>
 
 <section class="table-card">
+  <%
+    const targetExportParams = new URLSearchParams();
+    Object.entries(result.filters).forEach(([key, value]) => {
+      if (value) targetExportParams.set(key, value);
+    });
+  %>
   <div class="table-actions">
     <h2 class="h5 mb-0">目标列表</h2>
-    <a class="btn btn-sm btn-outline-primary" href="/targets/progress">查看达成进度</a>
+    <div class="table-action-buttons">
+      <a class="btn btn-sm btn-outline-secondary" href="<%= `/targets/export?${targetExportParams.toString()}` %>">导出</a>
+      <a class="btn btn-sm btn-outline-primary" href="/targets/progress">查看达成进度</a>
+    </div>
   </div>
   <div class="table-responsive">
     <table class="table table-hover align-middle">

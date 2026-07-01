@@ -43,6 +43,9 @@ function inferBase({ department, officeLocation }) {
   if (source.includes('成都中行') || source.includes('重庆中行') || source.includes('重庆外呼项目') || source.includes('ZH-成都中行') || source.includes('CQ-重庆中行') || source.includes('CQ-重庆外呼项目')) {
     return '新业务运营中心';
   }
+  if (source.includes('10015') || source.includes('15升投')) {
+    return '10015升投';
+  }
   if (source.includes('联通河北') || source.includes('河北基地') || source.includes('石家庄')) {
     return '联通河北';
   }
@@ -73,10 +76,6 @@ function inferBase({ department, officeLocation }) {
   if (source.includes('长春')) {
     return '长春热线项目';
   }
-  if (source.includes('10015') || source.includes('15升投')) {
-    return '10015升投';
-  }
-
   return officeText || departmentText;
 }
 

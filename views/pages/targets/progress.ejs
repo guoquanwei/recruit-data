@@ -22,12 +22,12 @@
   <div class="metric-card"><span>实际入培</span><strong><%= progress.overall.actualTraining %></strong></div>
   <div class="metric-card <%= progress.overall.gap < 0 ? 'danger' : '' %>"><span>GAP</span><strong><%= progress.overall.gap %></strong></div>
   <div class="metric-card <%= progress.overall.achievementRate < 1 ? 'danger' : '' %>"><span>达成率</span><strong><%= progress.overall.achievementRateText %></strong></div>
-  <div class="metric-card"><span>未达成基地数</span><strong><%= progress.overall.unmetBaseCount %></strong></div>
+  <div class="metric-card"><span>自主社招占比</span><strong><%= progress.overall.selfSourcingShareText %></strong></div>
 </div>
 
 <section class="table-card mb-3">
   <h2 class="h5">全局渠道占比</h2>
-  <div class="table-responsive">
+  <div class="table-responsive frozen-table-wrapper">
     <table class="table table-hover">
       <thead><tr><th>渠道</th><th>目标</th><th>截止目标</th><th>实际</th><th>目标占比</th><th>达成占比</th><th>占比GAP</th></tr></thead>
       <tbody>
@@ -48,24 +48,32 @@
 </section>
 
 <section class="table-card">
-  <h2 class="h5">基地达成明细</h2>
+  <h2 class="h5">各基地渠道达成明细</h2>
+  <p class="section-note">指标注释：GAP = 实际入培 - 月度目标；达成率 &lt; 80% 红色加粗；GAP 为负数红色；无目标且无达成的基地不展示。</p>
   <div class="table-responsive">
-    <table class="table table-hover">
-      <thead><tr><th>基地</th><th>月度目标</th><th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成率</th><th>主要缺口渠道</th></tr></thead>
+    <table class="table table-hover target-progress-detail-table">
+      <thead><tr class="frozen-header-row"><th>基地</th><th>渠道</th><th>月度目标</th><th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成率</th><th>目标占比</th><th>达成占比</th><th>占比GAP</th></tr></thead>
       <tbody>
-        <% if (progress.bases.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="7">暂无目标达成数据。</td></tr>
+        <% if (progress.detailGroups.length === 0) { %>
+          <tr><td class="text-center text-muted" colspan="10">暂无目标达成数据。</td></tr>
         <% } %>
-        <% progress.bases.forEach((base) => { %>
-          <tr>
-            <td><%= base.base %></td>
-            <td><%= base.monthlyTarget %></td>
-            <td><%= base.cutoffTarget %></td>
-            <td><%= base.actualTraining %></td>
-            <td class="<%= base.gap < 0 ? 'danger-text' : '' %>"><%= base.gap %></td>
-            <td class="<%= base.achievementRate < 1 ? 'danger-text' : '' %>"><%= base.achievementRateText %></td>
-            <td><%= base.shortageChannels.map((item) => `${item.channel}(${item.gap})`).join('、') %></td>
-          </tr>
+        <% progress.detailGroups.forEach((base) => { %>
+          <% base.channelRows.forEach((row, rowIndex) => { %>
+            <tr class="<%= row.channel === '合计' ? 'summary-row' : '' %> <%= base.isOverall ? 'overall-row' : '' %> <%= rowIndex === base.channelRows.length - 1 ? 'group-last-row' : '' %>">
+              <% if (rowIndex === 0) { %>
+                <td class="base-group-cell <%= base.isOverall ? 'overall-cell' : '' %>" rowspan="<%= base.channelRows.length %>"><%= base.base %></td>
+              <% } %>
+              <td><%= row.channel %></td>
+              <td><%= row.monthlyTarget %></td>
+              <td><%= row.cutoffTarget %></td>
+              <td><%= row.actualTraining %></td>
+              <td class="<%= row.gap < 0 ? 'danger-text' : '' %>"><%= row.gap %></td>
+              <td class="<%= row.achievementRate < 0.8 ? 'danger-text strong-text' : '' %>"><%= row.achievementRateText %></td>
+              <td><%= row.targetShareText %></td>
+              <td><%= row.actualShareText %></td>
+              <td><%= row.shareGapText %></td>
+            </tr>
+          <% }) %>
         <% }) %>
       </tbody>
     </table>

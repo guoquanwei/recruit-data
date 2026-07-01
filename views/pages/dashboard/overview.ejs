@@ -11,42 +11,140 @@
       <input class="form-control" type="date" name="cutoffDate" value="<%= dashboard.cutoffDate %>">
     </div>
     <div class="col-md-3">
+      <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: dashboard.filters.base, items: dashboard.options.bases }) %>
+    </div>
+    <div class="col-md-3">
       <button class="btn btn-primary" type="submit">查询</button>
+      <a class="btn btn-outline-secondary" href="/dashboard/overview">重置</a>
     </div>
   </form>
 </section>
 
-<div class="metric-grid">
-  <div class="metric-card"><span>整体目标</span><strong><%= dashboard.topMetrics.monthlyTarget %></strong></div>
-  <div class="metric-card"><span>截止目标</span><strong><%= dashboard.topMetrics.cutoffTarget %></strong></div>
-  <div class="metric-card"><span>实际入培数</span><strong><%= dashboard.topMetrics.actualTraining %></strong></div>
-  <div class="metric-card <%= dashboard.topMetrics.gap < 0 ? 'danger' : '' %>"><span>GAP</span><strong><%= dashboard.topMetrics.gap %></strong></div>
-  <div class="metric-card <%= dashboard.topMetrics.achievementRate < 1 ? 'danger' : '' %>"><span>达成率</span><strong><%= dashboard.topMetrics.achievementRateText %></strong></div>
-  <div class="metric-card"><span>未达成基地数</span><strong><%= dashboard.topMetrics.unmetBaseCount %></strong></div>
-  <div class="metric-card"><span>自主社招整体人效</span><strong><%= dashboard.topMetrics.selfSourcingEfficiency %></strong></div>
-  <div class="metric-card"><span>自主社招占比</span><strong><%= (dashboard.topMetrics.selfSourcingShare * 100).toFixed(2) %>%</strong></div>
+<%
+  const insights = dashboard.overviewInsights;
+  const channelPalette = ['#3b82f6', '#16a36a', '#7c6ee6', '#f59e0b', '#22a6b3'];
+  const donutStops = [];
+  let donutCursor = 0;
+  insights.channelShares.forEach((item, index) => {
+    const share = item.share * 100;
+    const end = donutCursor + share;
+    donutStops.push(`${channelPalette[index]} ${donutCursor}% ${end}%`);
+    donutCursor = end;
+  });
+  const donutStyle = donutStops.length > 0 && donutCursor > 0
+    ? `background: conic-gradient(${donutStops.join(', ')});`
+    : 'background: #edf2f8;';
+%>
+
+<div class="metric-grid overview-metric-grid">
+  <div class="metric-card"><span>目标达成率</span><strong><%= insights.cards.targetAchievementRateText %></strong></div>
+  <div class="metric-card"><span>自主社招占比</span><strong><%= insights.cards.selfSourcingShareText %></strong></div>
+  <div class="metric-card"><span>自招人效</span><strong><%= insights.cards.selfSourcingEfficiency %></strong></div>
+  <div class="metric-card"><span>自招团队规模</span><strong><%= insights.cards.recruiterTeamSize %></strong></div>
 </div>
 
-<section class="table-card">
-  <h2 class="h5">全局渠道占比</h2>
-  <div class="table-responsive">
-    <table class="table table-hover">
-      <thead><tr><th>渠道</th><th>目标</th><th>截止目标</th><th>实际</th><th>目标占比</th><th>达成占比</th><th>占比GAP</th></tr></thead>
-      <tbody>
-        <% dashboard.channels.forEach((channel) => { %>
-          <tr>
-            <td><%= channel.channel %></td>
-            <td><%= channel.monthlyTarget %></td>
-            <td><%= channel.cutoffTarget %></td>
-            <td><%= channel.actualTraining %></td>
-            <td><%= channel.targetShareText %></td>
-            <td><%= channel.actualShareText %></td>
-            <td><%= channel.shareGapText %></td>
-          </tr>
+<div class="overview-dashboard-grid">
+  <section class="table-card overview-risk-card overview-risk-<%= insights.overallRisk.status %>">
+    <div class="table-actions">
+      <div>
+        <h2 class="h5 mb-1">整体目标达成</h2>
+        <p class="section-note mb-0">按基地逐一展示目标达成情况，点击进入基地风险分析。</p>
+      </div>
+      <span class="position-status position-status-<%= insights.overallRisk.status %>"><%= insights.overallRisk.statusText %></span>
+    </div>
+
+    <div class="overview-risk-summary">
+      <div><span>整体达成率</span><strong><%= insights.overallRisk.achievementRateText %></strong></div>
+      <div><span>截止目标达成率</span><strong><%= insights.overallRisk.cutoffAchievementRateText %></strong></div>
+      <div><span>整体 GAP</span><strong class="<%= insights.overallRisk.gap < 0 ? 'danger-text' : '' %>"><%= insights.overallRisk.gap %></strong></div>
+    </div>
+
+    <div class="overview-base-achievement-list">
+      <% if (insights.baseAchievements.length === 0) { %>
+        <div class="empty-card">暂无基地达成数据。</div>
+      <% } %>
+      <% insights.baseAchievements.forEach((base) => { %>
+        <a class="overview-base-achievement overview-base-achievement-<%= base.status %>" href="/dashboard/base-risk?base=<%= encodeURIComponent(base.base) %>&yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>&cutoffDate=<%= encodeURIComponent(dashboard.cutoffDate) %>">
+          <div class="overview-base-main">
+            <strong><%= base.base %></strong>
+            <span>目标 <%= base.monthlyTarget %> · 实际 <%= base.actualTraining %> · GAP <%= base.gap %></span>
+          </div>
+          <div class="overview-base-progress">
+            <i style="width: <%= Math.min(100, Math.max(0, base.achievementRate * 100)) %>%"></i>
+          </div>
+          <span class="position-status position-status-<%= base.status %>"><%= base.statusText %></span>
+          <b><%= base.achievementRateText %></b>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+
+  <div class="overview-side-grid">
+    <section class="table-card overview-channel-card">
+      <div class="table-actions">
+        <div>
+          <h2 class="h5 mb-1">5 个渠道占比</h2>
+          <p class="section-note mb-0">按实际入培人数统计渠道贡献。</p>
+        </div>
+      </div>
+      <div class="overview-donut-layout">
+        <div class="overview-donut" style="<%= donutStyle %>">
+          <span><%= dashboard.topMetrics.actualTraining %></span>
+          <em>入培</em>
+        </div>
+        <div class="overview-channel-list">
+          <% insights.channelShares.forEach((item, index) => { %>
+            <div>
+              <span><i style="background: <%= channelPalette[index] %>"></i><%= item.channel %></span>
+              <strong><%= item.actualTraining %> · <%= item.shareText %></strong>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card overview-vendor-card">
+      <div class="table-actions">
+        <div>
+          <h2 class="h5 mb-1">渠道社招 TOP3</h2>
+          <p class="section-note mb-0">按渠道名称累计入职，并展示基地拆分。</p>
+        </div>
+      </div>
+      <div class="vendor-top-list">
+        <% if (insights.socialChannelTop3.length === 0) { %>
+          <div class="empty-card">暂无渠道社招入职数据。</div>
+        <% } %>
+        <% insights.socialChannelTop3.forEach((item, index) => { %>
+          <article class="vendor-top-item">
+            <span class="vendor-rank"><%= index + 1 %></span>
+            <div>
+              <strong><%= item.channelName %></strong>
+              <p><%= item.baseBreakdownText %></p>
+            </div>
+            <b><%= item.total %>人</b>
+          </article>
         <% }) %>
-      </tbody>
-    </table>
+      </div>
+    </section>
+
+    <section class="table-card overview-efficiency-card">
+      <div class="table-actions">
+        <div>
+          <h2 class="h5 mb-1">自招人效</h2>
+          <p class="section-note mb-0">整体、试用期、正式期招聘人效对比。</p>
+        </div>
+      </div>
+      <div class="overview-efficiency-grid">
+        <% insights.selfSourcingEfficiency.forEach((item) => { %>
+          <div>
+            <span><%= item.stage %></span>
+            <strong><%= item.efficiency %></strong>
+            <em><%= item.trainingCount %> 入培 / <%= item.recruiterCount %> 人</em>
+          </div>
+        <% }) %>
+      </div>
+    </section>
   </div>
-</section>
+</div>
 
 <%- include('../../partials/footer') %>
