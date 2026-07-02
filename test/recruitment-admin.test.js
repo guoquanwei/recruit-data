@@ -1,8 +1,13 @@
 const assert = require('node:assert/strict');
+const http = require('node:http');
 const test = require('node:test');
 
+const { createApp } = require('../server');
 const { makeUniqueHeaders } = require('../service/imports/excel');
 const { buildCsv } = require('../service/export/csv');
+const { getEmployeeImportTemplateConfig, buildEmployeeImportTemplateWorkbook } = require('../service/employees/importTemplate');
+const { getTargetImportTemplateConfig, buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
+const { getInterviewImportTemplateConfig, buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
 const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
 const { buildInterviewFilters } = require('../service/interviews/repository');
 const { formatDistinctTargetFilterOptions } = require('../service/targets/repository');
@@ -13,6 +18,21 @@ const { getCutoffDate, includeActualOnlyTargets, summarizeTargetPlan, summarizeT
 const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOverviewInsights, buildPositionChannelBoard, buildSelfSourcingEfficiency, buildSelfSourcingRecruiterOptions, buildSelfSourcingRecruiterRows, filterSelfSourcingTrainingDetails, getTrainingDetails, normalizeOverviewTab } = require('../service/dashboard/service');
 const { inferInterviewBase, normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('../service/interviews/normalize');
 const { buildFunnelRows, buildMonthlyFunnelRows } = require('../service/interviews/service');
+
+async function requestApp(pathName) {
+  const app = createApp();
+  const server = http.createServer(app);
+  await new Promise((resolve) => server.listen(0, resolve));
+  const { port } = server.address();
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}${pathName}`);
+    const text = await response.text();
+    return { response, text };
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+}
 
 test('shared formatting masks phone numbers and parses pagination defaults', () => {
   assert.equal(maskPhone('13915993720'), '139****3720');
@@ -27,6 +47,85 @@ test('excel helper keeps duplicate headers addressable like spreadsheet tools', 
     makeUniqueHeaders(['部门', '职位', '姓名', '部门', '职位']),
     ['部门', '职位', '姓名', '部门.1', '职位.1']
   );
+});
+
+test('employee import templates match required sheet names and column headers', async () => {
+  const activeConfig = getEmployeeImportTemplateConfig('active');
+  assert.equal(activeConfig.sheetName, '在职员工信息');
+  assert.deepEqual(activeConfig.headers.slice(0, 10), [
+    '工号',
+    '姓名',
+    '入培时间',
+    '手机号码',
+    '招聘渠道',
+    '渠道名称',
+    '办公地点',
+    '部门',
+    '职位',
+    '员工状态'
+  ]);
+
+  const resignedConfig = getEmployeeImportTemplateConfig('resigned');
+  assert.equal(resignedConfig.sheetName, '离职员工信息');
+  assert.deepEqual(resignedConfig.headers.slice(0, 10), [
+    '工号',
+    '姓名',
+    '入培时间',
+    '手机号码',
+    '招聘渠道',
+    '渠道名称',
+    '办公地点',
+    '离职前部门',
+    '离职前职位',
+    '离职日期'
+  ]);
+
+  const workbook = buildEmployeeImportTemplateWorkbook('resigned');
+  const sheet = workbook.getWorksheet('离职员工信息');
+  assert.ok(sheet);
+  assert.equal(sheet.getRow(1).getCell(1).value, '工号');
+  assert.equal(sheet.getRow(2).getCell(10).value, '2026-06-30');
+});
+
+test('target and interview import templates match required sheets and columns', () => {
+  const targetConfig = getTargetImportTemplateConfig();
+  assert.equal(targetConfig.sheetName, '整体目标');
+  assert.deepEqual(targetConfig.headers.slice(0, 8), [
+    '年月份',
+    '基地',
+    '渠道',
+    '招聘订单类型',
+    '7天留存率目标',
+    '15天留存率目标',
+    '30天留存率目标',
+    '招聘目标'
+  ]);
+  assert.equal(buildTargetImportTemplateWorkbook().getWorksheet('整体目标').getRow(2).getCell(1).value, '2026-06');
+
+  const interviewConfig = getInterviewImportTemplateConfig();
+  assert.equal(interviewConfig.sheetName, '面试记录');
+  assert.deepEqual(interviewConfig.headers.slice(0, 7), [
+    '职位名称',
+    '候选人名称',
+    '电话',
+    '面试官填写反馈时间',
+    '面试官反馈结果',
+    '面试官',
+    '猎头公司标签'
+  ]);
+  assert.equal(buildInterviewImportTemplateWorkbook().getWorksheet('面试记录').getRow(2).getCell(4).value, '2026-06-01');
+});
+
+test('target import is rendered on its own page', async () => {
+  const importPage = await requestApp('/targets/import');
+  assert.equal(importPage.response.status, 200);
+  assert.match(importPage.text, /招聘目标导入/);
+  assert.match(importPage.text, /下载 Excel 模板/);
+  assert.match(importPage.text, /字段规范说明/);
+
+  const listPage = await requestApp('/targets');
+  assert.doesNotMatch(listPage.text, /导入月度招聘目标 Excel/);
+  assert.match(listPage.text, /href="\/targets\/import"/);
 });
 
 test('csv export escapes values and includes utf8 bom', () => {

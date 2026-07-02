@@ -4,10 +4,14 @@
 <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
 
 <section class="import-card">
-  <h2 class="h5 mb-3">面试记录导入</h2>
-  <p class="text-muted small">支持历史全量覆盖、按日追加、按日覆盖。按日覆盖以 `面试官填写反馈时间` 为覆盖范围。</p>
+  <div class="import-card-head">
+    <div>
+      <h2 class="h5 mb-1">面试记录导入</h2>
+      <p class="text-muted small mb-0">支持历史全量覆盖、按日追加、按日覆盖。按日覆盖以「面试官填写反馈时间」为覆盖范围。</p>
+    </div>
+  </div>
   <form action="/interviews/import" method="post" enctype="multipart/form-data">
-    <div class="row g-3 align-items-end">
+    <div class="row g-3">
       <div class="col-md-4">
         <label class="form-label">导入模式</label>
         <select class="form-select" name="mode">
@@ -20,11 +24,29 @@
         <label class="form-label">选择 Excel 文件</label>
         <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
       </div>
-      <div class="col-md-2">
-        <button class="btn btn-primary w-100" type="submit">导入</button>
-      </div>
+    </div>
+    <div class="import-action-row mt-3">
+      <button class="btn btn-primary" type="submit">导入面试记录</button>
+      <a class="btn btn-outline-primary" href="/interviews/import/template">下载 Excel 模板</a>
     </div>
   </form>
+  <div class="import-field-guide">
+    <h3>字段规范说明</h3>
+    <dl>
+      <dt>工作表名称</dt>
+      <dd>建议使用「面试记录」；系统读取第一个工作表。</dd>
+      <dt>必填列</dt>
+      <dd><span class="required-columns">职位名称、候选人名称、电话、面试官填写反馈时间、面试官反馈结果、面试官、猎头公司标签</span></dd>
+      <dt>字段格式</dt>
+      <dd>面试官填写反馈时间使用 YYYY-MM-DD，例如 2026-06-01；电话建议设置为文本格式，禁止科学计数法。</dd>
+      <dt>导入模式</dt>
+      <dd>按日追加保留历史数据；按日覆盖按反馈日期覆盖；历史全量覆盖会替换全部面试记录。</dd>
+      <dt>校验规则</dt>
+      <dd>必填列禁止空值；表头必须在第 1 行，禁止改名、合并单元格、换行或添加特殊符号。</dd>
+      <dt>可选列</dt>
+      <dd>性别、猎头合约名称、内推人、综合评价。</dd>
+    </dl>
+  </div>
 </section>
 
 <%- include('../../partials/footer') %>

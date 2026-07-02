@@ -53,6 +53,7 @@
           </section>
           <section class="nav-group <%= moduleActive === 'targets' ? 'open' : '' %>">
             <div class="nav-group-title">需求管理</div>
+            <a class="<%= active === 'targets-import' ? 'active' : '' %>" href="/targets/import" title="招聘目标导入"><%- navIcon('upload') %><span class="nav-label">招聘目标导入</span></a>
             <a class="<%= active === 'targets-list' ? 'active' : '' %>" href="/targets" title="目标列表"><%- navIcon('list') %><span class="nav-label">目标列表</span></a>
             <a class="<%= active === 'targets-progress' ? 'active' : '' %>" href="/targets/progress" title="目标达成进度"><%- navIcon('target') %><span class="nav-label">目标达成进度</span></a>
           </section>

@@ -2,11 +2,9 @@ const path = require('node:path');
 
 const { readValidatedRecords } = require('../imports/excel');
 const { runImportTransaction } = require('../imports/transactions');
+const { ACTIVE_REQUIRED_COLUMNS, RESIGNED_REQUIRED_COLUMNS } = require('./importTemplate');
 const { normalizeActiveEmployee, normalizeResignedEmployee } = require('./normalize');
 const { replaceEmployeesBySource } = require('./repository');
-
-const ACTIVE_REQUIRED_COLUMNS = ['工号', '姓名', '入培时间', '手机号码', '招聘渠道', '渠道名称', '办公地点', '部门', '职位', '员工状态'];
-const RESIGNED_REQUIRED_COLUMNS = ['工号', '姓名', '入培时间', '手机号码', '招聘渠道', '渠道名称', '办公地点', '离职前部门', '离职前职位', '离职日期'];
 
 async function importActiveEmployees(filePath) {
   const records = await readValidatedRecords({

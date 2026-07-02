@@ -1038,6 +1038,61 @@ body {
   margin-bottom: 16px;
 }
 
+.import-card-head {
+  margin-bottom: 14px;
+}
+
+.import-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.import-action-row .btn {
+  min-width: 132px;
+}
+
+.import-field-guide {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.import-field-guide h3 {
+  margin: 0 0 8px;
+  color: #1f3b64;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.import-field-guide dl {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.import-field-guide dt {
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.import-field-guide dd {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.required-columns {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
 .empty-state {
   max-width: 960px;
   margin: 0 auto;
@@ -2797,6 +2852,10 @@ body {
 
   .filter-grid,
   .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .import-field-guide dl {
     grid-template-columns: 1fr;
   }
 

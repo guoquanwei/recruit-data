@@ -5,12 +5,15 @@ const multer = require('multer');
 
 const runtime = require('../config/runtime');
 const { importActiveEmployees, importResignedEmployees } = require('../service/employees/importer');
+const { buildEmployeeImportTemplateWorkbook, getEmployeeImportTemplateConfig } = require('../service/employees/importTemplate');
 const { getEmployeeExportRows, getEmployeeList } = require('../service/employees/service');
 const { sendCsv } = require('../service/export/csv');
 const { importInterviewRecords } = require('../service/interviews/importer');
+const { buildInterviewImportTemplateWorkbook, getInterviewImportTemplateConfig } = require('../service/interviews/importTemplate');
 const { getInterviewExportRows, getInterviewFunnel, getInterviewList } = require('../service/interviews/service');
 const { getDashboardOverview } = require('../service/dashboard/service');
 const { importMonthlyTargets } = require('../service/targets/importer');
+const { buildTargetImportTemplateWorkbook, getTargetImportTemplateConfig } = require('../service/targets/importTemplate');
 const { getTargetExportRows, getTargetList, getTargetProgress } = require('../service/targets/service');
 
 const router = express.Router();
@@ -48,6 +51,15 @@ function cleanupUploadedFile(file) {
       console.warn(`上传临时文件删除失败：${file.path}`, error);
     }
   });
+}
+
+async function sendWorkbookTemplate(res, config, workbook) {
+  const buffer = await workbook.xlsx.writeBuffer();
+  const encodedFilename = encodeURIComponent(config.filename);
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}`);
+  res.send(Buffer.from(buffer));
 }
 
 function employeeExportColumns(frontline = false) {
@@ -117,6 +129,12 @@ router.get('/employees/import', (req, res) => {
   });
 });
 
+router.get('/employees/import/template/:type', async (req, res) => {
+  const config = getEmployeeImportTemplateConfig(req.params.type);
+  const workbook = buildEmployeeImportTemplateWorkbook(req.params.type);
+  await sendWorkbookTemplate(res, config, workbook);
+});
+
 router.post('/employees/import', upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.redirect('/employees/import?error=请选择要导入的文件');
@@ -162,12 +180,26 @@ router.get('/employees/frontline/export', (req, res) => {
 
 router.post('/targets/import', upload.single('file'), async (req, res) => {
   if (!req.file) {
-    res.redirect('/targets?error=请选择要导入的文件');
+    res.redirect('/targets/import?error=请选择要导入的文件');
     return;
   }
   const result = await importMonthlyTargets(req.file.path);
   cleanupUploadedFile(req.file);
-  redirectWithResult(res, '/targets', result);
+  redirectWithResult(res, '/targets/import', result);
+});
+
+router.get('/targets/import', (req, res) => {
+  renderPage(res, 'pages/targets/import', {
+    active: 'targets-import',
+    moduleActive: 'targets',
+    pageTitle: '招聘目标导入',
+    notice: req.query.notice,
+    error: req.query.error
+  });
+});
+
+router.get('/targets/import/template', async (req, res) => {
+  await sendWorkbookTemplate(res, getTargetImportTemplateConfig(), buildTargetImportTemplateWorkbook());
 });
 
 router.get('/targets', (req, res) => {
@@ -202,6 +234,10 @@ router.get('/interviews/import', (req, res) => {
     notice: req.query.notice,
     error: req.query.error
   });
+});
+
+router.get('/interviews/import/template', async (req, res) => {
+  await sendWorkbookTemplate(res, getInterviewImportTemplateConfig(), buildInterviewImportTemplateWorkbook());
 });
 
 router.post('/interviews/import', upload.single('file'), async (req, res) => {

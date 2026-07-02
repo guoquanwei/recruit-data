@@ -1,0 +1,40 @@
+<%- include('../../partials/header') %>
+
+<% if (notice) { %><div class="alert alert-success"><%= notice %></div><% } %>
+<% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+<section class="import-card">
+  <div class="import-card-head">
+    <div>
+      <h2 class="h5 mb-1">招聘目标导入</h2>
+      <p class="text-muted small mb-0">上传「整体目标」Excel 后，将按文件中的月份覆盖对应月度招聘目标。</p>
+    </div>
+  </div>
+  <form action="/targets/import" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label class="form-label">选择 Excel 文件</label>
+      <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
+    </div>
+    <div class="import-action-row">
+      <button class="btn btn-primary" type="submit">按月覆盖导入</button>
+      <a class="btn btn-outline-primary" href="/targets/import/template">下载 Excel 模板</a>
+    </div>
+  </form>
+  <div class="import-field-guide">
+    <h3>字段规范说明</h3>
+    <dl>
+      <dt>工作表名称</dt>
+      <dd>必须为「整体目标」。</dd>
+      <dt>必填列</dt>
+      <dd><span class="required-columns">年月份、基地、渠道、招聘订单类型、7天留存率目标、15天留存率目标、30天留存率目标、招聘目标</span></dd>
+      <dt>每日目标</dt>
+      <dd>按日期填写 1日 至 31日 的目标人数；无目标日期填 0，不要留空。</dd>
+      <dt>字段格式</dt>
+      <dd>年月份使用 YYYY-MM，例如 2026-06；留存率目标使用数字或小数；招聘目标和每日目标使用整数。</dd>
+      <dt>校验规则</dt>
+      <dd>同一个文件只能包含一个月份；必填列禁止空值；表头必须在第 1 行，禁止改名、合并单元格或添加特殊符号。</dd>
+    </dl>
+  </div>
+</section>
+
+<%- include('../../partials/footer') %>

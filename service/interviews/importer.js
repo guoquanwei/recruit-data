@@ -2,10 +2,9 @@ const path = require('node:path');
 
 const { readValidatedRecords } = require('../imports/excel');
 const { runImportTransaction } = require('../imports/transactions');
+const { REQUIRED_COLUMNS } = require('./importTemplate');
 const { normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('./normalize');
 const { insertInterviewRecords, replaceAllInterviewRecords, replaceInterviewRecordsByDates } = require('./repository');
-
-const REQUIRED_COLUMNS = ['职位名称', '候选人名称', '电话', '面试官填写反馈时间', '面试官反馈结果', '面试官', '猎头公司标签'];
 
 async function readInterviewRecords(filePath) {
   return readValidatedRecords({

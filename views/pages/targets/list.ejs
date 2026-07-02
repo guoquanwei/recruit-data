@@ -85,18 +85,6 @@
   </div>
 </section>
 
-<section class="import-card">
-  <form class="row g-2 align-items-end" action="/targets/import" method="post" enctype="multipart/form-data">
-    <div class="col-md-8">
-      <label class="form-label">导入月度招聘目标 Excel</label>
-      <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
-    </div>
-    <div class="col-md-4">
-      <button class="btn btn-primary" type="submit">按月覆盖导入</button>
-    </div>
-  </form>
-</section>
-
 <section class="table-card">
   <%
     const targetExportParams = new URLSearchParams();
@@ -107,6 +95,7 @@
   <div class="table-actions">
     <h2 class="h5 mb-0">目标列表</h2>
     <div class="table-action-buttons">
+      <a class="btn btn-sm btn-outline-primary" href="/targets/import">导入招聘目标</a>
       <a class="btn btn-sm btn-outline-secondary" href="<%= `/targets/export?${targetExportParams.toString()}` %>">导出</a>
       <a class="btn btn-sm btn-outline-primary" href="/targets/progress">查看达成进度</a>
     </div>

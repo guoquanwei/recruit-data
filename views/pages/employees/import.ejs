@@ -6,30 +6,74 @@
 <div class="row g-3">
   <div class="col-lg-6">
     <section class="import-card">
-      <h2 class="h5 mb-3">在职员工全量覆盖</h2>
-      <p class="text-muted small">上传 `在职员工信息` Excel 后，将覆盖所有在职来源员工数据。</p>
+      <div class="import-card-head">
+        <div>
+          <h2 class="h5 mb-1">在职员工全量覆盖</h2>
+          <p class="text-muted small mb-0">上传「在职员工信息」Excel 后，将覆盖所有在职来源员工数据。</p>
+        </div>
+      </div>
       <form action="/employees/import" method="post" enctype="multipart/form-data">
         <input type="hidden" name="type" value="active">
         <div class="mb-3">
           <label class="form-label">选择 Excel 文件</label>
           <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
         </div>
-        <button class="btn btn-primary" type="submit">导入在职员工</button>
+        <div class="import-action-row">
+          <button class="btn btn-primary" type="submit">导入在职员工</button>
+          <a class="btn btn-outline-primary" href="/employees/import/template/active">下载 Excel 模板</a>
+        </div>
       </form>
+      <div class="import-field-guide">
+        <h3>字段规范说明</h3>
+        <dl>
+          <dt>工作表名称</dt>
+          <dd>必须为「在职员工信息」。</dd>
+          <dt>必填列</dt>
+          <dd><span class="required-columns">工号、姓名、入培时间、手机号码、招聘渠道、渠道名称、办公地点、部门、职位、员工状态</span></dd>
+          <dt>字段格式</dt>
+          <dd>日期使用 YYYY-MM-DD，例如 2026-06-01；工号、手机号码请设置为文本格式，手机号码禁止科学计数法。</dd>
+          <dt>校验规则</dt>
+          <dd>必填列禁止空值；表头必须在第 1 行，禁止改名、合并单元格、换行或添加特殊符号。</dd>
+          <dt>可选列</dt>
+          <dd>入职日期、证件号、通关交接时间。</dd>
+        </dl>
+      </div>
     </section>
   </div>
   <div class="col-lg-6">
     <section class="import-card">
-      <h2 class="h5 mb-3">离职员工全量覆盖</h2>
-      <p class="text-muted small">上传 `离职员工信息` Excel 后，将覆盖所有离职来源员工数据。</p>
+      <div class="import-card-head">
+        <div>
+          <h2 class="h5 mb-1">离职员工全量覆盖</h2>
+          <p class="text-muted small mb-0">上传「离职员工信息」Excel 后，将覆盖所有离职来源员工数据。</p>
+        </div>
+      </div>
       <form action="/employees/import" method="post" enctype="multipart/form-data">
         <input type="hidden" name="type" value="resigned">
         <div class="mb-3">
           <label class="form-label">选择 Excel 文件</label>
           <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
         </div>
-        <button class="btn btn-primary" type="submit">导入离职员工</button>
+        <div class="import-action-row">
+          <button class="btn btn-primary" type="submit">导入离职员工</button>
+          <a class="btn btn-outline-primary" href="/employees/import/template/resigned">下载 Excel 模板</a>
+        </div>
       </form>
+      <div class="import-field-guide">
+        <h3>字段规范说明</h3>
+        <dl>
+          <dt>工作表名称</dt>
+          <dd>必须为「离职员工信息」。</dd>
+          <dt>必填列</dt>
+          <dd><span class="required-columns">工号、姓名、入培时间、手机号码、招聘渠道、渠道名称、办公地点、离职前部门、离职前职位、离职日期</span></dd>
+          <dt>字段格式</dt>
+          <dd>入培时间、离职日期使用 YYYY-MM-DD，例如 2026-06-30；工号、手机号码请设置为文本格式，手机号码禁止科学计数法。</dd>
+          <dt>校验规则</dt>
+          <dd>必填列禁止空值；表头必须在第 1 行，禁止改名、合并单元格、换行或添加特殊符号。</dd>
+          <dt>可选列</dt>
+          <dd>入职日期、证件号、通关交接时间。</dd>
+        </dl>
+      </div>
     </section>
   </div>
 </div>
