@@ -13,16 +13,6 @@
       <%- include('../../partials/admin/search-select', { label: '渠道', name: 'channel', value: dashboard.filters.channel, items: dashboard.options.channels }) %>
     </div>
     <div class="col-md-3">
-      <label class="form-label">状态</label>
-      <select class="form-select" name="status">
-        <option value="">全部状态</option>
-        <option value="risk" <%= dashboard.filters.status === 'risk' ? 'selected' : '' %>>风险</option>
-        <option value="warning" <%= dashboard.filters.status === 'warning' ? 'selected' : '' %>>预警</option>
-        <option value="achieved" <%= dashboard.filters.status === 'achieved' ? 'selected' : '' %>>达成</option>
-        <option value="empty" <%= dashboard.filters.status === 'empty' ? 'selected' : '' %>>无数据</option>
-      </select>
-    </div>
-    <div class="col-md-3">
       <button class="btn btn-primary" type="submit">查询</button>
       <a class="btn btn-outline-secondary" href="/dashboard/base-risk">重置</a>
     </div>

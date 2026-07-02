@@ -731,9 +731,9 @@ test('dashboard overview insights expose executive cards, channel shares and ven
   assert.equal(insights.cards.recruiterTeamSize, 5);
   assert.equal(insights.overallRisk.status, 'risk');
   assert.deepEqual(insights.baseAchievements.map((item) => [item.base, item.actualTraining, item.achievementRateText, item.status]), [
-    ['江苏基地-淮安', 8, '80.00%', 'risk'],
     ['长春热线项目', 3, '30.00%', 'risk'],
     ['南二在线客服项目', 4, '40.00%', 'risk'],
+    ['江苏基地-淮安', 8, '80.00%', 'risk'],
     ['联通天津', 8, '80.00%', 'risk'],
     ['联通河北', 7, '140.00%', 'achieved']
   ]);
@@ -753,6 +753,34 @@ test('dashboard overview insights expose executive cards, channel shares and ven
     ['整体', '1.6', 5],
     ['试用期', '1.0', 2],
     ['正式期', '2.0', 3]
+  ]);
+});
+
+test('dashboard overview base achievements sort by achievement rate and keep actual-only bases last', () => {
+  const progress = summarizeTargets([
+    { yearMonth: '2026-06', base: '低达成基地', channel: '自主社招', dailyTargets: { 10: 10 } },
+    { yearMonth: '2026-06', base: '高达成基地', channel: '内推', dailyTargets: { 10: 10 } }
+  ], [
+    { employeeNo: 'LOW1', base: '低达成基地', channelType: '自主社招', trainingDate: '2026-06-09' },
+    ...Array.from({ length: 8 }, (_, index) => ({
+      employeeNo: `HIGH${index}`,
+      base: '高达成基地',
+      channelType: '内推',
+      trainingDate: '2026-06-09'
+    })),
+    { employeeNo: 'ONLY1', base: '无目标达成基地', channelType: '渠道社招', trainingDate: '2026-06-09' }
+  ], '2026-06-30');
+
+  const insights = buildOverviewInsights({
+    progress,
+    trainingDetails: [],
+    selfSourcingEfficiency: []
+  });
+
+  assert.deepEqual(insights.baseAchievements.map((item) => [item.base, item.monthlyTarget, item.actualTraining, item.achievementRateText]), [
+    ['低达成基地', 10, 1, '10.00%'],
+    ['高达成基地', 10, 8, '80.00%'],
+    ['无目标达成基地', 0, 1, '0.00%']
   ]);
 });
 
