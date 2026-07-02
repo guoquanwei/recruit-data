@@ -1058,6 +1058,25 @@ function pickPositionBase(progress, batchMatrix, selectedBase = '') {
   return worstBase?.base || bases[0]?.base || '';
 }
 
+function isActualOnlyBase(base) {
+  return Number(base.monthlyTarget || 0) <= 0 && Number(base.actualTraining || 0) > 0;
+}
+
+function sortBaseAchievements(left, right) {
+  const leftActualOnly = isActualOnlyBase(left);
+  const rightActualOnly = isActualOnlyBase(right);
+  if (leftActualOnly !== rightActualOnly) {
+    return leftActualOnly ? 1 : -1;
+  }
+  if (left.achievementRate !== right.achievementRate) {
+    return left.achievementRate - right.achievementRate;
+  }
+  if (left.gap !== right.gap) {
+    return left.gap - right.gap;
+  }
+  return left.base.localeCompare(right.base, 'zh-Hans-CN');
+}
+
 function buildBaseAchievementOverview(progress) {
   const baseAchievements = (progress.bases || [])
     .map((base) => {
@@ -1084,16 +1103,7 @@ function buildBaseAchievementOverview(progress) {
       };
     })
     .filter((base) => base.monthlyTarget > 0 || base.actualTraining > 0)
-    .sort((left, right) => {
-      const statusDiff = getSortWeight(left.status) - getSortWeight(right.status);
-      if (statusDiff !== 0) {
-        return statusDiff;
-      }
-      if (left.gap !== right.gap) {
-        return left.gap - right.gap;
-      }
-      return left.base.localeCompare(right.base, 'zh-Hans-CN');
-    });
+    .sort(sortBaseAchievements);
   const riskBaseCount = baseAchievements.filter((base) => base.status === 'risk' || base.status === 'warning').length;
 
   return {
@@ -1277,7 +1287,8 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
         statusText: getStatusText(status)
       };
     })
-    .filter((base) => base.monthlyTarget > 0 || base.actualTraining > 0);
+    .filter((base) => base.monthlyTarget > 0 || base.actualTraining > 0)
+    .sort(sortBaseAchievements);
   const socialChannelMap = new Map();
   trainingDetails
     .filter((employee) => employee.channelType === '渠道社招')

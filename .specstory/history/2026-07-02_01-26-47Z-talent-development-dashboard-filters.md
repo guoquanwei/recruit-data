@@ -5283,7 +5283,109 @@ _**Agent (gpt-5.5)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+测试已补，我会先跑一次确认它因缺少该选项格式化函数而失败，再实现。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm test</summary>
+
+```bash
+npm test
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test
+
+✔ shared formatting masks phone numbers and parses pagination defaults (3.308855ms)
+✔ excel helper keeps duplicate headers addressable like spreadsheet tools (0.268362ms)
+✔ csv export escapes values and includes utf8 bom (0.437917ms)
+✔ employee normalization maps active and resigned source columns to one model (1.055336ms)
+✔ talent development department base uses third-level department (0.285843ms)
+✔ frontline base maps special office locations to business target names (0.477659ms)
+✔ employee filters support single-select enums and fuzzy channel names (0.473038ms)
+✔ employee base filter options hide ignored and raw department paths (0.28465ms)
+✔ recruiter role requires talent development department and recruitment position (0.299007ms)
+✔ target progress sums cutoff targets and actuals through cutoff date (1.634979ms)
+✔ target progress default cutoff uses today for current month and month end for past month (0.239657ms)
+✔ target plan summary calculates channel shares (1.016557ms)
+✔ target plan summary uses month breakdown when month is all (13.544508ms)
+✖ target filter options use bases from selected month only (0.325607ms)
+✔ target progress summary exposes self sourcing actual share (1.370205ms)
+✔ target progress includes actual-only base channel combinations (0.422538ms)
+✔ target progress summary follows base filter (0.434503ms)
+✔ dashboard training details follow base filter (0.305513ms)
+✔ dashboard matrix exposes base channel status cells (0.663375ms)
+✔ dashboard batch drilldown groups funnel by batch feedback window (1.002373ms)
+✔ dashboard batch drilldown diagnoses gap by funnel stage (0.4652ms)
+✔ dashboard batch matrix uses base channel rows and batch columns (2.034892ms)
+✔ dashboard funnel diagnosis excludes return and campus channels (1.584503ms)
+✔ dashboard position channel board summarizes one base across channels and batches (0.969001ms)
+✔ dashboard position channel board switches to base achievement overview when base is all (1.216017ms)
+✔ dashboard overview insights expose executive cards, channel shares and vendor top three (1.789311ms)
+✔ dashboard overview tab normalizes unknown tab to overview (0.112006ms)
+✔ self sourcing efficiency uses monthly active recruiter scale by stage (0.886218ms)
+✔ self sourcing efficiency follows recruiter filter (0.407417ms)
+✔ self sourcing details expose recruiter options and support recruiter filter (0.350296ms)
+✔ self sourcing recruiter rows summarize months through selected month (1.820168ms)
+✔ interview normalization resolves feedback dates for daily overwrite (0.37313ms)
+✔ interview position name infers base (0.106566ms)
+✔ interview filters use cleaned funnel dimensions (0.222659ms)
+✔ interview funnel rows use cleaned dimensions (0.318721ms)
+✔ monthly interview funnel uses monthly employee training totals by base (0.390044ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 35
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 506.953925
+
+✖ failing tests:
+
+test at test/recruitment-admin.test.js:261:1
+✖ target filter options use bases from selected month only (0.325607ms)
+  TypeError: formatDistinctTargetFilterOptions is not a function
+      at TestContext.&lt;anonymous&gt; (/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js:262:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7)
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+失败符合预期。接下来实现选项过滤，并让看板/目标列表调用时传入当前月份。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/targets/repository.js</summary>
 
 </details>
 
@@ -5291,5 +5393,393 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
 <summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+选项格式化已按月份过滤。现在把调用方改为传当前筛选上下文，这样看板页面和目标列表都会只展示当前月份目标基地。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/targets/service.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/dashboard/service.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+我会运行测试确认新选项过滤规则通过，并检查是否影响其他筛选页面。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm test</summary>
+
+```bash
+npm test
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test
+
+✔ shared formatting masks phone numbers and parses pagination defaults (2.449912ms)
+✔ excel helper keeps duplicate headers addressable like spreadsheet tools (0.185418ms)
+✔ csv export escapes values and includes utf8 bom (0.385726ms)
+✔ employee normalization maps active and resigned source columns to one model (0.710531ms)
+✔ talent development department base uses third-level department (0.148892ms)
+✔ frontline base maps special office locations to business target names (0.200807ms)
+✔ employee filters support single-select enums and fuzzy channel names (0.317699ms)
+✔ employee base filter options hide ignored and raw department paths (0.204394ms)
+✔ recruiter role requires talent development department and recruitment position (0.214394ms)
+✔ target progress sums cutoff targets and actuals through cutoff date (1.339936ms)
+✔ target progress default cutoff uses today for current month and month end for past month (0.17775ms)
+✔ target plan summary calculates channel shares (0.769585ms)
+✔ target plan summary uses month breakdown when month is all (10.772703ms)
+✔ target filter options use bases from selected month only (1.483727ms)
+✔ target progress summary exposes self sourcing actual share (1.210629ms)
+✔ target progress includes actual-only base channel combinations (0.34938ms)
+✔ target progress summary follows base filter (0.347473ms)
+✔ dashboard training details follow base filter (0.256241ms)
+✔ dashboard matrix exposes base channel status cells (0.582885ms)
+✔ dashboard batch drilldown groups funnel by batch feedback window (0.863777ms)
+✔ dashboard batch drilldown diagnoses gap by funnel stage (0.338234ms)
+✔ dashboard batch matrix uses base channel rows and batch columns (1.367321ms)
+✔ dashboard funnel diagnosis excludes return and campus channels (1.203054ms)
+✔ dashboard position channel board summarizes one base across channels and batches (0.831219ms)
+✔ dashboard position channel board switches to base achievement overview when base is all (1.026443ms)
+✔ dashboard overview insights expose executive cards, channel shares and vendor top three (1.48769ms)
+✔ dashboard overview tab normalizes unknown tab to overview (0.094365ms)
+✔ self sourcing efficiency uses monthly active recruiter scale by stage (0.739689ms)
+✔ self sourcing efficiency follows recruiter filter (0.231638ms)
+✔ self sourcing details expose recruiter options and support recruiter filter (0.248813ms)
+✔ self sourcing recruiter rows summarize months through selected month (1.29751ms)
+✔ interview normalization resolves feedback dates for daily overwrite (0.355402ms)
+✔ interview position name infers base (0.092873ms)
+✔ interview filters use cleaned funnel dimensions (0.193797ms)
+✔ interview funnel rows use cleaned dimensions (0.270318ms)
+✔ monthly interview funnel uses monthly employee training totals by base (0.338632ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 374.030307
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/guo1/Desktop/recruit-data/service/targets/repository.js",
+    "/Users/guo1/Desktop/recruit-data/service/targets/service.js",
+    "/Users/guo1/Desktop/recruit-data/service/dashboard/service.js",
+    "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/targets/repository.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/targets/service.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/dashboard/service.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+测试已通过。为了更贴近你看到的页面，我再从当前运行服务取一次看板 HTML，确认基地选项由服务端按当前月份输出。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: node - <<'NODE'
+fetch('http://localhost:3000/dashboard/overview')
+  .then((res) => res.text())
+  .then((html) => {
+    const bases = Array.from(html.matchAll(/data-search-select-option data-value="([^"]+)" data-label="([^"]+)"/g)).map((m) => m[1]).filter(Boolean).slice(0, 12);
+    console.log(bases.join('\n'));
+  });
+NODE</summary>
+
+```bash
+node - <<'NODE'
+fetch('http://localhost:3000/dashboard/overview')
+  .then((res) => res.text())
+  .then((html) => {
+    const bases = Array.from(html.matchAll(/data-search-select-option data-value="([^"]+)" data-label="([^"]+)"/g)).map((m) => m[1]).filter(Boolean).slice(0, 12);
+    console.log(bases.join('\n'));
+  });
+NODE
+```
+
+```
+10015升投
+湖南基地-荷花
+湖南基地-空港
+吉林外呼项目
+济南基地-济阳
+济南基地-夏都
+江苏基地-淮安
+江苏基地-南京
+京东外呼项目
+联通河北
+联通天津
+辽宁外呼项目
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+从当前运行页面看，新逻辑已经不再返回截图里的“北京基地 / 15升投”这类历史选项；现在下拉来自当前月份目标表。不过当前月份目标表本身仍包含一些带项目后缀的基地，如 `江苏基地-淮安`、`湖南基地-荷花`，这类会保留，因为它们确实在目标数据里。
+原因是筛选器之前取的是目标表的“全量历史基地”，没有按当前月份过滤，所以会混入其他月份的 `江苏基地`、`北京基地`、`湖南基地` 等选项。
+
+已修复为：基地下拉只展示当前筛选月份里的目标基地；如果切换月份，基地选项也会随月份变化。当前服务端页面验证里，已经没有截图中的 `北京基地`、`15升投` 这类历史/非当前目标选项。
+
+验证：
+- `npm test` 通过：36/36
+- lint：无错误
+
+---
+
+_**User**_
+
+整体目标达成的基地达成情况，按照达成率升序排序，达成最差的在前面，无目标有达成数据的在最下面
+
+---
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering tool usage**
+
+I need to respond using the appropriate tools. It’s important to check whether I've already used the necessary skills. The user is asking about changing behavior, and I’m wondering if I might need to apply Test-Driven Development (TDD) principles. I think I should inspect relevant aspects of buildOverviewInsights or baseAchievementOverview before I start making updates. Let’s see how this unfolds!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+我会先定位“整体目标达成”这块基地列表的排序函数，然后补一个排序回归测试：有目标的基地按达成率从低到高排，无目标但有实际达成的数据固定放最后。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/test-driven-development/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/systematic-debugging/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "context": 4,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/service/dashboard/service.js",
+  "pattern": "baseAchievements|achievementRate|sort\\("
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/service/dashboard/service.js",
+  "pattern": "baseAchievements|achievementRate|sort\\(",
+  "topFiles": [
+    {
+      "matchCount": 394,
+      "uri": "service/dashboard/service.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 67
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "context": 6,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js",
+  "pattern": "baseAchievements|整体目标达成|base achievement|overview insights"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js",
+  "pattern": "baseAchievements|整体目标达成|base achievement|overview insights",
+  "topFiles": [
+    {
+      "matchCount": 47,
+      "uri": "test/recruitment-admin.test.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 4
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+当前排序在 `buildOverviewInsights` 里基本沿用了汇总顺序，没有按达成率排；基地风险页的“全部基地达成情况”也有一套类似排序。我会统一成一个排序规则，避免两个入口表现不一致。
+
+_**Agent (gpt-5.5)**_
+
+Failed to find context:
+  assert.ok(insights.operationsSummary.text.includes('当月达成进度'));
+});
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+测试位置和上下文有些偏移，我先读一下现有断言片段再精确修改。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
 
 </details></tool-use>
