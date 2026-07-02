@@ -38,8 +38,14 @@ function normalizeOverviewTab(tab) {
 
 function getTrainingDetails(query = {}, preloadedEmployees) {
   const yearMonth = toText(query.yearMonth);
+  const cutoffDate = normalizeDate(query.cutoffDate);
+  const baseFilter = toText(query.base);
+  const channelFilter = toText(query.channel);
   return (preloadedEmployees || listAllEmployees())
     .filter((employee) => !yearMonth || employee.trainingDate.startsWith(yearMonth))
+    .filter((employee) => !cutoffDate || normalizeDate(employee.trainingDate) <= cutoffDate)
+    .filter((employee) => !baseFilter || toText(employee.base) === baseFilter)
+    .filter((employee) => !channelFilter || toText(employee.channelType) === channelFilter)
     .map((employee) => ({
       base: employee.base,
       employeeNo: employee.employeeNo,
@@ -243,17 +249,21 @@ function isTalentRecruiter(employee) {
     && toText(employee.department).includes('人才开发部');
 }
 
-function buildSelfSourcingEfficiency({ yearMonth, asOfDate, employees = [] }) {
+function buildSelfSourcingEfficiency({ yearMonth, asOfDate, employees = [], filters = {} }) {
   const normalizedYearMonth = toText(yearMonth);
+  const recruiterFilter = toText(filters.recruiter);
   const currentDate = normalizeDate(asOfDate) || (normalizedYearMonth ? buildDate(normalizedYearMonth, getMonthLastDay(normalizedYearMonth)) : formatDate(new Date()));
   const recruiters = employees.filter((employee) => (
     isTalentRecruiter(employee)
       && (!normalizedYearMonth || isRecruiterActiveInMonth(employee, normalizedYearMonth))
+      && (!recruiterFilter || employee.name === recruiterFilter)
   ));
   const recruiterByName = new Map(recruiters.map((recruiter) => [recruiter.name, recruiter]));
   const selfSourcingEmployees = employees.filter((employee) => (
     employee.channelType === '自主社招'
       && (!normalizedYearMonth || employee.trainingDate.startsWith(normalizedYearMonth))
+      && (!currentDate || normalizeDate(employee.trainingDate) <= currentDate)
+      && (!recruiterFilter || getSelfSourcingRecruiterName(employee) === recruiterFilter)
   ));
   const summary = {
     probation: { stage: '试用期', recruiterCount: 0, trainingCount: 0, sevenDayCount: 0 },
@@ -302,15 +312,18 @@ function getSelfSourcingRecruitersForYear(employees = [], yearMonth = '') {
     .filter((employee) => !year || isRecruiterInYear(employee, year));
 }
 
-function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [] }) {
+function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], filters = {} }) {
   const normalizedYearMonth = toText(yearMonth);
+  const recruiterFilter = toText(filters.recruiter);
   const currentDate = normalizeDate(asOfDate) || (normalizedYearMonth ? buildDate(normalizedYearMonth, getMonthLastDay(normalizedYearMonth)) : formatDate(new Date()));
   const months = buildYearMonthsThrough(normalizedYearMonth);
   const selectedMonth = months[months.length - 1]?.yearMonth || normalizedYearMonth;
-  const recruiters = getSelfSourcingRecruitersForYear(employees, normalizedYearMonth);
+  const recruiters = getSelfSourcingRecruitersForYear(employees, normalizedYearMonth)
+    .filter((recruiter) => !recruiterFilter || recruiter.name === recruiterFilter);
   const selfSourcingEmployees = employees.filter((employee) => (
     employee.channelType === '自主社招'
       && months.some((month) => employee.trainingDate.startsWith(month.yearMonth))
+      && (!recruiterFilter || getSelfSourcingRecruiterName(employee) === recruiterFilter)
   ));
   const recruiterMap = new Map(recruiters.map((recruiter) => [recruiter.name, recruiter]));
   const employeeMap = new Map();
@@ -344,17 +357,24 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [] })
     const recruiter = recruiterMap.get(name) || {};
     const details = employeeMap.get(name) || [];
     const monthRows = months.map((month) => {
-      const monthlyDetails = details.filter((employee) => employee.trainingDate.startsWith(month.yearMonth));
       const monthEnd = buildDate(month.yearMonth, getMonthLastDay(month.yearMonth));
-      const sevenDayRetainedDetails = monthlyDetails.filter((employee) => isSevenDayRetained(employee, monthEnd));
+      const monthAsOfDate = month.yearMonth === selectedMonth ? currentDate : monthEnd;
+      const monthlyDetails = details.filter((employee) => (
+        employee.trainingDate.startsWith(month.yearMonth)
+          && normalizeDate(employee.trainingDate) <= monthAsOfDate
+      ));
+      const sevenDayRetainedDetails = monthlyDetails.filter((employee) => isSevenDayRetained(employee, monthAsOfDate));
       return {
         ...month,
         actualAchievement: monthlyDetails.length,
         sevenDayRetainedCount: sevenDayRetainedDetails.length,
-        sevenDayRetainedDetails: sevenDayRetainedDetails.map((employee) => toSelfSourcingCandidateDetail(employee, monthEnd))
+        sevenDayRetainedDetails: sevenDayRetainedDetails.map((employee) => toSelfSourcingCandidateDetail(employee, monthAsOfDate))
       };
     });
-    const selectedMonthDetails = details.filter((employee) => employee.trainingDate.startsWith(selectedMonth));
+    const selectedMonthDetails = details.filter((employee) => (
+      employee.trainingDate.startsWith(selectedMonth)
+        && normalizeDate(employee.trainingDate) <= currentDate
+    ));
     const selectedSevenDayDetails = selectedMonthDetails.filter((employee) => isSevenDayRetained(employee, currentDate));
     const selectedSevenDayCount = selectedSevenDayDetails.length;
     const cumulativeSevenDayCount = monthRows.reduce((sum, month) => sum + month.sevenDayRetainedCount, 0);
@@ -409,7 +429,10 @@ function getSelfSourcingEfficiency(query = {}, preloadedEmployees) {
   const rows = buildSelfSourcingEfficiency({
     yearMonth,
     asOfDate: query.cutoffDate,
-    employees: preloadedEmployees || listAllEmployees()
+    employees: preloadedEmployees || listAllEmployees(),
+    filters: {
+      recruiter: query.recruiter
+    }
   });
   saveRecruiterMonthlyScales(yearMonth, rows.scales);
   return rows;
@@ -1351,7 +1374,7 @@ function getDashboardOverview(query = {}) {
   const employees = listAllEmployees();
   const progress = getTargetProgress(query, employees);
   const yearMonth = progress.yearMonth;
-  const asOfDate = query.cutoffDate || formatDate(new Date());
+  const asOfDate = progress.cutoffDate;
   const filters = {
     base: toText(query.base),
     channel: toText(query.channel),
@@ -1365,11 +1388,17 @@ function getDashboardOverview(query = {}) {
     selectedBatchDay: toText(query.selectedBatchDay)
   };
   const targets = yearMonth ? listTargetsByMonth(yearMonth) : [];
-  const details = getTrainingDetails({ yearMonth }, employees);
+  const details = getTrainingDetails({
+    yearMonth,
+    cutoffDate: asOfDate,
+    base: filters.base,
+    channel: filters.channel
+  }, employees);
   const selfSourcingCount = details.filter((item) => item.channelType === '自主社招').length;
   const selfSourcingEfficiency = getSelfSourcingEfficiency({
     yearMonth,
-    cutoffDate: asOfDate
+    cutoffDate: asOfDate,
+    recruiter: filters.recruiter
   }, employees);
   const overallEfficiency = selfSourcingEfficiency.find((item) => item.stage === '整体');
   const overviewInsights = buildOverviewInsights({
@@ -1415,8 +1444,11 @@ function getDashboardOverview(query = {}) {
     ? buildSelfSourcingRecruiterRows({
       yearMonth,
       asOfDate,
-      employees
-    }).filter((row) => !filters.recruiter || row.name === filters.recruiter)
+      employees,
+      filters: {
+        recruiter: filters.recruiter
+      }
+    })
     : [];
   const selfSourcingRecruiterOptions = overviewTab === 'self'
     ? getSelfSourcingRecruitersForYear(employees, yearMonth)
@@ -1465,7 +1497,10 @@ function getDashboardOverview(query = {}) {
     overviewInsights,
     overviewTab,
     filters,
-    options: getDistinctTargetFilterOptions(),
+    options: getDistinctTargetFilterOptions({
+      yearMonth,
+      base: filters.base
+    }),
     matrix,
     batchMatrix,
     positionBoard,

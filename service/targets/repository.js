@@ -1,4 +1,5 @@
 const { getDatabase } = require('../../dao/db');
+const { toText } = require('../shared/format');
 
 function replaceTargetsByMonth(database, yearMonth, targets) {
   database.prepare('DELETE FROM recruitment_targets WHERE year_month = ?').run(yearMonth);
@@ -129,15 +130,33 @@ function getAvailableMonths() {
   `).all().map((row) => row.yearMonth);
 }
 
-function getDistinctTargetFilterOptions() {
-  const database = getDatabase();
-  const pluck = (sql, field) => database.prepare(sql).all().map((row) => row[field]).filter(Boolean);
+function uniqueSorted(values) {
+  return Array.from(new Set(values.filter(Boolean)))
+    .sort((left, right) => left.localeCompare(right, 'zh-Hans-CN'));
+}
+
+function formatDistinctTargetFilterOptions(targets = [], filters = {}) {
+  const yearMonth = toText(filters.yearMonth);
+  const base = toText(filters.base);
+  const monthRows = targets.filter((target) => !yearMonth || target.yearMonth === yearMonth);
+  const scopedRows = monthRows.filter((target) => !base || target.base === base);
 
   return {
-    months: pluck('SELECT DISTINCT year_month FROM recruitment_targets ORDER BY year_month DESC', 'year_month'),
-    bases: pluck('SELECT DISTINCT base FROM recruitment_targets ORDER BY base', 'base'),
-    channels: pluck('SELECT DISTINCT channel FROM recruitment_targets ORDER BY channel', 'channel')
+    months: uniqueSorted(targets.map((target) => target.yearMonth)).reverse(),
+    bases: uniqueSorted(monthRows.map((target) => target.base)),
+    channels: uniqueSorted(scopedRows.map((target) => target.channel))
   };
+}
+
+function getDistinctTargetFilterOptions(filters = {}) {
+  const database = getDatabase();
+  const targets = database.prepare(`
+    SELECT year_month AS yearMonth, base, channel
+    FROM recruitment_targets
+    ORDER BY year_month DESC, base ASC, channel ASC
+  `).all();
+
+  return formatDistinctTargetFilterOptions(targets, filters);
 }
 
 module.exports = {
@@ -147,5 +166,6 @@ module.exports = {
   listTargetsForSummary,
   getAvailableMonths,
   getDistinctTargetFilterOptions,
+  formatDistinctTargetFilterOptions,
   fromDatabaseRow
 };

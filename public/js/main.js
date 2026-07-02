@@ -151,9 +151,24 @@ function hideOptionTooltip() {
 function closeSearchSelects(except) {
   document.querySelectorAll('[data-search-select]').forEach((select) => {
     if (select !== except) {
+      restoreSearchSelectLabel(select);
       select.classList.remove('open');
     }
   });
+}
+
+function findSearchSelectOption(select, value) {
+  return Array.from(select.querySelectorAll('[data-search-select-option]'))
+    .find((option) => (option.dataset.value || '') === (value || ''));
+}
+
+function restoreSearchSelectLabel(select) {
+  const hiddenInput = select.querySelector('input[type="hidden"]');
+  const searchInput = select.querySelector('[data-search-select-input]');
+  const selectedOption = findSearchSelectOption(select, hiddenInput?.value || '');
+  if (searchInput && selectedOption && searchInput.value.trim() === '') {
+    searchInput.value = selectedOption.dataset.label || selectedOption.textContent;
+  }
 }
 
 function filterSearchSelectOptions(select) {
@@ -182,8 +197,20 @@ document.querySelectorAll('[data-search-select]').forEach((select) => {
   const toggle = select.querySelector('[data-search-select-toggle]');
   const searchable = select.dataset.searchable === '1';
 
+  function showAllOptionsForCurrentSelection() {
+    if (!searchable || !hiddenInput.value) {
+      return;
+    }
+    const selectedOption = findSearchSelectOption(select, hiddenInput.value);
+    const selectedLabel = selectedOption?.dataset.label || selectedOption?.textContent || '';
+    if (searchInput.value === selectedLabel) {
+      searchInput.value = '';
+    }
+  }
+
   function openSelect() {
     closeSearchSelects(select);
+    showAllOptionsForCurrentSelection();
     select.classList.add('open');
     filterSearchSelectOptions(select);
   }
@@ -231,21 +258,29 @@ document.querySelectorAll('[data-search-select]').forEach((select) => {
     syncClearButtons();
   });
 
+  function applySearchSelectOption(option) {
+    hideOptionTooltip();
+    hiddenInput.value = option.dataset.value || '';
+    searchInput.value = option.dataset.label || option.textContent;
+    select.querySelectorAll('[data-search-select-option]').forEach((item) => {
+      item.classList.toggle('active', item === option);
+      item.hidden = false;
+    });
+    select.classList.remove('open', 'is-empty');
+    syncClearButtons();
+  }
+
   select.querySelectorAll('[data-search-select-option]').forEach((option) => {
     option.addEventListener('mouseenter', () => showOptionTooltip(option));
     option.addEventListener('mouseleave', hideOptionTooltip);
     option.addEventListener('focus', () => showOptionTooltip(option));
     option.addEventListener('blur', hideOptionTooltip);
+    option.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+    });
     option.addEventListener('click', (event) => {
       event.stopPropagation();
-      hideOptionTooltip();
-      hiddenInput.value = option.dataset.value || '';
-      searchInput.value = option.dataset.label || option.textContent;
-      select.querySelectorAll('[data-search-select-option]').forEach((item) => {
-        item.classList.toggle('active', item === option);
-      });
-      select.classList.remove('open');
-      syncClearButtons();
+      applySearchSelectOption(option);
     });
   });
 });

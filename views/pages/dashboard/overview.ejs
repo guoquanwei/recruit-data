@@ -7,10 +7,6 @@
       <input class="form-control" type="month" name="yearMonth" value="<%= dashboard.yearMonth %>">
     </div>
     <div class="col-md-3">
-      <label class="form-label">截止日期</label>
-      <input class="form-control" type="date" name="cutoffDate" value="<%= dashboard.cutoffDate %>">
-    </div>
-    <div class="col-md-3">
       <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: dashboard.filters.base, items: dashboard.options.bases }) %>
     </div>
     <div class="col-md-3">
@@ -22,6 +18,10 @@
 
 <%
   const insights = dashboard.overviewInsights;
+  const baseRiskParams = new URLSearchParams({ yearMonth: dashboard.yearMonth });
+  if (dashboard.filters.base) {
+    baseRiskParams.set('base', dashboard.filters.base);
+  }
   const channelPalette = ['#3b82f6', '#16a36a', '#7c6ee6', '#f59e0b', '#22a6b3'];
   const donutStops = [];
   let donutCursor = 0;
@@ -42,7 +42,7 @@
       <h2 class="h5 mb-1">运营风险摘要</h2>
       <p class="section-note mb-0">结合目标达成、基地风险、渠道结构和自招人效生成的管理摘要。</p>
     </div>
-    <a class="btn btn-sm btn-outline-primary" href="/dashboard/base-risk?yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>&cutoffDate=<%= encodeURIComponent(dashboard.cutoffDate) %>">进入风险诊断</a>
+    <a class="btn btn-sm btn-outline-primary" href="/dashboard/base-risk?<%= baseRiskParams.toString() %>">进入风险诊断</a>
   </div>
   <p class="operations-summary-text"><%= insights.operationsSummary.text %></p>
   <div class="operations-summary-grid">
@@ -52,7 +52,7 @@
         <strong>暂无风险基地</strong>
       <% } %>
       <% insights.operationsSummary.riskBases.slice(0, 3).forEach((base) => { %>
-        <a href="/dashboard/base-risk?base=<%= encodeURIComponent(base.base) %>&yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>&cutoffDate=<%= encodeURIComponent(dashboard.cutoffDate) %>"><%= base.base %> · GAP <%= base.gap %></a>
+        <a href="/dashboard/base-risk?base=<%= encodeURIComponent(base.base) %>&yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>"><%= base.base %> · GAP <%= base.gap %></a>
       <% }) %>
     </div>
     <div>
@@ -92,7 +92,7 @@
         <div class="empty-card">暂无基地达成数据。</div>
       <% } %>
       <% insights.baseAchievements.forEach((base) => { %>
-        <a class="overview-base-achievement overview-base-achievement-<%= base.status %>" href="/dashboard/base-risk?base=<%= encodeURIComponent(base.base) %>&yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>&cutoffDate=<%= encodeURIComponent(dashboard.cutoffDate) %>">
+        <a class="overview-base-achievement overview-base-achievement-<%= base.status %>" href="/dashboard/base-risk?base=<%= encodeURIComponent(base.base) %>&yearMonth=<%= encodeURIComponent(dashboard.yearMonth) %>">
           <div class="overview-base-main">
             <strong><%= base.base %></strong>
             <span>目标 <%= base.monthlyTarget %> · 实际 <%= base.actualTraining %> · GAP <%= base.gap %></span>

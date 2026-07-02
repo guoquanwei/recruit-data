@@ -26,21 +26,22 @@ function sumDailyTargets(target, endDay) {
   return formatInteger(total);
 }
 
-function sameMonth(date, yearMonth) {
-  return normalizeDate(date).startsWith(yearMonth);
-}
-
 function matchesTarget(employee, target) {
   return toText(employee.base) === toText(target.base)
     && toText(employee.channelType) === toText(target.channel);
 }
 
-function countActualTraining({ target, employees }) {
+function countActualTraining({ target, employees, cutoffDate }) {
   const seen = new Set();
   const yearMonth = target.yearMonth;
+  const normalizedCutoffDate = normalizeDate(cutoffDate);
 
   employees.forEach((employee) => {
-    if (!employee.employeeNo || !sameMonth(employee.trainingDate, yearMonth) || !matchesTarget(employee, target)) {
+    const trainingDate = normalizeDate(employee.trainingDate);
+    if (!employee.employeeNo || !trainingDate.startsWith(yearMonth) || !matchesTarget(employee, target)) {
+      return;
+    }
+    if (normalizedCutoffDate && normalizedCutoffDate.startsWith(yearMonth) && trainingDate > normalizedCutoffDate) {
       return;
     }
     seen.add(employee.employeeNo);
@@ -95,9 +96,11 @@ function calculateTargetProgress({ target, employees = [], cutoffDate, actualTra
     : lastDay;
   const monthlyTarget = sumDailyTargets(target, lastDay);
   const cutoffTarget = sumDailyTargets(target, cutoffDay);
-  const indexedActualTraining = getIndexedActualTraining(target, actualTrainingIndex);
+  const indexedActualTraining = cutoffDay === lastDay
+    ? getIndexedActualTraining(target, actualTrainingIndex)
+    : undefined;
   const actualTraining = indexedActualTraining === undefined
-    ? countActualTraining({ target, employees })
+    ? countActualTraining({ target, employees, cutoffDate })
     : indexedActualTraining;
   const gap = actualTraining - monthlyTarget;
   const achievementRate = monthlyTarget > 0 ? actualTraining / monthlyTarget : 0;

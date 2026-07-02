@@ -1,5 +1,5 @@
 const { listAllEmployees } = require('../employees/repository');
-const { getMonthLastDay } = require('../shared/date');
+const { formatDate, getMonthLastDay, normalizeDate } = require('../shared/date');
 const { formatPercent, parsePage, toText } = require('../shared/format');
 const { buildActualTrainingIndex, calculateTargetProgress, CHANNEL_ORDER } = require('./progress');
 const { getAvailableMonths, getDistinctTargetFilterOptions, listTargets, listTargetsByMonth, listTargetsForSummary } = require('./repository');
@@ -29,6 +29,11 @@ function getCutoffDate(yearMonth, query = {}) {
     return '';
   }
 
+  const today = normalizeDate(query.today) || formatDate(new Date());
+  if (today.startsWith(yearMonth)) {
+    return today;
+  }
+
   return `${yearMonth}-${String(getMonthLastDay(yearMonth)).padStart(2, '0')}`;
 }
 
@@ -52,7 +57,7 @@ function getTargetList(query = {}) {
     })),
     page,
     filters,
-    options: getDistinctTargetFilterOptions(),
+    options: getDistinctTargetFilterOptions(filters),
     summary: summarizeTargetPlan(summaryTargets, displayMonth),
     emptyMessage: result.total === 0
       ? '没有符合筛选条件的目标数据，请调整筛选项后重试。'
@@ -189,18 +194,39 @@ function getChannelSummaryLabel(channel) {
   return labelMap[channel] || channel;
 }
 
-function summarizeTargets(targets, employees, cutoffDate) {
+function matchesProgressFilters(item = {}, filters = {}) {
+  const baseFilter = toText(filters.base);
+  const channelFilter = toText(filters.channel);
+  const itemBase = toText(item.base);
+  const itemChannel = toText(item.channel || item.channelType);
+
+  return (!baseFilter || itemBase === baseFilter)
+    && (!channelFilter || itemChannel === channelFilter);
+}
+
+function summarizeTargets(targets, employees, cutoffDate, filters = {}) {
+  const filteredTargets = targets.filter((target) => matchesProgressFilters(target, filters));
+  const filteredEmployees = employees.filter((employee) => matchesProgressFilters(employee, filters));
   const channelMap = new Map();
   const baseMap = new Map();
   let overallMonthlyTarget = 0;
   let overallCutoffTarget = 0;
   let overallActual = 0;
-  const targetYearMonth = targets[0]?.yearMonth || String(cutoffDate || '').slice(0, 7);
-  const targetsForSummary = includeActualOnlyTargets({ targets, employees, yearMonth: targetYearMonth });
-  const actualTrainingIndex = buildActualTrainingIndex(employees);
+  const targetYearMonth = filteredTargets[0]?.yearMonth || String(cutoffDate || '').slice(0, 7);
+  const targetsForSummary = includeActualOnlyTargets({
+    targets: filteredTargets,
+    employees: filteredEmployees,
+    yearMonth: targetYearMonth
+  });
+  const actualTrainingIndex = buildActualTrainingIndex(filteredEmployees);
 
   targetsForSummary.forEach((target) => {
-    const progress = calculateTargetProgress({ target, employees, cutoffDate, actualTrainingIndex });
+    const progress = calculateTargetProgress({
+      target,
+      employees: filteredEmployees,
+      cutoffDate,
+      actualTrainingIndex
+    });
     overallMonthlyTarget += progress.monthlyTarget;
     overallCutoffTarget += progress.cutoffTarget;
     overallActual += progress.actualTraining;
@@ -383,11 +409,12 @@ function getTargetProgress(query = {}, preloadedEmployees) {
     yearMonth,
     cutoffDate,
     months: getAvailableMonths(),
-    ...summarizeTargets(targets, employees, cutoffDate)
+    ...summarizeTargets(targets, employees, cutoffDate, query)
   };
 }
 
 module.exports = {
+  getCutoffDate,
   getTargetList,
   getTargetExportRows,
   getTargetProgress,

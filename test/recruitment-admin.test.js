@@ -5,11 +5,12 @@ const { makeUniqueHeaders } = require('../service/imports/excel');
 const { buildCsv } = require('../service/export/csv');
 const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
 const { buildInterviewFilters } = require('../service/interviews/repository');
+const { formatDistinctTargetFilterOptions } = require('../service/targets/repository');
 const { maskPhone, parsePage, formatPercent } = require('../service/shared/format');
 const { inferBase, isRecruiterEmployee, normalizeActiveEmployee, normalizeResignedEmployee } = require('../service/employees/normalize');
 const { calculateTargetProgress } = require('../service/targets/progress');
-const { includeActualOnlyTargets, summarizeTargetPlan, summarizeTargets } = require('../service/targets/service');
-const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOverviewInsights, buildPositionChannelBoard, buildSelfSourcingEfficiency, buildSelfSourcingRecruiterOptions, buildSelfSourcingRecruiterRows, filterSelfSourcingTrainingDetails, normalizeOverviewTab } = require('../service/dashboard/service');
+const { getCutoffDate, includeActualOnlyTargets, summarizeTargetPlan, summarizeTargets } = require('../service/targets/service');
+const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOverviewInsights, buildPositionChannelBoard, buildSelfSourcingEfficiency, buildSelfSourcingRecruiterOptions, buildSelfSourcingRecruiterRows, filterSelfSourcingTrainingDetails, getTrainingDetails, normalizeOverviewTab } = require('../service/dashboard/service');
 const { inferInterviewBase, normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('../service/interviews/normalize');
 const { buildFunnelRows, buildMonthlyFunnelRows } = require('../service/interviews/service');
 
@@ -187,7 +188,7 @@ test('recruiter role requires talent development department and recruitment posi
   assert.doesNotMatch(whereSql, /position = @recruiterPosition/);
 });
 
-test('target progress sums monthly and cutoff targets and de-duplicates employees', () => {
+test('target progress sums cutoff targets and actuals through cutoff date', () => {
   const result = calculateTargetProgress({
     target: {
       yearMonth: '2026-06',
@@ -205,9 +206,15 @@ test('target progress sums monthly and cutoff targets and de-duplicates employee
 
   assert.equal(result.monthlyTarget, 10);
   assert.equal(result.cutoffTarget, 5);
-  assert.equal(result.actualTraining, 2);
-  assert.equal(result.gap, -8);
-  assert.equal(result.achievementRateText, '20.00%');
+  assert.equal(result.actualTraining, 1);
+  assert.equal(result.gap, -9);
+  assert.equal(result.achievementRateText, '10.00%');
+});
+
+test('target progress default cutoff uses today for current month and month end for past month', () => {
+  assert.equal(typeof getCutoffDate, 'function');
+  assert.equal(getCutoffDate('2026-06', { today: '2026-06-15' }), '2026-06-15');
+  assert.equal(getCutoffDate('2026-05', { today: '2026-06-15' }), '2026-05-31');
 });
 
 test('target plan summary calculates channel shares', () => {
@@ -251,6 +258,18 @@ test('target plan summary uses month breakdown when month is all', () => {
   ]);
 });
 
+test('target filter options use bases from selected month only', () => {
+  const options = formatDistinctTargetFilterOptions([
+    { yearMonth: '2026-05', base: '江苏基地', channel: '自主社招' },
+    { yearMonth: '2026-05', base: '北京基地', channel: '内推' },
+    { yearMonth: '2026-06', base: '10015升投', channel: '自主社招' },
+    { yearMonth: '2026-06', base: '京东外呼项目', channel: '渠道社招' }
+  ], { yearMonth: '2026-06' });
+
+  assert.deepEqual(options.bases, ['10015升投', '京东外呼项目']);
+  assert.deepEqual(options.channels, ['渠道社招', '自主社招']);
+});
+
 test('target progress summary exposes self sourcing actual share', () => {
   const summary = summarizeTargets([
     { yearMonth: '2026-06', base: '联通天津', channel: '自主社招', dailyTargets: { 1: 1 } },
@@ -288,6 +307,40 @@ test('target progress includes actual-only base channel combinations', () => {
     ['自主社招', 1, 1],
     ['合计', 1, 2]
   ]);
+});
+
+test('target progress summary follows base filter', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '自主社招', dailyTargets: { 10: 10 } },
+    { yearMonth: '2026-06', base: '联通天津', channel: '内推', dailyTargets: { 10: 8 } }
+  ], [
+    { employeeNo: 'HA001', base: '江苏基地-淮安', channelType: '自主社招', trainingDate: '2026-06-09' },
+    { employeeNo: 'HA002', base: '江苏基地-淮安', channelType: '渠道社招', trainingDate: '2026-06-09' },
+    { employeeNo: 'TJ001', base: '联通天津', channelType: '内推', trainingDate: '2026-06-09' }
+  ], '2026-06-30', { base: '江苏基地-淮安' });
+
+  assert.equal(summary.overall.monthlyTarget, 10);
+  assert.equal(summary.overall.actualTraining, 2);
+  assert.deepEqual(summary.bases.map((base) => base.base), ['江苏基地-淮安']);
+  assert.deepEqual(summary.channels
+    .filter((channel) => channel.monthlyTarget > 0 || channel.actualTraining > 0)
+    .map((channel) => [channel.channel, channel.monthlyTarget, channel.actualTraining]), [
+    ['渠道社招', 0, 1],
+    ['自主社招', 10, 1]
+  ]);
+});
+
+test('dashboard training details follow base filter', () => {
+  const details = getTrainingDetails({
+    yearMonth: '2026-06',
+    cutoffDate: '2026-06-30',
+    base: '江苏基地-淮安'
+  }, [
+    { employeeNo: 'HA001', base: '江苏基地-淮安', channelType: '自主社招', trainingDate: '2026-06-09' },
+    { employeeNo: 'TJ001', base: '联通天津', channelType: '内推', trainingDate: '2026-06-09' }
+  ]);
+
+  assert.deepEqual(details.map((item) => item.employeeNo), ['HA001']);
 });
 
 test('dashboard matrix exposes base channel status cells', () => {
@@ -814,6 +867,56 @@ test('self sourcing efficiency uses monthly active recruiter scale by stage', ()
     { stage: '整体', recruiterCount: 3 },
     { stage: '试用期', recruiterCount: 1 },
     { stage: '正式期', recruiterCount: 2 }
+  ]);
+});
+
+test('self sourcing efficiency follows recruiter filter', () => {
+  const employees = [
+    {
+      name: '正式招聘',
+      position: '招聘专员',
+      department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+      sourceType: 'active',
+      employeeStatus: '在职',
+      trainingDate: '2025-11-01',
+      entryDate: '2025-11-01',
+      resignedDate: ''
+    },
+    {
+      name: '试用招聘',
+      position: '招聘专员',
+      department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+      sourceType: 'active',
+      employeeStatus: '在职',
+      trainingDate: '2026-02-01',
+      entryDate: '2026-02-01',
+      resignedDate: ''
+    },
+    {
+      employeeNo: 'SELF1',
+      channelType: '自主社招',
+      channelName: '正式招聘+JZ001',
+      trainingDate: '2026-06-10'
+    },
+    {
+      employeeNo: 'SELF2',
+      channelType: '自主社招',
+      channelName: '试用招聘+JZ002',
+      trainingDate: '2026-06-11'
+    }
+  ];
+
+  const result = buildSelfSourcingEfficiency({
+    yearMonth: '2026-06',
+    asOfDate: '2026-06-30',
+    employees,
+    filters: { recruiter: '正式招聘' }
+  });
+
+  assert.deepEqual(result.map((item) => [item.stage, item.recruiterCount, item.trainingCount]), [
+    ['整体', 1, 1],
+    ['试用期', 0, 0],
+    ['正式期', 1, 1]
   ]);
 });
 

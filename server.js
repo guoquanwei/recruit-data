@@ -7,6 +7,7 @@ const pageRoutes = require('./routes');
 
 function createApp() {
   const app = express();
+  const assetVersion = Date.now().toString(36);
 
   app.set('view engine', 'ejs');
   app.set('views', path.join(runtime.appRoot, 'views'));
@@ -23,6 +24,7 @@ function createApp() {
     res.locals.active = '';
     res.locals.moduleActive = '';
     res.locals.pageTitle = runtime.platformName;
+    res.locals.assetVersion = assetVersion;
     next();
   });
 
