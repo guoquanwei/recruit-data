@@ -1029,13 +1029,12 @@ test('self sourcing recruiter rows summarize months through selected month', () 
 
   assert.deepEqual(rows.map((row) => [row.name, row.employeeStatus]), [
     ['李四', '在职'],
-    ['张三', '在职'],
-    ['王五', '离职']
+    ['张三', '在职']
   ]);
   assert.deepEqual(zhang.months.map((month) => month.label), ['1月', '2月', '3月', '4月', '5月']);
   assert.equal(zhang.actualAchievement, 3);
-  assert.equal(zhang.monthlyTrainingTarget, 19);
-  assert.equal(zhang.monthlyCutoffTarget, 19);
+  assert.equal(zhang.monthlyTrainingTarget, 20);
+  assert.equal(zhang.monthlyCutoffTarget, 20);
   assert.equal(zhang.sevenDayTrainingTarget, 12);
   assert.equal(zhang.sevenDayCutoffTarget, 12);
   assert.equal(zhang.sevenDayRetainedCount, 1);
@@ -1046,14 +1045,87 @@ test('self sourcing recruiter rows summarize months through selected month', () 
   ]);
   assert.deepEqual(zhang.sevenDayRetainedDetails.map((item) => item.employeeNo), ['B']);
   const lisi = rows.find((row) => row.name === '李四');
-  assert.equal(lisi.monthlyTrainingTarget, 11);
-  assert.equal(lisi.monthlyCutoffTarget, 11);
+  assert.equal(lisi.monthlyTrainingTarget, 12);
+  assert.equal(lisi.monthlyCutoffTarget, 12);
   assert.equal(lisi.sevenDayTrainingTarget, 8);
   assert.equal(lisi.sevenDayCutoffTarget, 8);
   assert.deepEqual(zhang.months.map((month) => month.sevenDayRetainedCount), [1, 0, 0, 0, 1]);
   assert.equal(zhang.cutoffMonthlyAverageSevenDayEfficiency, '0.4');
   assert.equal(zhang.cumulativeSevenDayEfficiency, '2.0');
+  assert.equal(zhang.riskStatus, '高风险');
+  assert.match(zhang.riskReason, /连续3个月7天人效低于目标/);
+  assert.match(zhang.riskReason, /流失偏高33%/);
+  assert.equal(zhang.diagnosis.hasThreeMonthLowSevenDayEfficiency, true);
+  assert.equal(zhang.diagnosis.hasHighAttrition, true);
+  assert.equal(rows.some((row) => row.name === '王五'), false);
   assert.equal(rows.some((row) => row.name === '未匹配招聘'), false);
+});
+
+test('self sourcing recruiter rows include current month funnel diagnosis', () => {
+  const rows = buildSelfSourcingRecruiterRows({
+    yearMonth: '2026-05',
+    asOfDate: '2026-05-31',
+    interviews: [
+      { channelType: '自主社招', channelName: '张三+R001', feedbackResult: '推荐', phone: '13900000001', feedbackDate: '2026-05-01' },
+      { channelType: '自主社招', channelName: '张三+R001', feedbackResult: '不推荐', phone: '13900000002', feedbackDate: '2026-05-02' }
+    ],
+    employees: [
+      {
+        employeeNo: 'R001',
+        name: '张三',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2025-01-01',
+        entryDate: '2025-01-01',
+        resignedDate: ''
+      },
+      { employeeNo: 'A', phone: '13900000001', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-10', resignedDate: '' }
+    ]
+  });
+
+  const zhang = rows.find((row) => row.name === '张三');
+  assert.equal(zhang.recruitmentFunnel.interviewCount, 2);
+  assert.equal(zhang.recruitmentFunnel.passedCount, 1);
+  assert.equal(zhang.recruitmentFunnel.trainingCount, 1);
+  assert.deepEqual(zhang.recruitmentFunnel.diagnosisPath.map((item) => item.stage), ['到面', '面通', '参培', '7天留存']);
+  assert.equal(zhang.recruitmentFunnel.diagnosisPath.every((item) => item.suggestion), true);
+});
+
+test('self sourcing risk status follows seven day achievement rate', () => {
+  const retainedEmployees = Array.from({ length: 10 }, (_, index) => ({
+    employeeNo: `SELF${index + 1}`,
+    channelType: '自主社招',
+    channelName: '正式招聘+R001',
+    trainingDate: `2026-05-${String(index + 1).padStart(2, '0')}`,
+    resignedDate: ''
+  }));
+  const rows = buildSelfSourcingRecruiterRows({
+    yearMonth: '2026-05',
+    asOfDate: '2026-05-31',
+    employees: [
+      {
+        employeeNo: 'R001',
+        name: '正式招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2025-01-01',
+        entryDate: '2025-01-01',
+        resignedDate: ''
+      },
+      ...retainedEmployees
+    ]
+  });
+
+  const row = rows.find((item) => item.name === '正式招聘');
+  assert.equal(row.sevenDayRetainedCount, 10);
+  assert.equal(row.sevenDayCutoffTarget, 12);
+  assert.equal(row.sevenDayAchievementRateText, '83.33%');
+  assert.equal(row.monthlyGap, -10);
+  assert.equal(row.riskStatus, '正常达标');
 });
 
 test('interview normalization resolves feedback dates for daily overwrite', () => {

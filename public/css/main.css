@@ -20,7 +20,9 @@ body {
   background: var(--app-bg);
   color: var(--text-main);
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 .admin-shell {
@@ -34,7 +36,11 @@ body {
   z-index: 1000;
   width: 240px;
   height: 100vh;
-  background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-deep) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--sidebar-bg) 0%,
+    var(--sidebar-bg-deep) 100%
+  );
   color: var(--sidebar-text);
   overflow-y: auto;
   transition: width 0.2s ease;
@@ -1480,21 +1486,166 @@ body {
   font-style: normal;
 }
 
+.self-warning-rule {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #f7d869;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  margin: -2px 0 14px;
+  padding: 9px 12px;
+  background: linear-gradient(90deg, #fff3bf 0%, #fff7cf 52%, #ffe88a 100%);
+  color: #6f4a00;
+  box-shadow: 0 8px 18px rgba(245, 158, 11, 0.08);
+}
+
+.self-warning-icon {
+  display: inline-grid;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  place-items: center;
+  color: #9a5b00;
+  background: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.self-warning-rule p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.self-warning-rule strong {
+  color: #7a4b00;
+}
+
+.self-warning-rule .rule-green {
+  color: #13a35b;
+  font-weight: 900;
+}
+
+.self-warning-rule .rule-yellow {
+  color: #d97706;
+  font-weight: 900;
+}
+
+.self-warning-rule .rule-red {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.self-core-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.self-core-metric-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(16, 32, 64, 0.04);
+}
+
+.self-core-metric-card::after {
+  position: absolute;
+  right: -36px;
+  bottom: -44px;
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  background: rgba(47, 128, 237, 0.08);
+  content: "";
+}
+
+.self-core-metric-card.success::after {
+  background: rgba(28, 155, 97, 0.12);
+}
+
+.self-core-metric-card span {
+  position: relative;
+  z-index: 1;
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.self-core-metric-card strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 10px 0 8px;
+  color: var(--text-main);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.self-core-metric-card em {
+  position: relative;
+  z-index: 1;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+@media (max-width: 1200px) {
+  .self-core-metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .self-core-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .self-core-metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .self-sourcing-recruiter-table {
   table-layout: fixed;
   min-width: 1720px;
   font-size: 13px;
 }
 
-.self-sourcing-recruiter-table .col-name { width: 96px; }
-.self-sourcing-recruiter-table .col-employee-no { width: 96px; }
-.self-sourcing-recruiter-table .col-date { width: 112px; }
-.self-sourcing-recruiter-table .col-status { width: 82px; }
-.self-sourcing-recruiter-table .col-target { width: 104px; }
-.self-sourcing-recruiter-table .col-count { width: 92px; }
-.self-sourcing-recruiter-table .col-efficiency { width: 118px; }
-.self-sourcing-recruiter-table .col-month { width: 58px; }
-.self-sourcing-recruiter-table .col-trend { width: 110px; }
+.self-sourcing-recruiter-table .col-person {
+  width: 220px;
+}
+.self-sourcing-recruiter-table .col-target {
+  width: 104px;
+}
+.self-sourcing-recruiter-table .col-count {
+  width: 92px;
+}
+.self-sourcing-recruiter-table .col-rate {
+  width: 96px;
+}
+.self-sourcing-recruiter-table .col-efficiency {
+  width: 118px;
+}
+.self-sourcing-recruiter-table .col-month {
+  width: 58px;
+}
+.self-sourcing-recruiter-table .col-trend {
+  width: 110px;
+}
+.self-sourcing-recruiter-table .col-diagnosis {
+  width: 160px;
+}
 
 .self-sourcing-recruiter-table th {
   white-space: nowrap;
@@ -1506,9 +1657,93 @@ body {
   text-overflow: ellipsis;
 }
 
-.self-sourcing-recruiter-table th:nth-child(n + 5),
-.self-sourcing-recruiter-table td:nth-child(n + 5) {
+.self-sourcing-recruiter-table th:nth-child(n + 2),
+.self-sourcing-recruiter-table td:nth-child(n + 2) {
   text-align: center;
+}
+
+.self-person-cell {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.self-person-cell strong {
+  display: block;
+  color: var(--text-main);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.self-person-cell em {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+.self-risk-dot {
+  display: inline-block;
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.self-risk-dot.good {
+  background: #18b77a;
+}
+
+.self-risk-dot.warn {
+  background: #f6b51e;
+}
+
+.self-risk-dot.bad {
+  background: #ef4444;
+}
+
+.self-risk-chip {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.self-risk-chip.good {
+  color: #168a5a;
+  background: #e8f7ef;
+}
+
+.self-risk-chip.warn {
+  color: #b77900;
+  background: #fff4df;
+}
+
+.self-risk-chip.bad {
+  color: #d92d20;
+  background: #ffeceb;
+}
+
+.self-risk-reason {
+  display: block;
+  max-width: 180px;
+  margin: 6px auto 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.self-diagnosis-row {
+  cursor: pointer;
+}
+
+.self-diagnosis-row:hover td {
+  background: #fffdf4;
 }
 
 .self-sourcing-recruiter-table th:last-child,
@@ -1761,7 +1996,10 @@ body {
   color: #344054;
   background: #fff;
   text-decoration: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease;
 }
 
 .base-achievement-item:hover {
@@ -1902,7 +2140,10 @@ body {
   color: #344054;
   background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
   text-decoration: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease;
 }
 
 .batch-risk-card:hover,
@@ -2121,7 +2362,10 @@ body {
   padding: 10px;
   color: #344054;
   text-decoration: none;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .matrix-cell:hover,
