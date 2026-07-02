@@ -7,10 +7,6 @@
       <input class="form-control" type="month" name="yearMonth" value="<%= dashboard.yearMonth %>">
     </div>
     <div class="col-md-3">
-      <label class="form-label">截止日期</label>
-      <input class="form-control" type="date" name="cutoffDate" value="<%= dashboard.cutoffDate %>">
-    </div>
-    <div class="col-md-3">
       <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: dashboard.filters.base, items: dashboard.options.bases }) %>
     </div>
     <div class="col-md-3">
