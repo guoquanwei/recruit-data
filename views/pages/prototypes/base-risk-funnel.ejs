@@ -1,0 +1,28 @@
+<%- include('../../partials/header') %>
+
+<%
+  const dashboard = riskPrototype.dashboard;
+%>
+
+<section class="filter-card">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">月份</label>
+      <input class="form-control" type="month" name="yearMonth" value="<%= dashboard.yearMonth %>">
+    </div>
+    <div class="col-md-3">
+      <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: dashboard.filters.base, items: dashboard.options.bases }) %>
+    </div>
+    <div class="col-md-3">
+      <%- include('../../partials/admin/search-select', { label: '渠道', name: 'channel', value: dashboard.filters.channel, items: dashboard.options.channels }) %>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary" type="submit">查询</button>
+      <a class="btn btn-outline-secondary" href="/prototype/base-risk-funnel">重置</a>
+    </div>
+  </form>
+</section>
+
+<%- include('../dashboard/partials/position-risk-board', { dashboard, dashboardPath: '/prototype/base-risk-funnel' }) %>
+
+<%- include('../../partials/footer') %>

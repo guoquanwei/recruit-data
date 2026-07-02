@@ -17,7 +17,7 @@ function insertInterviewRecords(database, records) {
       contract_name,
       referrer,
       evaluation
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   records.forEach((record) => {

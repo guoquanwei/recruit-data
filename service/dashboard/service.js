@@ -9,6 +9,7 @@ const { getDatabase } = require('../../dao/db');
 const PASSED_INTERVIEW_RESULTS = new Set(['推荐', '强烈推荐']);
 const EXPECTED_INTERVIEW_PASS_RATE = 0.6;
 const EXPECTED_ENTRY_RATE = 2 / 3;
+const INVITE_ARRIVE_RATE = 0.8;
 const CHANNEL_DISPLAY_ORDER = ['回流', '内推', '渠道社招', '渠道校招', '自主社招'];
 const EXCLUDED_FUNNEL_DIAGNOSIS_CHANNELS = new Set(['回流', '渠道校招']);
 const OVERVIEW_TABS = new Set(['overview', 'base', 'channel', 'self']);
@@ -953,6 +954,42 @@ function buildEmptyBatchCell(day, yearMonth) {
   };
 }
 
+function buildActualOnlyBatchCell(day, yearMonth, { base, channel, previousDay, employees = [], interviews = [] }) {
+  const windowStart = buildDate(yearMonth, previousDay);
+  const windowEnd = buildDate(yearMonth, day);
+  const actualTraining = countTrainingInWindow(employees, { base, channel, startDate: windowStart, endDate: windowEnd });
+  if (actualTraining <= 0) {
+    return buildEmptyBatchCell(day, yearMonth);
+  }
+  const funnel = countFunnelInWindow(interviews, { base, channel, startDate: windowStart, endDate: windowEnd });
+
+  return {
+    type: 'batch',
+    day,
+    label: `${Number(yearMonth.slice(5, 7))}月${day}日批次`,
+    windowStart,
+    windowEnd,
+    status: 'achieved',
+    statusText: '健康',
+    target: 0,
+    actualTraining,
+    gap: actualTraining,
+    achievementRate: 1,
+    achievementRateText: '100.0%',
+    displayText: '100.0%',
+    diagnosis: buildGapDiagnosis({
+      target: 0,
+      actualTraining,
+      arrivedCount: funnel.arrivedCount,
+      passedCount: funnel.passedCount
+    }),
+    funnel: {
+      ...funnel,
+      trainingCount: actualTraining
+    }
+  };
+}
+
 function buildTotalMatrixCell(cell) {
   const hasData = cell.monthlyTarget > 0 || cell.actualTraining > 0;
   const status = getCellStatus(cell.achievementRate, hasData);
@@ -1017,9 +1054,7 @@ function buildBatchMatrix({ yearMonth, matrix, targets = [], employees = [], int
   const rows = [];
   matrix.rows.forEach((baseRow) => {
     matrix.channels.forEach((channel) => {
-      if (!shouldDiagnoseFunnel(channel)) {
-        return;
-      }
+      const diagnosable = shouldDiagnoseFunnel(channel);
       const batches = buildBatchDrilldown({
         yearMonth,
         base: baseRow.base,
@@ -1036,19 +1071,28 @@ function buildBatchMatrix({ yearMonth, matrix, targets = [], employees = [], int
       }]));
       const cells = {};
 
-      batchDays.forEach((day) => {
-        const sourceCell = batchMap.get(day) || buildEmptyBatchCell(day, yearMonth);
+      batchDays.forEach((day, index) => {
+        const previousDay = index === 0 ? 1 : batchDays[index - 1] + 1;
+        const sourceCell = batchMap.get(day) || buildActualOnlyBatchCell(day, yearMonth, {
+          base: baseRow.base,
+          channel,
+          previousDay,
+          employees,
+          interviews
+        });
         const matrixStatus = toMatrixStatus(sourceCell.status);
         const cell = {
           ...sourceCell,
           batchStatus: sourceCell.status,
           batchStatusText: sourceCell.statusText,
           status: matrixStatus,
-          statusText: getStatusText(matrixStatus)
+          statusText: sourceCell.target <= 0 && sourceCell.actualTraining > 0
+            ? sourceCell.statusText
+            : getStatusText(matrixStatus)
         };
         cells[day] = cell;
         summary[cell.status] += 1;
-        if (cell.status === 'risk' || cell.status === 'warning') {
+        if (diagnosable && (cell.status === 'risk' || cell.status === 'warning')) {
           riskItems.push({
             base: baseRow.base,
             channel,
@@ -1072,6 +1116,7 @@ function buildBatchMatrix({ yearMonth, matrix, targets = [], employees = [], int
         base: baseRow.base,
         channel,
         label: `${baseRow.base} / ${channel}`,
+        diagnosable,
         cells,
         total
       };
@@ -1178,6 +1223,387 @@ function sortChannels(left, right) {
   return toText(left.channel || left).localeCompare(toText(right.channel || right), 'zh-Hans-CN');
 }
 
+function buildChannelFunnelRows(channels = [], batchGap = null) {
+  return channels.map((channel) => {
+    const funnel = channel.funnel || {};
+    const arrivedCount = Number(funnel.arrivedCount || 0);
+    const passedCount = Number(funnel.passedCount || 0);
+    const trainingCount = Number(funnel.trainingCount ?? channel.actualTraining ?? 0);
+    const row = {
+      channel: channel.channel,
+      arrivedCount,
+      passedCount,
+      trainingCount,
+      passRateText: arrivedCount > 0 ? formatPercent(passedCount / arrivedCount) : '0.00%',
+      trainingRateText: passedCount > 0 ? formatPercent(trainingCount / passedCount) : '0.00%',
+      status: channel.status,
+      statusText: channel.statusText,
+      gap: channel.gap
+    };
+
+    if (batchGap === null || Number(batchGap) < 0) {
+      return row;
+    }
+
+    if (Number(row.gap || 0) >= 0) {
+      return {
+        ...row,
+        status: 'achieved',
+        statusText: Number(channel.target || 0) <= 0 && trainingCount > 0 ? '健康' : getStatusText('achieved')
+      };
+    }
+
+    return {
+      ...row,
+      status: 'warning',
+      statusText: '需关注'
+    };
+  });
+}
+
+function getChannelBoardStatus(row) {
+  const monthlyTarget = Number(row.monthlyTarget || 0);
+  const actualTraining = Number(row.actualTraining || 0);
+  if (monthlyTarget <= 0 && actualTraining > 0) {
+    return {
+      status: 'achieved',
+      statusText: '健康'
+    };
+  }
+  const hasData = monthlyTarget > 0 || actualTraining > 0;
+  const status = getCellStatus(row.achievementRate, hasData);
+  return {
+    status,
+    statusText: getStatusText(status)
+  };
+}
+
+function formatChineseMonthDay(dateValue) {
+  const normalized = normalizeDate(dateValue);
+  if (!normalized) {
+    return '';
+  }
+
+  return `${Number(normalized.slice(5, 7))}月${Number(normalized.slice(8, 10))}日`;
+}
+
+function countInclusiveDays(startDate, endDate) {
+  const start = normalizeDate(startDate);
+  const end = normalizeDate(endDate);
+  if (!start || !end) {
+    return 1;
+  }
+
+  const diff = Math.floor((Date.parse(end) - Date.parse(start)) / 86400000);
+  return Math.max(1, diff + 1);
+}
+
+function getBatchPreparationEndDate(windowEnd) {
+  const end = normalizeDate(windowEnd);
+  if (!end) {
+    return '';
+  }
+
+  const date = new Date(`${end}T00:00:00`);
+  date.setDate(date.getDate() - 1);
+  return formatDate(date);
+}
+
+function getBatchActionPeriod({ windowStart, windowEnd, asOfDate }) {
+  const start = normalizeDate(windowStart);
+  const end = getBatchPreparationEndDate(windowEnd);
+
+  if (!start || !end || end < start) {
+    return {
+      label: '后续',
+      days: 1
+    };
+  }
+
+  const today = normalizeDate(asOfDate);
+  if (!today || today > end) {
+    return {
+      label: `${formatChineseMonthDay(start)} - ${formatChineseMonthDay(end)}`,
+      days: countInclusiveDays(start, end)
+    };
+  }
+
+  const periodStart = today >= start ? today : start;
+  return {
+    label: `${formatChineseMonthDay(periodStart)} - ${formatChineseMonthDay(end)}`,
+    days: countInclusiveDays(periodStart, end)
+  };
+}
+
+function countBaseSelfRecruiters(employees = [], interviews = [], base = '', windowStart = '', windowEnd = '', yearMonth = '') {
+  const recruiterNames = new Set();
+
+  interviews.forEach((interview) => {
+    if (toText(interview.channelType) !== '自主社招') {
+      return;
+    }
+    if (base && toText(interview.base) !== base) {
+      return;
+    }
+    if (windowStart && windowEnd && !isBetween(interview.feedbackDate, windowStart, windowEnd)) {
+      return;
+    }
+    const recruiterName = getSelfSourcingRecruiterName(interview);
+    if (recruiterName) {
+      recruiterNames.add(recruiterName);
+    }
+  });
+
+  if (recruiterNames.size > 0) {
+    return recruiterNames.size;
+  }
+
+  employees.forEach((employee) => {
+    if (toText(employee.channelType) !== '自主社招') {
+      return;
+    }
+    if (base && toText(employee.base) !== base) {
+      return;
+    }
+    if (yearMonth && !employee.trainingDate.startsWith(yearMonth)) {
+      return;
+    }
+    const recruiterName = getSelfSourcingRecruiterName(employee);
+    if (recruiterName) {
+      recruiterNames.add(recruiterName);
+    }
+  });
+
+  const fallbackCount = getSelfSourcingRecruitersForYear(employees, yearMonth).length;
+  return Math.max(1, recruiterNames.size || fallbackCount);
+}
+
+function estimateDailyInviteCapacity(interviews = [], base = '', windowStart = '', windowEnd = '', asOfDate = '') {
+  const end = normalizeDate(asOfDate) && normalizeDate(asOfDate) <= normalizeDate(windowEnd)
+    ? normalizeDate(asOfDate)
+    : normalizeDate(windowEnd);
+  const start = normalizeDate(windowStart);
+  if (!start || !end || end < start) {
+    return 0;
+  }
+
+  const inviteCount = interviews.filter((interview) => (
+    toText(interview.channelType) === '自主社招'
+    && (!base || toText(interview.base) === base)
+    && isBetween(interview.feedbackDate, start, end)
+  )).length;
+
+  return Math.ceil(inviteCount / countInclusiveDays(start, end));
+}
+
+function countSocialSuppliers(interviews = [], base = '', windowStart = '', windowEnd = '') {
+  const suppliers = new Set();
+
+  interviews.forEach((interview) => {
+    if (toText(interview.channelType) !== '渠道社招') {
+      return;
+    }
+    if (base && toText(interview.base) !== base) {
+      return;
+    }
+    if (windowStart && windowEnd && !isBetween(interview.feedbackDate, windowStart, windowEnd)) {
+      return;
+    }
+    const supplierName = toText(interview.channelName);
+    if (supplierName) {
+      suppliers.add(supplierName);
+    }
+  });
+
+  return Math.max(1, suppliers.size);
+}
+
+function buildSelfBatchActionPlan(cell, batchMeta, context = {}) {
+  const period = getBatchActionPeriod({
+    windowStart: cell.windowStart || batchMeta.windowStart,
+    windowEnd: cell.windowEnd || batchMeta.windowEnd,
+    asOfDate: context.asOfDate
+  });
+  const expectedArrived = Number(cell.diagnosis?.expectedArrivedCount || 0);
+  const actualArrived = Number(cell.funnel?.arrivedCount || 0);
+  const arrivedGap = Math.max(0, expectedArrived - actualArrived);
+  const dailyArrived = Math.max(1, Math.ceil(arrivedGap / period.days));
+  const dailyInvite = Math.max(1, Math.ceil(arrivedGap / INVITE_ARRIVE_RATE / period.days));
+  const recruiterCount = countBaseSelfRecruiters(
+    context.employees,
+    context.interviews,
+    batchMeta.base,
+    cell.windowStart || batchMeta.windowStart,
+    cell.windowEnd || batchMeta.windowEnd,
+    context.yearMonth
+  );
+  const perRecruiterInvite = Math.max(1, Math.ceil(dailyInvite / recruiterCount));
+  const currentDailyCapacity = estimateDailyInviteCapacity(
+    context.interviews,
+    batchMeta.base,
+    cell.windowStart || batchMeta.windowStart,
+    cell.windowEnd || batchMeta.windowEnd,
+    context.asOfDate
+  );
+  const capacityOk = currentDailyCapacity <= 0 || currentDailyCapacity >= dailyInvite;
+  const diagnosis = arrivedGap > 0
+    ? `到面人数未达标，当前候选人储备无法支撑 ${batchMeta.label} 到岗。`
+    : (cell.diagnosis?.conclusion || `自主社招低于 ${batchMeta.label} 目标，需继续跟进剩余候选人到岗确认。`);
+
+  return {
+    channel: '自主社招',
+    title: '自主社招提升方案',
+    owner: '自招团队',
+    status: cell.status,
+    statusText: cell.statusText,
+    focus: diagnosis,
+    diagnosis,
+    communicationScript: '',
+    actions: [
+      `${period.label}每天至少完成 ${dailyArrived} 人有效到面，对应每天约 ${dailyInvite} 人有效邀约。`,
+      capacityOk
+        ? `当前自招有 ${recruiterCount} 名招聘专员，均摊后每人每天需要完成约 ${perRecruiterInvite} 人有效邀约；人力测算可承接当前缺口，优先把邀约和到面动作做满，暂不扩编。`
+        : `当前自招有 ${recruiterCount} 名招聘专员，均摊后每人每天需要完成约 ${perRecruiterInvite} 人有效邀约，按现有人力日均约 ${currentDailyCapacity} 人邀约，存在产能缺口，建议增加招聘专员或临时加人。`,
+      '如果每天邀约人数完成了，但实际到面仍然不足，说明候选人爽约较多，需要提前讲清岗位要求、薪资、工作地点和到岗时间，减少无效邀约。'
+    ]
+  };
+}
+
+function buildSocialBatchActionPlan(cell, batchMeta, context = {}) {
+  const period = getBatchActionPeriod({
+    windowStart: cell.windowStart || batchMeta.windowStart,
+    windowEnd: cell.windowEnd || batchMeta.windowEnd,
+    asOfDate: context.asOfDate
+  });
+  const expectedArrived = Number(cell.diagnosis?.expectedArrivedCount || 0);
+  const actualArrived = Number(cell.funnel?.arrivedCount || 0);
+  const arrivedGap = Math.max(0, expectedArrived - actualArrived);
+  const dailyArrived = Math.max(1, Math.ceil(arrivedGap / period.days));
+  const supplierCount = countSocialSuppliers(
+    context.interviews,
+    batchMeta.base,
+    cell.windowStart || batchMeta.windowStart,
+    cell.windowEnd || batchMeta.windowEnd
+  );
+  const perSupplierDaily = Math.max(1, Math.ceil(dailyArrived / supplierCount));
+  const supplierCapacity = Math.ceil(actualArrived / period.days);
+  const capacityGap = Math.max(0, dailyArrived - supplierCapacity);
+  const suggestedNewSuppliers = capacityGap > 0 ? 1 : 0;
+  const diagnosis = `渠道社招整体到面不足，现有供应商池日均到面能力低于 ${batchMeta.label} 达成节奏。`;
+  const actions = [
+    `${period.label}每天需完成 ${dailyArrived} 人到面，当前 ${supplierCount} 家供应商平均每家每天需提升到 ${perSupplierDaily} 人到面。`,
+    capacityGap > 0
+      ? `现有供应商池最近日均到面约 ${supplierCapacity} 人，低于后续所需 ${dailyArrived} 人，存在 ${capacityGap} 人/天产能缺口。`
+      : `现有供应商池最近日均到面约 ${supplierCapacity} 人，已达到后续所需 ${dailyArrived} 人/天。`
+  ];
+
+  if (suggestedNewSuppliers > 0) {
+    actions.push(`若现有供应商无法提升到该节奏，建议新增 ${suggestedNewSuppliers} 家 RPO 供应商或要求现有供应商短期加量。`);
+  }
+
+  return {
+    channel: '渠道社招',
+    title: '渠道社招提升方案',
+    owner: 'RPO 供应商池',
+    status: cell.status,
+    statusText: cell.statusText,
+    focus: diagnosis,
+    diagnosis,
+    communicationScript: '',
+    actions
+  };
+}
+
+function buildReferralBatchActionPlan(cell, batchMeta) {
+  const diagnosis = cell.diagnosis?.conclusion
+    || `内推渠道低于 ${batchMeta.label} 目标，但不做复杂产能测算，重点提示基地侧加强宣导。`;
+
+  return {
+    channel: '内推',
+    title: '内推提升方案',
+    owner: '基地负责人',
+    status: cell.status,
+    statusText: cell.statusText,
+    focus: diagnosis,
+    diagnosis,
+    communicationScript: '',
+    actions: [
+      '基地负责人在班前会 / 班后会加强岗位需求、到岗时间和奖励政策宣导。',
+      '推动班组长收集员工推荐名单，并对已推荐候选人及时跟进邀约和到面。',
+      '将内推缺口纳入基地周度复盘，持续提醒员工转介绍。'
+    ]
+  };
+}
+
+function buildChannelBatchActionPlan(cell, batchMeta, context = {}) {
+  if (Number(cell.gap || 0) >= 0 || Number(cell.target || 0) <= 0) {
+    return undefined;
+  }
+
+  if (cell.channel === '自主社招') {
+    return buildSelfBatchActionPlan(cell, batchMeta, context);
+  }
+
+  if (cell.channel === '渠道社招') {
+    return buildSocialBatchActionPlan(cell, batchMeta, context);
+  }
+
+  if (cell.channel === '内推') {
+    return buildReferralBatchActionPlan(cell, batchMeta);
+  }
+
+  return undefined;
+}
+
+function buildBatchActionPlans(cells = [], batchMeta = {}, context = {}) {
+  const actionPlans = cells
+    .map((cell) => buildChannelBatchActionPlan(cell, batchMeta, context))
+    .filter(Boolean)
+    .sort(sortChannels);
+
+  if (actionPlans.length === 0) {
+    return [{
+      title: '保持现状',
+      owner: '基地负责人',
+      status: 'achieved',
+      statusText: '已达成',
+      focus: '当前批次各渠道目标已达成',
+      diagnosis: '目标已达成，当前不需要额外提升方案。',
+      communicationScript: '',
+      actions: ['保持现有招聘节奏和渠道跟进即可。']
+    }];
+  }
+
+  return actionPlans;
+}
+
+function buildBatchMainRiskText(batch, worstCell) {
+  if (batch.gap >= 0) {
+    return '当前批次目标已达成，保持现有招聘节奏';
+  }
+
+  const reason = worstCell?.diagnosis?.reason || batch.reason || '存在入职缺口';
+  return `当前主要风险：${worstCell?.channel || batch.worstChannel || '多渠道'}${reason}`;
+}
+
+function buildHealthyActionPlans(base) {
+  return [{
+    channel: '整体',
+    title: '基地达成健康',
+    owner: '基地负责人',
+    focus: '达成稳定性 + 漏斗保持',
+    status: 'achieved',
+    statusText: '健康',
+    diagnosis: '当前基地已完成目标，各项环节均在健康值，建议保持现有招聘节奏。',
+    communicationScript: `${base}当前达成健康，自招团队和渠道经理保持日常跟进，重点沉淀高转化来源与稳定入职做法。`,
+    actions: [
+      '保留当前高转化渠道和招聘顾问节奏',
+      '复盘已入职候选人来源，沉淀可复用画像',
+      '继续关注入职后稳定性，避免只看数量不看质量'
+    ]
+  }];
+}
+
 function pickPositionBase(progress, batchMatrix, selectedBase = '') {
   if (selectedBase) {
     return selectedBase;
@@ -1268,7 +1694,16 @@ function buildBaseAchievementOverview(progress) {
   };
 }
 
-function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', selectedBatchDay = '' }) {
+function buildPositionChannelBoard({
+  progress,
+  batchMatrix,
+  selectedBase = '',
+  selectedBatchDay = '',
+  employees = [],
+  interviews = [],
+  asOfDate = '',
+  yearMonth = ''
+}) {
   if (!selectedBase) {
     return buildBaseAchievementOverview(progress);
   }
@@ -1286,22 +1721,31 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
   };
   const channels = (baseProgress?.channelRows || [])
     .filter((row) => row.channel !== '合计')
-    .map((row) => ({
-      channel: row.channel,
-      monthlyTarget: row.monthlyTarget,
-      cutoffTarget: row.cutoffTarget,
-      actualTraining: row.actualTraining,
-      gap: row.gap,
-      achievementRate: row.achievementRate,
-      achievementRateText: row.achievementRateText,
-      status: getCellStatus(row.achievementRate, row.monthlyTarget > 0 || row.actualTraining > 0),
-      statusText: getStatusText(getCellStatus(row.achievementRate, row.monthlyTarget > 0 || row.actualTraining > 0)),
-      targetShareText: row.targetShareText,
-      actualShareText: row.actualShareText
-    }))
+    .map((row) => {
+      const channelStatus = getChannelBoardStatus(row);
+      return {
+        channel: row.channel,
+        monthlyTarget: row.monthlyTarget,
+        cutoffTarget: row.cutoffTarget,
+        actualTraining: row.actualTraining,
+        gap: row.gap,
+        achievementRate: row.achievementRate,
+        achievementRateText: row.achievementRateText,
+        status: channelStatus.status,
+        statusText: channelStatus.statusText,
+        targetShareText: row.targetShareText,
+        actualShareText: row.actualShareText
+      };
+    })
     .filter((row) => row.monthlyTarget > 0 || row.actualTraining > 0)
     .sort(sortChannels);
   const batchColumns = batchMatrix.columns.filter((column) => column.type === 'batch');
+  const actionContext = {
+    employees,
+    interviews,
+    asOfDate,
+    yearMonth
+  };
   const batchRisks = batchColumns.map((column) => {
     const cells = baseRows
       .map((row) => ({
@@ -1309,6 +1753,14 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
         ...row.cells[column.day]
       }))
       .filter((cell) => cell);
+    const referenceCell = cells.find((cell) => cell.windowStart && cell.windowEnd) || cells[0];
+    const batchMeta = {
+      day: column.day,
+      label: column.label,
+      base,
+      windowStart: referenceCell?.windowStart || '',
+      windowEnd: referenceCell?.windowEnd || (yearMonth ? buildDate(yearMonth, column.day) : '')
+    };
     const target = cells.reduce((sum, cell) => sum + Number(cell.target || 0), 0);
     const actualTraining = cells.reduce((sum, cell) => sum + Number(cell.actualTraining || 0), 0);
     const gap = actualTraining - target;
@@ -1322,7 +1774,7 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
         }
         return Number(left.gap || 0) - Number(right.gap || 0);
       })[0];
-    const status = worstCell?.status || getCellStatus(achievementRate, target > 0 || actualTraining > 0);
+    const status = getCellStatus(achievementRate, target > 0 || actualTraining > 0);
 
     return {
       day: column.day,
@@ -1334,6 +1786,14 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
       achievementRateText: formatDashboardRate(achievementRate),
       status,
       statusText: getStatusText(status),
+      channels: cells.slice().sort(sortChannels),
+      funnelRows: buildChannelFunnelRows(cells.slice().sort(sortChannels), gap),
+      actionPlans: buildBatchActionPlans(cells, batchMeta, actionContext),
+      mainRiskText: buildBatchMainRiskText({
+        gap,
+        reason: worstCell?.diagnosis?.reason || (gap >= 0 ? '达标 / 正常' : '存在入职缺口'),
+        worstChannel: worstCell?.channel || ''
+      }, worstCell),
       reason: worstCell?.diagnosis?.reason || (gap >= 0 ? '达标 / 正常' : '存在入职缺口'),
       suggestion: worstCell?.diagnosis?.suggestion || '',
       worstChannel: worstCell?.channel || ''
@@ -1352,6 +1812,21 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
     .filter((batch) => batch.status === 'risk' || batch.status === 'warning')
     .map((batch) => `${batch.worstChannel || '多渠道'}${batch.reason}`)
     .slice(0, 2);
+  const funnelRows = buildChannelFunnelRows(
+    selectedBatchRows,
+    selectedBatchSummary?.gap
+  );
+  const totalStatus = getCellStatus(total.achievementRate, total.monthlyTarget > 0 || total.actualTraining > 0);
+  const isHealthy = totalStatus === 'achieved';
+  const actionPlans = isHealthy
+    ? buildHealthyActionPlans(base)
+    : (selectedBatchSummary?.actionPlans || buildBatchActionPlans(selectedBatchRows, {
+      day: selectedBatchSummary?.day,
+      label: selectedBatchSummary?.label,
+      base,
+      windowStart: selectedBatchRows.find((cell) => cell.windowStart)?.windowStart || '',
+      windowEnd: selectedBatchRows.find((cell) => cell.windowEnd)?.windowEnd || ''
+    }, actionContext));
 
   return {
     mode: 'position',
@@ -1359,16 +1834,21 @@ function buildPositionChannelBoard({ progress, batchMatrix, selectedBase = '', s
     title: base ? `${base} · 多渠道岗位` : '多渠道岗位',
     total: {
       ...total,
-      status: getCellStatus(total.achievementRate, total.monthlyTarget > 0 || total.actualTraining > 0),
-      statusText: getStatusText(getCellStatus(total.achievementRate, total.monthlyTarget > 0 || total.actualTraining > 0))
+      status: totalStatus,
+      statusText: getStatusText(totalStatus)
     },
+    healthStatus: isHealthy ? 'healthy' : 'risk',
     channels,
+    funnelRows,
+    actionPlans,
     batchRisks,
     selectedBatch: selectedBatchSummary ? {
       ...selectedBatchSummary,
       channels: selectedBatchRows
     } : undefined,
-    mainRiskText: mainRisks.length > 0 ? `当前主要风险：${mainRisks.join('，')}` : '当前无明显 GAP 风险，保持渠道节奏'
+    mainRiskText: isHealthy
+      ? '当前基地已达成，各项环节均在健康值，保持自招与渠道协同节奏'
+      : (selectedBatchSummary?.mainRiskText || (mainRisks.length > 0 ? `当前主要风险：${mainRisks.join('，')}` : '当前无明显 GAP 风险，保持渠道节奏'))
   };
 }
 
@@ -1588,7 +2068,11 @@ function getDashboardOverview(query = {}) {
       progress,
       batchMatrix,
       selectedBase: filters.base,
-      selectedBatchDay: selectedCell.selectedBatchDay
+      selectedBatchDay: selectedCell.selectedBatchDay,
+      employees,
+      interviews,
+      asOfDate,
+      yearMonth
     })
     : undefined;
   const selfSourcingDetails = overviewTab === 'self'

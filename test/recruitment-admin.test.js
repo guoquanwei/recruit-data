@@ -1,15 +1,19 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const http = require('node:http');
+const path = require('node:path');
 const test = require('node:test');
+const { DatabaseSync } = require('node:sqlite');
 
 const { createApp } = require('../server');
+const { initializeBusinessSchema } = require('../dao/schema');
 const { makeUniqueHeaders } = require('../service/imports/excel');
 const { buildCsv } = require('../service/export/csv');
 const { getEmployeeImportTemplateConfig, buildEmployeeImportTemplateWorkbook } = require('../service/employees/importTemplate');
 const { getTargetImportTemplateConfig, buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
 const { getInterviewImportTemplateConfig, buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
 const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
-const { buildInterviewFilters } = require('../service/interviews/repository');
+const { buildInterviewFilters, insertInterviewRecords } = require('../service/interviews/repository');
 const { formatDistinctTargetFilterOptions } = require('../service/targets/repository');
 const { maskPhone, parsePage, formatPercent } = require('../service/shared/format');
 const { inferBase, isRecruiterEmployee, normalizeActiveEmployee, normalizeResignedEmployee } = require('../service/employees/normalize');
@@ -128,6 +132,44 @@ test('target import is rendered on its own page', async () => {
   assert.match(listPage.text, /href="\/targets\/import"/);
 });
 
+test('base risk funnel prototype renders as an isolated prototype page', async () => {
+  const page = await requestApp('/prototype/base-risk-funnel');
+  assert.equal(page.response.status, 200);
+  assert.match(page.text, /岗位月目标/);
+  assert.match(page.text, /风险批次/);
+  assert.match(page.text, /5月12日批次/);
+  assert.match(page.text, /GAP -8/);
+  assert.match(page.text, /5月20日批次/);
+  assert.match(page.text, /5月26日批次/);
+  assert.match(page.text, /漏斗诊断与提升方案/);
+  assert.match(page.text, /自主社招提升方案/);
+  assert.doesNotMatch(page.text, /渠道社招保持现状/);
+  assert.doesNotMatch(page.text, /内推保持现状/);
+  assert.match(page.text, /"actionPlans"/);
+  assert.match(page.text, /"mainRiskText"/);
+  assert.match(page.text, /5月5日 - 5月11日每天至少完成 5 人有效到面/);
+
+  const may20Page = await requestApp('/prototype/base-risk-funnel?selectedBatchDay=20');
+  assert.equal(may20Page.response.status, 200);
+  assert.match(may20Page.text, /5月13日 - 5月19日每天至少完成 2 人有效到面/);
+  const may20Payload = JSON.parse(may20Page.text.match(/id="positionBatchPayload"[^>]*>([^<]+)/)[1]);
+  const may20BatchPlan = may20Payload.batches.find((batch) => batch.day === 20).actionPlans
+    .find((plan) => plan.title.includes('自主社招'));
+  assert.match(may20BatchPlan.actions[0], /5月13日 - 5月19日/);
+  const may12BatchPlan = may20Payload.batches.find((batch) => batch.day === 12).actionPlans
+    .find((plan) => plan.title.includes('自主社招'));
+  assert.match(may12BatchPlan.actions[0], /5月5日 - 5月11日/);
+
+  const rpoPage = await requestApp('/prototype/base-risk-funnel?selectedBatchDay=20&channel=rpo');
+  assert.equal(rpoPage.response.status, 200);
+  assert.match(rpoPage.text, /渠道社招/);
+  assert.match(rpoPage.text, /建议新增 1 家 RPO 供应商/);
+
+  const achievedPage = await requestApp('/prototype/base-risk-funnel?batch=26');
+  assert.equal(achievedPage.response.status, 200);
+  assert.match(achievedPage.text, /目标已达成，当前不需要额外提升方案/);
+});
+
 test('csv export escapes values and includes utf8 bom', () => {
   const csv = buildCsv([
     { header: '姓名', value: (row) => row.name },
@@ -141,6 +183,38 @@ test('csv export escapes values and includes utf8 bom', () => {
   assert.equal(csv.includes('"包含,逗号"'), true);
   assert.equal(csv.includes('"李""四"'), true);
   assert.equal(csv.includes('"换行\n内容"'), true);
+});
+
+test('interview repository inserts every normalized interview field', () => {
+  const database = new DatabaseSync(':memory:');
+  initializeBusinessSchema(database);
+
+  try {
+    const records = [{
+      base: '石家庄基地',
+      positionName: '客服专员',
+      candidateName: '张三',
+      gender: '男',
+      phone: '13900000000',
+      feedbackDate: '2026-06-25',
+      feedbackResult: '通过',
+      interviewer: '李四',
+      channelType: '自主社招',
+      channelName: '李四+JZ001',
+      channelTag: '自主社招',
+      contractName: '李四+JZ001',
+      referrer: '',
+      evaluation: '沟通表达良好'
+    }];
+
+    assert.equal(insertInterviewRecords(database, records), 1);
+
+    const row = database.prepare('SELECT * FROM interview_records').get();
+    assert.equal(row.channel_name, '李四+JZ001');
+    assert.equal(row.evaluation, '沟通表达良好');
+  } finally {
+    database.close();
+  }
 });
 
 test('employee normalization maps active and resigned source columns to one model', () => {
@@ -574,7 +648,7 @@ test('dashboard batch matrix uses base channel rows and batch columns', () => {
   });
 
   assert.deepEqual(batchMatrix.columns.map((column) => column.label), ['6月10日批次', '6月20日批次', '合计']);
-  assert.deepEqual(batchMatrix.summary, { risk: 2, warning: 1, achieved: 0, empty: 1 });
+  assert.deepEqual(batchMatrix.summary, { risk: 2, warning: 1, achieved: 1, empty: 0 });
   assert.deepEqual(batchMatrix.rows.map((row) => [row.label, row.cells[10].status, row.cells[10].displayText, row.total.status]), [
     ['联通天津 / 内推', 'risk', '0.0%', 'risk'],
     ['联通天津 / 自主社招', 'risk', '50.0%', 'risk']
@@ -623,10 +697,10 @@ test('dashboard funnel diagnosis excludes return and campus channels', () => {
     selectedBase: '江苏基地-淮安'
   });
 
-  assert.deepEqual(batchMatrix.rows.map((row) => row.channel), ['内推', '渠道社招', '自主社招']);
+  assert.deepEqual(batchMatrix.rows.map((row) => row.channel), ['回流', '内推', '渠道社招', '渠道校招', '自主社招']);
   assert.equal(batchMatrix.riskItems.some((item) => item.channel === '回流' || item.channel === '渠道校招'), false);
   assert.deepEqual(board.channels.map((item) => item.channel), ['回流', '内推', '渠道社招', '渠道校招', '自主社招']);
-  assert.deepEqual(board.selectedBatch.channels.map((item) => item.channel), ['内推', '渠道社招', '自主社招']);
+  assert.deepEqual(board.selectedBatch.channels.map((item) => item.channel), ['回流', '内推', '渠道社招', '渠道校招', '自主社招']);
 });
 
 test('dashboard position channel board summarizes one base across channels and batches', () => {
@@ -658,7 +732,22 @@ test('dashboard position channel board summarizes one base across channels and b
       { employeeNo: 'JZ003', base: '江苏基地-淮安', channelType: '渠道社招', trainingDate: '2026-06-09' },
       { employeeNo: 'JZ004', base: '江苏基地-淮安', channelType: '自主社招', trainingDate: '2026-06-18' }
     ],
-    interviews: [],
+    interviews: [
+      { base: '江苏基地-淮安', channelType: '回流', feedbackDate: '2026-06-05', feedbackResult: '推荐' },
+      { base: '江苏基地-淮安', channelType: '内推', feedbackDate: '2026-06-03', feedbackResult: '推荐' },
+      { base: '江苏基地-淮安', channelType: '内推', feedbackDate: '2026-06-08', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '渠道社招', feedbackDate: '2026-06-04', feedbackResult: '推荐' },
+      { base: '江苏基地-淮安', channelType: '渠道社招', feedbackDate: '2026-06-07', feedbackResult: '强烈推荐' },
+      { base: '江苏基地-淮安', channelType: '渠道社招', feedbackDate: '2026-06-09', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-02', feedbackResult: '推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-05', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-07', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-10', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '渠道社招', feedbackDate: '2026-06-15', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-12', feedbackResult: '推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-19', feedbackResult: '不推荐' },
+      { base: '江苏基地-淮安', channelType: '自主社招', feedbackDate: '2026-06-21', feedbackResult: '推荐' }
+    ],
     asOfDate: '2026-06-20'
   });
 
@@ -679,15 +768,348 @@ test('dashboard position channel board summarizes one base across channels and b
     ['自主社招', 9, 1, -8]
   ]);
   assert.deepEqual(board.batchRisks.map((item) => [item.label, item.target, item.actualTraining, item.gap]), [
-    ['6月10日批次', 12, 2, -10],
+    ['6月10日批次', 14, 3, -11],
     ['6月20日批次', 6, 1, -5]
+  ]);
+  assert.equal(board.batchRisks.reduce((sum, batch) => sum + batch.gap, 0), board.total.gap);
+  assert.deepEqual(board.batchRisks[1].channels.map((item) => [item.channel, item.target, item.actualTraining, item.gap]), [
+    ['回流', 0, 0, 0],
+    ['内推', 0, 0, 0],
+    ['渠道社招', 2, 0, -2],
+    ['自主社招', 4, 1, -3]
   ]);
   assert.equal(board.selectedBatch.day, 10);
   assert.deepEqual(board.selectedBatch.channels.map((item) => [item.channel, item.target, item.actualTraining, item.gap]), [
+    ['回流', 2, 1, -1],
     ['内推', 3, 1, -2],
     ['渠道社招', 4, 1, -3],
     ['自主社招', 5, 0, -5]
   ]);
+  assert.deepEqual(board.funnelRows.map((row) => [
+    row.channel,
+    row.arrivedCount,
+    row.passedCount,
+    row.trainingCount,
+    row.passRateText,
+    row.trainingRateText
+  ]), [
+    ['回流', 1, 1, 1, '100.00%', '100.00%'],
+    ['内推', 2, 1, 1, '50.00%', '100.00%'],
+    ['渠道社招', 3, 2, 1, '66.67%', '50.00%'],
+    ['自主社招', 4, 1, 0, '25.00%', '0.00%']
+  ]);
+
+  const secondBatchBoard = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '江苏基地-淮安',
+    selectedBatchDay: 20
+  });
+
+  assert.deepEqual(secondBatchBoard.funnelRows.map((row) => [
+    row.channel,
+    row.arrivedCount,
+    row.passedCount,
+    row.trainingCount,
+    row.passRateText,
+    row.trainingRateText
+  ]), [
+    ['回流', 0, 0, 0, '0.00%', '0.00%'],
+    ['内推', 0, 0, 0, '0.00%', '0.00%'],
+    ['渠道社招', 1, 0, 0, '0.00%', '0.00%'],
+    ['自主社招', 2, 1, 1, '50.00%', '100.00%']
+  ]);
+  assert.match(board.actionPlans.find((item) => item.title === '自主社招提升方案').actions[0], /6月1日 - 6月9日/);
+  assert.match(secondBatchBoard.actionPlans.find((item) => item.title === '自主社招提升方案').actions[0], /6月11日 - 6月19日/);
+});
+
+test('dashboard position channel board exposes funnel rows and channel action plans', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '内推', dailyTargets: { 10: 15 } },
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道社招', dailyTargets: { 10: 60 } },
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '自主社招', dailyTargets: { 10: 75 } }
+  ], [
+    ...Array.from({ length: 5 }, (_, index) => ({
+      employeeNo: `NT${index}`,
+      base: '江苏基地-淮安',
+      channelType: '内推',
+      trainingDate: '2026-06-09'
+    })),
+    ...Array.from({ length: 62 }, (_, index) => ({
+      employeeNo: `QD${index}`,
+      base: '江苏基地-淮安',
+      channelType: '渠道社招',
+      trainingDate: '2026-06-09'
+    })),
+    ...Array.from({ length: 34 }, (_, index) => ({
+      employeeNo: `ZZ${index}`,
+      base: '江苏基地-淮安',
+      channelType: '自主社招',
+      trainingDate: '2026-06-09'
+    }))
+  ], '2026-06-30');
+  const matrix = buildDashboardMatrix(summary, { base: '江苏基地-淮安' });
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-06',
+    matrix,
+    targets: [
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '内推', dailyTargets: { 10: 15 } },
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道社招', dailyTargets: { 10: 60 } },
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '自主社招', dailyTargets: { 10: 75 } }
+    ],
+    employees: [],
+    interviews: [],
+    asOfDate: '2026-06-30'
+  });
+
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '江苏基地-淮安'
+  });
+
+  assert.deepEqual(board.funnelRows.map((row) => [
+    row.channel,
+    row.arrivedCount,
+    row.passedCount,
+    row.trainingCount,
+    row.passRateText,
+    row.trainingRateText
+  ]), [
+    ['内推', 0, 0, 0, '0.00%', '0.00%'],
+    ['渠道社招', 0, 0, 0, '0.00%', '0.00%'],
+    ['自主社招', 0, 0, 0, '0.00%', '0.00%']
+  ]);
+  assert.deepEqual(board.actionPlans.map((item) => item.title), [
+    '内推提升方案',
+    '渠道社招提升方案',
+    '自主社招提升方案'
+  ]);
+  assert.deepEqual(board.actionPlans.map((item) => item.owner), [
+    '基地负责人',
+    'RPO 供应商池',
+    '自招团队'
+  ]);
+  assert.match(board.actionPlans[1].actions[0], /6月1日 - 6月9日/);
+  assert.match(board.actionPlans[2].actions[0], /6月1日 - 6月9日/);
+  assert.match(board.actionPlans[2].actions.join('；'), /有效邀约/);
+  assert.equal(board.actionPlans.every((item) => item.actions.length <= 3), true);
+});
+
+test('dashboard position channel board action plans follow selected channel scope', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道社招', dailyTargets: { 10: 60 } }
+  ], [
+    ...Array.from({ length: 38 }, (_, index) => ({
+      employeeNo: `QD${index}`,
+      base: '江苏基地-淮安',
+      channelType: '渠道社招',
+      trainingDate: '2026-06-09'
+    }))
+  ], '2026-06-30');
+  const matrix = buildDashboardMatrix(summary, { base: '江苏基地-淮安', channel: '渠道社招' });
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-06',
+    matrix,
+    targets: [
+      { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '渠道社招', dailyTargets: { 10: 60 } }
+    ],
+    employees: [],
+    interviews: [],
+    filters: { channel: '渠道社招' },
+    asOfDate: '2026-06-30'
+  });
+
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '江苏基地-淮安'
+  });
+
+  assert.deepEqual(board.actionPlans.map((item) => item.title), ['渠道社招提升方案']);
+  assert.match(board.actionPlans[0].diagnosis, /渠道社招整体到面不足/);
+  assert.match(board.actionPlans[0].actions[0], /6月1日 - 6月9日/);
+  assert.match(board.actionPlans[0].actions.join('；'), /RPO 供应商/);
+});
+
+test('dashboard position channel board shows healthy diagnosis when base is achieved', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '济阳基地', channel: '自主社招', dailyTargets: { 10: 10 } }
+  ], [
+    ...Array.from({ length: 8 }, (_, index) => ({
+      employeeNo: `ZY-ZZ${index}`,
+      base: '济阳基地',
+      channelType: '自主社招',
+      trainingDate: '2026-06-09'
+    })),
+    ...Array.from({ length: 4 }, (_, index) => ({
+      employeeNo: `ZY-QD${index}`,
+      base: '济阳基地',
+      channelType: '渠道社招',
+      trainingDate: '2026-06-09'
+    }))
+  ], '2026-06-30');
+  const matrix = buildDashboardMatrix(summary, { base: '济阳基地' });
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-06',
+    matrix,
+    targets: [
+      { yearMonth: '2026-06', base: '济阳基地', channel: '自主社招', dailyTargets: { 10: 10 } }
+    ],
+    employees: [],
+    interviews: [],
+    asOfDate: '2026-06-30'
+  });
+
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '济阳基地'
+  });
+
+  assert.equal(board.total.status, 'achieved');
+  assert.equal(board.healthStatus, 'healthy');
+  assert.match(board.mainRiskText, /各项环节均在健康值/);
+  assert.deepEqual(board.actionPlans.map((item) => item.title), ['基地达成健康']);
+  assert.doesNotMatch(board.actionPlans[0].diagnosis, /风险|缺口|GAP/);
+  assert.doesNotMatch(board.actionPlans[0].communicationScript, /补齐|供应商压降|风险/);
+});
+
+test('dashboard position channel board marks achieved batch as healthy even when one channel is short', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-05', base: '济南基地-济阳', channel: '内推', dailyTargets: { 26: 1 } },
+    { yearMonth: '2026-05', base: '济南基地-济阳', channel: '渠道社招', dailyTargets: { 26: 3 } },
+    { yearMonth: '2026-05', base: '济南基地-济阳', channel: '自主社招', dailyTargets: { 26: 2 } }
+  ], [
+    ...Array.from({ length: 5 }, (_, index) => ({
+      employeeNo: `HL${index}`,
+      base: '济南基地-济阳',
+      channelType: '回流',
+      trainingDate: '2026-05-20'
+    })),
+    { employeeNo: 'NT1', base: '济南基地-济阳', channelType: '内推', trainingDate: '2026-05-20' },
+    ...Array.from({ length: 3 }, (_, index) => ({
+      employeeNo: `QD${index}`,
+      base: '济南基地-济阳',
+      channelType: '渠道社招',
+      trainingDate: '2026-05-20'
+    })),
+    { employeeNo: 'ZZ1', base: '济南基地-济阳', channelType: '自主社招', trainingDate: '2026-05-20' }
+  ], '2026-05-31');
+  const matrix = buildDashboardMatrix(summary, { base: '济南基地-济阳' });
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-05',
+    matrix,
+    targets: [
+      { yearMonth: '2026-05', base: '济南基地-济阳', channel: '内推', dailyTargets: { 26: 1 } },
+      { yearMonth: '2026-05', base: '济南基地-济阳', channel: '渠道社招', dailyTargets: { 26: 3 } },
+      { yearMonth: '2026-05', base: '济南基地-济阳', channel: '自主社招', dailyTargets: { 26: 2 } }
+    ],
+    employees: [
+      ...Array.from({ length: 5 }, (_, index) => ({
+        employeeNo: `HL${index}`,
+        base: '济南基地-济阳',
+        channelType: '回流',
+        trainingDate: '2026-05-20'
+      })),
+      { employeeNo: 'NT1', base: '济南基地-济阳', channelType: '内推', trainingDate: '2026-05-20' },
+      ...Array.from({ length: 3 }, (_, index) => ({
+        employeeNo: `QD${index}`,
+        base: '济南基地-济阳',
+        channelType: '渠道社招',
+        trainingDate: '2026-05-20'
+      })),
+      { employeeNo: 'ZZ1', base: '济南基地-济阳', channelType: '自主社招', trainingDate: '2026-05-20' }
+    ],
+    interviews: [],
+    asOfDate: '2026-05-31'
+  });
+
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '济南基地-济阳',
+    selectedBatchDay: 26
+  });
+  const batch = board.batchRisks.find((item) => item.day === 26);
+
+  assert.equal(batch.target, 6);
+  assert.equal(batch.actualTraining, 10);
+  assert.equal(batch.gap, 4);
+  assert.equal(batch.status, 'achieved');
+  assert.equal(batch.statusText, '达成');
+  assert.equal(board.funnelRows.find((row) => row.channel === '自主社招').status, 'warning');
+  assert.equal(board.funnelRows.find((row) => row.channel === '自主社招').statusText, '需关注');
+  assert.equal(board.funnelRows.find((row) => row.channel === '渠道社招').status, 'achieved');
+});
+
+test('dashboard position channel board treats actual-only channels as healthy', () => {
+  const employees = [
+    ...Array.from({ length: 10 }, (_, index) => ({
+      employeeNo: `SELF${index}`,
+      base: '湖南基地-空港',
+      channelType: '自主社招',
+      trainingDate: '2026-06-09'
+    })),
+    ...Array.from({ length: 3 }, (_, index) => ({
+      employeeNo: `SOCIAL${index}`,
+      base: '湖南基地-空港',
+      channelType: '渠道社招',
+      trainingDate: '2026-06-09'
+    }))
+  ];
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '湖南基地-空港', channel: '自主社招', dailyTargets: { 10: 10 } }
+  ], employees, '2026-06-30');
+  const matrix = buildDashboardMatrix(summary, { base: '湖南基地-空港' });
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-06',
+    matrix,
+    targets: [
+      { yearMonth: '2026-06', base: '湖南基地-空港', channel: '自主社招', dailyTargets: { 10: 10 } }
+    ],
+    employees,
+    interviews: [],
+    asOfDate: '2026-06-30'
+  });
+
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '湖南基地-空港'
+  });
+  const socialChannel = board.channels.find((channel) => channel.channel === '渠道社招');
+  const socialFunnel = board.funnelRows.find((row) => row.channel === '渠道社招');
+
+  assert.equal(socialChannel.status, 'achieved');
+  assert.equal(socialChannel.statusText, '健康');
+  assert.equal(socialFunnel.status, 'achieved');
+  assert.equal(socialFunnel.statusText, '健康');
+});
+
+test('dashboard position board keeps batch overview embedded and vertical', () => {
+  const template = fs.readFileSync(
+    path.join(__dirname, '../views/pages/dashboard/partials/position-risk-board.ejs'),
+    'utf8'
+  );
+  const css = fs.readFileSync(path.join(__dirname, '../public/css/main.css'), 'utf8');
+  const script = fs.readFileSync(path.join(__dirname, '../public/js/main.js'), 'utf8');
+
+  assert.doesNotMatch(template, /批次概览已前移到上方达成卡片|批次漏斗概览已展示在上方左侧区域/);
+  assert.match(template, /batch-channel-breakdown/);
+  assert.match(template, /positionBatchPayload/);
+  assert.match(template, /data-position-batch-card/);
+  assert.match(template, /data-channel-action-grid/);
+  assert.match(template, /data-position-main-risk-text/);
+  assert.match(css, /\.embedded-batch-grid\s*{[^}]*grid-template-columns:\s*1fr/s);
+  assert.match(css, /\.batch-channel-breakdown\s*{/);
+  assert.match(css, /\.embedded-batch-grid \.batch-channel-row b\s*{[^}]*font-size:\s*12px/s);
+  assert.match(css, /\.position-goal-card,\s*\.position-diagnosis-card\s*{[^}]*height:\s*100%/s);
+  assert.match(script, /data-position-batch-card/);
+  assert.match(script, /event\.preventDefault\(\)/);
+  assert.match(script, /renderPositionBatchPanel/);
+  assert.match(script, /renderPositionBatchActionPlans/);
+  assert.match(script, /data-channel-action-grid/);
 });
 
 test('dashboard position channel board switches to base achievement overview when base is all', () => {

@@ -294,6 +294,111 @@ document.querySelectorAll('.table tbody td').forEach((cell) => {
   cell.addEventListener('mouseleave', hideOptionTooltip);
 });
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderPositionBatchActionPlans(actionPlans = []) {
+  const actionGrid = document.querySelector('[data-channel-action-grid]');
+  if (!actionGrid) {
+    return;
+  }
+
+  actionGrid.innerHTML = actionPlans.map((plan) => `
+    <article class="channel-action-card channel-action-${escapeHtml(plan.status)}">
+      <div class="channel-action-head">
+        <h3>${escapeHtml(plan.title)}</h3>
+        <span>${escapeHtml(plan.owner)} · ${escapeHtml(plan.statusText)}</span>
+      </div>
+      <em>关注：${escapeHtml(plan.focus)}</em>
+      <p>${escapeHtml(plan.diagnosis)}</p>
+      ${plan.communicationScript ? `<blockquote>${escapeHtml(plan.communicationScript)}</blockquote>` : ''}
+      <ol>
+        ${(plan.actions || []).map((action) => `<li>${escapeHtml(action)}</li>`).join('')}
+      </ol>
+    </article>
+  `).join('');
+}
+
+function renderPositionBatchPanel(batch) {
+  if (!batch) {
+    return;
+  }
+
+  renderPositionBatchFunnel(batch);
+  renderPositionBatchActionPlans(batch.actionPlans || []);
+
+  const mainRiskText = document.querySelector('[data-position-main-risk-text]');
+  if (mainRiskText && batch.mainRiskText) {
+    mainRiskText.textContent = batch.mainRiskText;
+  }
+}
+
+function renderPositionBatchFunnel(batch) {
+  const tableBody = document.querySelector('[data-funnel-diagnosis-body]');
+  if (!tableBody || !batch) {
+    return;
+  }
+
+  tableBody.innerHTML = (batch.funnelRows || []).map((row) => `
+    <tr>
+      <td><span class="channel-dot channel-dot-${escapeHtml(row.status)}" title="${escapeHtml(row.statusText)}"></span>${escapeHtml(row.channel)}</td>
+      <td><span class="position-status position-status-${escapeHtml(row.status)}">${escapeHtml(row.statusText)}</span></td>
+      <td>${escapeHtml(row.arrivedCount)}</td>
+      <td>${escapeHtml(row.passedCount)}</td>
+      <td>${escapeHtml(row.trainingCount)}</td>
+      <td>${escapeHtml(row.passRateText)}</td>
+      <td>${escapeHtml(row.trainingRateText)}</td>
+    </tr>
+  `).join('');
+
+  const selectedLabel = document.querySelector('[data-selected-batch-label]');
+  if (selectedLabel) {
+    selectedLabel.textContent = `已选择：${batch.label}`;
+  }
+}
+
+function setupPositionBatchSwitch() {
+  const payloadElement = document.getElementById('positionBatchPayload');
+  if (!payloadElement) {
+    return;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(payloadElement.textContent);
+  } catch (error) {
+    return;
+  }
+
+  const batchMap = new Map((payload.batches || []).map((batch) => [String(batch.day), batch]));
+  document.querySelectorAll('[data-position-batch-card]').forEach((card) => {
+    card.addEventListener('click', (event) => {
+      const batch = batchMap.get(String(card.dataset.batchDay));
+      if (!batch) {
+        return;
+      }
+
+      event.preventDefault();
+      document.querySelectorAll('[data-position-batch-card]').forEach((item) => {
+        item.classList.toggle('active', item === card);
+      });
+      renderPositionBatchPanel(batch);
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('selectedBatchDay', String(batch.day));
+      window.history.replaceState({}, '', url);
+    });
+  });
+}
+
+setupPositionBatchSwitch();
+
 syncClearButtons();
 
 document.addEventListener('click', () => {

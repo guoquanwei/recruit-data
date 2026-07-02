@@ -1976,3 +1976,1459 @@ _**Agent (gpt-5.5)**_
 <summary>Tool use: **read_file_v2**</summary>
 
 </details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+我会按员工导入页现在的标准扩展到招聘目标和面试记录：两者都补模板下载、字段规范说明、并排操作按钮；其中招聘目标导入会从现有目标列表页拆成独立页面和导航入口。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "in_progress"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "pending"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "pending"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "pending"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "核对现有数据导入页结构与样式",
+      "id": "context",
+      "status": "completed"
+    },
+    {
+      "content": "输出在职/离职导入卡片的 UI 结构与文案方案",
+      "id": "scheme",
+      "status": "completed"
+    }
+  ],
+  "success": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "" • **18** results in **1** directory</summary>
+
+Directory: **/Users/guo1/Desktop/recruit-data/views/pages** (18 files)
+
+| File |
+|------|
+| `employees/import.ejs` |
+| `dashboard/self-sourcing.ejs` |
+| `dashboard/base-risk.ejs` |
+| `dashboard/overview.ejs` |
+| `dashboard/partials/position-risk-board.ejs` |
+| `interviews/funnel.ejs` |
+| `interviews/list.ejs` |
+| `targets/progress.ejs` |
+| `targets/list.ejs` |
+| `employees/list.ejs` |
+| `interviews/import.ejs` |
+| `dashboard.ejs` |
+| `error.ejs` |
+| `404.ejs` |
+| `settings.ejs` |
+| `channels.ejs` |
+| `progress.ejs` |
+| `candidates.ejs` |
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="search" data-tool-name="glob_file_search"><details>
+<summary>Tool use: **glob_file_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/views/pages/interviews/import.ejs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/views/pages/targets/list.ejs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/targets/importer.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/interviews/importer.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/targets/normalize.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/interviews/normalize.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/routes/index.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Inspecting necessary imports**
+
+I need to check the target navigation and possibly add an import. The header already has target lists and progress, but I might want to add more. Plus, I'll need to import the template for the target or interview sections. Writing tests is on my list too; we can test modules instead of routes or pages. It's worth inspecting the server exports, but maybe not using supertest. I need to consider testing active names — that sounds better than testing the full app.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+现状是：招聘目标导入表单嵌在 `目标列表` 页里，面试记录已有独立导入页但没有模板和规范；两者的必填列都写在各自 importer 里。我会像员工导入一样抽出模板配置模块，让 importer 和下载模板共用字段定义。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/views/partials/header.ejs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/server.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js",
+  "pattern": "import templates|target|interview"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js",
+  "pattern": "import templates|target|interview",
+  "topFiles": [
+    {
+      "matchCount": 49,
+      "uri": "test/recruitment-admin.test.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 49
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+我会先补测试，覆盖三件事：目标/面试模板的工作表与表头、目标导入独立页面可访问、目标列表页不再承载导入表单。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm test -- --test-name-pattern "target and interview import templates|target import is rendered"</summary>
+
+```bash
+npm test -- --test-name-pattern "target and interview import templates|target import is rendered"
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test --test-name-pattern target and interview import templates|target import is rendered
+
+node:internal/modules/cjs/loader:1503
+  throw err;
+  ^
+
+Error: Cannot find module '../service/targets/importTemplate'
+Require stack:
+- /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1500:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1116:12)
+    at Module._load (node:internal/modules/cjs/loader:1285:25)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1600:12)
+    at require (node:internal/modules/helpers:153:16)
+    at Object.&lt;anonymous&gt; (/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js:9:78)
+    at Module._compile (node:internal/modules/cjs/loader:1854:14)
+    at Object..js (node:internal/modules/cjs/loader:1985:10)
+    at Module.load (node:internal/modules/cjs/loader:1577:32)
+    at Module._load (node:internal/modules/cjs/loader:1379:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js' ]
+}
+
+Node.js v24.17.0
+✖ test/recruitment-admin.test.js (443.373065ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 502.918724
+
+✖ failing tests:
+
+test at test/recruitment-admin.test.js:1:1
+✖ test/recruitment-admin.test.js (443.373065ms)
+  'test failed'
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+新增测试已按预期失败在缺少目标/面试模板模块。现在开始实现模板模块、下载路由和页面拆分。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "completed"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "completed"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "in_progress"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "pending"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "in_progress"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "pending"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "pending"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "pending"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering template imports**
+
+I need to add the target importTemplate and the interview importTemplate. I want to ensure it spans from the 1st to the 31st of the month. Maybe I could include a sample row to illustrate it better. I should also use ApplyPatch for each file to process the updates. It's all about making sure everything integrates smoothly, so I’m thinking through these steps carefully!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+模板内容会对齐现有校验：招聘目标工作表固定为「整体目标」，面试记录模板使用「面试记录」工作表但导入仍读取第一个 sheet，避免破坏现有上传兼容性。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/targets/importTemplate.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+招聘目标模板模块已添加，接下来补面试记录模板模块。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/interviews/importTemplate.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+现在把目标和面试 importer 里的必填列改为复用模板模块，确保下载模板与导入校验同源。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/targets/importer.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/interviews/importer.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+接着补路由：目标导入会有独立 GET 页面，目标导入提交后的结果也回到这个页面；目标和面试都增加模板下载地址。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/routes/index.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Adding navigation**
+
+I'm thinking I need to add a navigation element to the header. This is crucial because it can enhance user experience by helping people find their way around more easily. I wonder what the best design for this nav would be—maybe it should include links to the most important sections of the site? I'm curious about how to format it visually to keep it intuitive for the user. Let's explore the design options!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+路由已补上，下面把需求管理导航加入“招聘目标导入”，并把目标列表里的内嵌导入表单移除、替换成入口按钮。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/views/partials/header.ejs</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Modifying target list**
+
+I'm looking at the target list and thinking about how I need to remove the import section. It seems like it might be cluttering things up. At the same time, I want to add a button to improve the functionality or user experience. So, I'll focus on making those adjustments while ensuring everything aligns well. It's exciting to refine it, and I hope this will help enhance the overall design!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/views/pages/targets/list.ejs</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+接下来新增招聘目标导入页，页面结构会完全对齐现有导入标准：说明、文件选择、导入/下载并排、字段规范说明。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/views/pages/targets/import.ejs</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+目标导入页已独立出来。现在改造面试记录导入页，保留导入模式选择，并加入模板下载按钮和字段规范说明。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/views/pages/interviews/import.ejs</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Planning updates and tests**
+
+I need to update something, and then I’ll run some tests. I think they might fail due to the database; it seems like a likely issue. Also, I should consider looking into a potential test pattern. There seems to be a lot to keep track of, but I want to make sure everything is sorted out properly! Let's see what happens when I get started on that.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+页面改造已完成。我会运行刚才新增的测试，先看模板与独立页面是否都满足预期。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "completed"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "completed"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "completed"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "in_progress"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "completed"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "completed"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "in_progress"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "pending"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm test -- --test-name-pattern "target and interview import templates|target import is rendered"</summary>
+
+```bash
+npm test -- --test-name-pattern "target and interview import templates|target import is rendered"
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test --test-name-pattern target and interview import templates|target import is rendered
+
+✔ target and interview import templates match required sheets and columns (6.424781ms)
+✔ target import is rendered on its own page (637.626648ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1438.331251
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+新增测试已通过。接下来做编辑文件诊断和全量测试，确认目标列表、导航、面试导入和既有导入逻辑没有回归。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/guo1/Desktop/recruit-data/service/targets/importTemplate.js",
+    "/Users/guo1/Desktop/recruit-data/service/interviews/importTemplate.js",
+    "/Users/guo1/Desktop/recruit-data/service/targets/importer.js",
+    "/Users/guo1/Desktop/recruit-data/service/interviews/importer.js",
+    "/Users/guo1/Desktop/recruit-data/routes/index.js",
+    "/Users/guo1/Desktop/recruit-data/views/pages/targets/import.ejs",
+    "/Users/guo1/Desktop/recruit-data/views/pages/targets/list.ejs",
+    "/Users/guo1/Desktop/recruit-data/views/pages/interviews/import.ejs",
+    "/Users/guo1/Desktop/recruit-data/views/partials/header.ejs",
+    "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/targets/importTemplate.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/interviews/importTemplate.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/targets/importer.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/interviews/importer.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/routes/index.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/views/pages/targets/import.ejs"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/views/pages/targets/list.ejs"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/views/pages/interviews/import.ejs"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/views/partials/header.ejs"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm test</summary>
+
+```bash
+npm test
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test
+
+✔ shared formatting masks phone numbers and parses pagination defaults (2.706729ms)
+✔ excel helper keeps duplicate headers addressable like spreadsheet tools (0.25523ms)
+✔ employee import templates match required sheet names and column headers (2.39925ms)
+✔ target and interview import templates match required sheets and columns (2.168662ms)
+✔ target import is rendered on its own page (651.823922ms)
+✔ csv export escapes values and includes utf8 bom (0.595164ms)
+✔ employee normalization maps active and resigned source columns to one model (0.784882ms)
+✔ talent development department base uses third-level department (0.203319ms)
+✔ frontline base maps special office locations to business target names (0.294375ms)
+✔ employee filters support single-select enums and fuzzy channel names (0.49294ms)
+✔ employee base filter options hide ignored and raw department paths (0.308332ms)
+✔ recruiter role requires talent development department and recruitment position (0.241408ms)
+✔ target progress sums cutoff targets and actuals through cutoff date (0.373328ms)
+✔ target progress default cutoff uses today for current month and month end for past month (0.155987ms)
+✔ target plan summary calculates channel shares (0.441849ms)
+✔ target plan summary uses month breakdown when month is all (0.327502ms)
+✔ target filter options use bases from selected month only (0.234525ms)
+✔ target progress summary exposes self sourcing actual share (1.630399ms)
+✔ target progress includes actual-only base channel combinations (0.509416ms)
+✔ target progress summary follows base filter (0.630364ms)
+✔ dashboard training details follow base filter (0.44925ms)
+✔ dashboard matrix exposes base channel status cells (0.791497ms)
+✔ dashboard batch drilldown groups funnel by batch feedback window (1.197649ms)
+✔ dashboard batch drilldown diagnoses gap by funnel stage (0.621521ms)
+✔ dashboard batch matrix uses base channel rows and batch columns (3.328663ms)
+✔ dashboard funnel diagnosis excludes return and campus channels (7.403466ms)
+✔ dashboard position channel board summarizes one base across channels and batches (1.181835ms)
+✔ dashboard position channel board switches to base achievement overview when base is all (1.68676ms)
+✔ dashboard overview insights expose executive cards, channel shares and vendor top three (2.156899ms)
+✔ dashboard overview base achievements sort by achievement rate and keep actual-only bases last (0.503426ms)
+✔ dashboard overview tab normalizes unknown tab to overview (0.159224ms)
+✔ self sourcing efficiency uses monthly active recruiter scale by stage (1.202626ms)
+✔ self sourcing efficiency follows recruiter filter (0.531922ms)
+✔ self sourcing details expose recruiter options and support recruiter filter (0.407862ms)
+✔ self sourcing recruiter rows summarize months through selected month (2.890325ms)
+✔ self sourcing recruiter rows include current month funnel diagnosis (0.576246ms)
+✔ self sourcing risk status follows seven day achievement rate (0.743507ms)
+✔ interview normalization resolves feedback dates for daily overwrite (0.392358ms)
+✔ interview position name infers base (0.111557ms)
+✔ interview filters use cleaned funnel dimensions (0.233204ms)
+✔ interview funnel rows use cleaned dimensions (0.334044ms)
+✔ monthly interview funnel uses monthly employee training totals by base (0.421277ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 42
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1332.74444
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Figuring out git diff focus**
+
+I need to focus on using git diff more effectively. Maybe I should narrow down what I'm comparing to get clearer insights into changes. I'll think about what specifically I want to examine: is it file changes, line additions or deletions, or something else? By honing in on these details, I can make sure I'm not overwhelmed by unnecessary information. Alright, let’s see how to streamline this!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+全量测试和诊断都通过了。我再核对一次本轮 diff，确认只涉及导入模板、导入页面、导航和测试。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff -- views/pages/targets/import.ejs views/pages/targets/list.ejs views/pages/interviews/import.ejs views/partials/header.ejs routes/index.js service/targets/importTemplate.js service/interviews/importTemplate.js service/targets/importer.js service/interviews/importer.js test/recruitment-admin.test.js</summary>
+
+```bash
+git diff -- views/pages/targets/import.ejs views/pages/targets/list.ejs views/pages/interviews/import.ejs views/partials/header.ejs routes/index.js service/targets/importTemplate.js service/interviews/importTemplate.js service/targets/importer.js service/interviews/importer.js test/recruitment-admin.test.js
+```
+
+```
+diff --git a/routes/index.js b/routes/index.js
+index f4574e1..d83cc4c 100644
+--- a/routes/index.js
++++ b/routes/index.js
+@@ -5,12 +5,15 @@ const multer = require('multer');
+ 
+ const runtime = require('../config/runtime');
+ const { importActiveEmployees, importResignedEmployees } = require('../service/employees/importer');
++const { buildEmployeeImportTemplateWorkbook, getEmployeeImportTemplateConfig } = require('../service/employees/importTemplate');
+ const { getEmployeeExportRows, getEmployeeList } = require('../service/employees/service');
+ const { sendCsv } = require('../service/export/csv');
+ const { importInterviewRecords } = require('../service/interviews/importer');
++const { buildInterviewImportTemplateWorkbook, getInterviewImportTemplateConfig } = require('../service/interviews/importTemplate');
+ const { getInterviewExportRows, getInterviewFunnel, getInterviewList } = require('../service/interviews/service');
+ const { getDashboardOverview } = require('../service/dashboard/service');
+ const { importMonthlyTargets } = require('../service/targets/importer');
++const { buildTargetImportTemplateWorkbook, getTargetImportTemplateConfig } = require('../service/targets/importTemplate');
+ const { getTargetExportRows, getTargetList, getTargetProgress } = require('../service/targets/service');
+ 
+ const router = express.Router();
+@@ -50,6 +53,15 @@ function cleanupUploadedFile(file) {
+   });
+ }
+ 
++async function sendWorkbookTemplate(res, config, workbook) {
++  const buffer = await workbook.xlsx.writeBuffer();
++  const encodedFilename = encodeURIComponent(config.filename);
++
++  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
++  res.setHeader('Content-Disposition', &#96;attachment; filename*=UTF-8''${encodedFilename}&#96;);
++  res.send(Buffer.from(buffer));
++}
++
+ function employeeExportColumns(frontline = false) {
+   const columns = [
+     { header: '工号', value: (row) =&gt; row.employeeNo },
+@@ -117,6 +129,12 @@ router.get('/employees/import', (req, res) =&gt; {
+   });
+ });
+ 
++router.get('/employees/import/template/:type', async (req, res) =&gt; {
++  const config = getEmployeeImportTemplateConfig(req.params.type);
++  const workbook = buildEmployeeImportTemplateWorkbook(req.params.type);
++  await sendWorkbookTemplate(res, config, workbook);
++});
++
+ router.post('/employees/import', upload.single('file'), async (req, res) =&gt; {
+   if (!req.file) {
+     res.redirect('/employees/import?error=请选择要导入的文件');
+@@ -162,12 +180,26 @@ router.get('/employees/frontline/export', (req, res) =&gt; {
+ 
+ router.post('/targets/import', upload.single('file'), async (req, res) =&gt; {
+   if (!req.file) {
+-    res.redirect('/targets?error=请选择要导入的文件');
++    res.redirect('/targets/import?error=请选择要导入的文件');
+     return;
+   }
+   const result = await importMonthlyTargets(req.file.path);
+   cleanupUploadedFile(req.file);
+-  redirectWithResult(res, '/targets', result);
++  redirectWithResult(res, '/targets/import', result);
++});
++
++router.get('/targets/import', (req, res) =&gt; {
++  renderPage(res, 'pages/targets/import', {
++    active: 'targets-import',
++    moduleActive: 'targets',
++    pageTitle: '招聘目标导入',
++    notice: req.query.notice,
++    error: req.query.error
++  });
++});
++
++router.get('/targets/import/template', async (req, res) =&gt; {
++  await sendWorkbookTemplate(res, getTargetImportTemplateConfig(), buildTargetImportTemplateWorkbook());
+ });
+ 
+ router.get('/targets', (req, res) =&gt; {
+@@ -204,6 +236,10 @@ router.get('/interviews/import', (req, res) =&gt; {
+   });
+ });
+ 
++router.get('/interviews/import/template', async (req, res) =&gt; {
++  await sendWorkbookTemplate(res, getInterviewImportTemplateConfig(), buildInterviewImportTemplateWorkbook());
++});
++
+ router.post('/interviews/import', upload.single('file'), async (req, res) =&gt; {
+   if (!req.file) {
+     res.redirect('/interviews/import?error=请选择要导入的文件');
+diff --git a/service/interviews/importer.js b/service/interviews/importer.js
+index 7333c1f..cac8032 100644
+--- a/service/interviews/importer.js
++++ b/service/interviews/importer.js
+@@ -2,11 +2,10 @@ const path = require('node:path');
+ 
+ const { readValidatedRecords } = require('../imports/excel');
+ const { runImportTransaction } = require('../imports/transactions');
++const { REQUIRED_COLUMNS } = require('./importTemplate');
+ const { normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('./normalize');
+ const { insertInterviewRecords, replaceAllInterviewRecords, replaceInterviewRecordsByDates } = require('./repository');
+ 
+-const REQUIRED_COLUMNS = ['职位名称', '候选人名称', '电话', '面试官填写反馈时间', '面试官反馈结果', '面试官', '猎头公司标签'];
+-
+ async function readInterviewRecords(filePath) {
+   return readValidatedRecords({
+     filePath,
+diff --git a/service/targets/importer.js b/service/targets/importer.js
+index 52c0da5..cda4d5a 100644
+--- a/service/targets/importer.js
++++ b/service/targets/importer.js
+@@ -2,11 +2,10 @@ const path = require('node:path');
+ 
+ const { readValidatedRecords } = require('../imports/excel');
+ const { runImportTransaction } = require('../imports/transactions');
++const { REQUIRED_COLUMNS } = require('./importTemplate');
+ const { normalizeTargetRecord } = require('./normalize');
+ const { replaceTargetsByMonth } = require('./repository');
+ 
+-const REQUIRED_COLUMNS = ['年月份', '基地', '渠道', '招聘订单类型', '7天留存率目标', '15天留存率目标', '30天留存率目标', '招聘目标'];
+-
+ async function importMonthlyTargets(filePath) {
+   const records = (await readValidatedRecords({
+     filePath,
+diff --git a/test/recruitment-admin.test.js b/test/recruitment-admin.test.js
+index a560229..f2851aa 100644
+--- a/test/recruitment-admin.test.js
++++ b/test/recruitment-admin.test.js
+@@ -1,8 +1,13 @@
+ const assert = require('node:assert/strict');
++const http = require('node:http');
+ const test = require('node:test');
+ 
++const { createApp } = require('../server');
+ const { makeUniqueHeaders } = require('../service/imports/excel');
+ const { buildCsv } = require('../service/export/csv');
++const { getEmployeeImportTemplateConfig, buildEmployeeImportTemplateWorkbook } = require('../service/employees/importTemplate');
++const { getTargetImportTemplateConfig, buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
++const { getInterviewImportTemplateConfig, buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
+ const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
+ const { buildInterviewFilters } = require('../service/interviews/repository');
+ const { formatDistinctTargetFilterOptions } = require('../service/targets/repository');
+@@ -14,6 +19,21 @@ const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOvervi
+ const { inferInterviewBase, normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('../service/interviews/normalize');
+ const { buildFunnelRows, buildMonthlyFunnelRows } = require('../service/interviews/service');
+ 
++async function requestApp(pathName) {
++  const app = createApp();
++  const server = http.createServer(app);
++  await new Promise((resolve) =&gt; server.listen(0, resolve));
++  const { port } = server.address();
++
++  try {
++    const response = await fetch(&#96;http://127.0.0.1:${port}${pathName}&#96;);
++    const text = await response.text();
++    return { response, text };
++  } finally {
++    await new Promise((resolve) =&gt; server.close(resolve));
++  }
++}
++
+ test('shared formatting masks phone numbers and parses pagination defaults', () =&gt; {
+   assert.equal(maskPhone('13915993720'), '139****3720');
+   assert.equal(maskPhone(''), '');
+@@ -29,6 +49,85 @@ test('excel helper keeps duplicate headers addressable like spreadsheet tools',
+   );
+ });
+ 
++test('employee import templates match required sheet names and column headers', async () =&gt; {
++  const activeConfig = getEmployeeImportTemplateConfig('active');
++  assert.equal(activeConfig.sheetName, '在职员工信息');
++  assert.deepEqual(activeConfig.headers.slice(0, 10), [
++    '工号',
++    '姓名',
++    '入培时间',
++    '手机号码',
++    '招聘渠道',
++    '渠道名称',
++    '办公地点',
++    '部门',
++    '职位',
++    '员工状态'
++  ]);
++
++  const resignedConfig = getEmployeeImportTemplateConfig('resigned');
++  assert.equal(resignedConfig.sheetName, '离职员工信息');
++  assert.deepEqual(resignedConfig.headers.slice(0, 10), [
++    '工号',
++    '姓名',
++    '入培时间',
++    '手机号码',
++    '招聘渠道',
++    '渠道名称',
++    '办公地点',
++    '离职前部门',
++    '离职前职位',
++    '离职日期'
++  ]);
++
++  const workbook = buildEmployeeImportTemplateWorkbook('resigned');
++  const sheet = workbook.getWorksheet('离职员工信息');
++  assert.ok(sheet);
++  assert.equal(sheet.getRow(1).getCell(1).value, '工号');
++  assert.equal(sheet.getRow(2).getCell(10).value, '2026-06-30');
++});
++
++test('target and interview import templates match required sheets and columns', () =&gt; {
++  const targetConfig = getTargetImportTemplateConfig();
++  assert.equal(targetConfig.sheetName, '整体目标');
++  assert.deepEqual(targetConfig.headers.slice(0, 8), [
++    '年月份',
++    '基地',
++    '渠道',
++    '招聘订单类型',
++    '7天留存率目标',
++    '15天留存率目标',
++    '30天留存率目标',
++    '招聘目标'
++  ]);
++  assert.equal(buildTargetImportTemplateWorkbook().getWorksheet('整体目标').getRow(2).getCell(1).value, '2026-06');
++
++  const interviewConfig = getInterviewImportTemplateConfig();
++  assert.equal(interviewConfig.sheetName, '面试记录');
++  assert.deepEqual(interviewConfig.headers.slice(0, 7), [
++    '职位名称',
++    '候选人名称',
++    '电话',
++    '面试官填写反馈时间',
++    '面试官反馈结果',
++    '面试官',
++    '猎头公司标签'
++  ]);
++  assert.equal(buildInterviewImportTemplateWorkbook().getWorksheet('面试记录').getRow(2).getCell(4).value, '2026-06-01');
++});
++
++test('target import is rendered on its own page', async () =&gt; {
++  const importPage = await requestApp('/targets/import');
++  assert.equal(importPage.response.status, 200);
++  assert.match(importPage.text, /招聘目标导入/);
++  assert.match(importPage.text, /下载 Excel 模板/);
++  assert.match(importPage.text, /字段规范说明/);
++
++  const listPage = await requestApp('/targets');
++  assert.doesNotMatch(listPage.text, /导入月度招聘目标 Excel/);
++  assert.match(listPage.text, /href="\/targets\/import"/);
++});
++
+ test('csv export escapes values and includes utf8 bom', () =&gt; {
+   const csv = buildCsv([
+     { header: '姓名', value: (row) =&gt; row.name },
+diff --git a/views/pages/interviews/import.ejs b/views/pages/interviews/import.ejs
+index bca8fbf..952a2c1 100644
+--- a/views/pages/interviews/import.ejs
++++ b/views/pages/interviews/import.ejs
+@@ -4,10 +4,14 @@
+ &lt;% if (error) { %&gt;&lt;div class="alert alert-danger"&gt;&lt;%= error %&gt;&lt;/div&gt;&lt;% } %&gt;
+ 
+ &lt;section class="import-card"&gt;
+-  &lt;h2 class="h5 mb-3"&gt;面试记录导入&lt;/h2&gt;
+-  &lt;p class="text-muted small"&gt;支持历史全量覆盖、按日追加、按日覆盖。按日覆盖以 &#96;面试官填写反馈时间&#96; 为覆盖范围。&lt;/p&gt;
++  &lt;div class="import-card-head"&gt;
++    &lt;div&gt;
++      &lt;h2 class="h5 mb-1"&gt;面试记录导入&lt;/h2&gt;
++      &lt;p class="text-muted small mb-0"&gt;支持历史全量覆盖、按日追加、按日覆盖。按日覆盖以「面试官填写反馈时间」为覆盖范围。&lt;/p&gt;
++    &lt;/div&gt;
++  &lt;/div&gt;
+   &lt;form action="/interviews/import" method="post" enctype="multipart/form-data"&gt;
+-    &lt;div class="row g-3 align-items-end"&gt;
++    &lt;div class="row g-3"&gt;
+       &lt;div class="col-md-4"&gt;
+         &lt;label class="form-label"&gt;导入模式&lt;/label&gt;
+         &lt;select class="form-select" name="mode"&gt;
+@@ -20,11 +24,29 @@
+         &lt;label class="form-label"&gt;选择 Excel 文件&lt;/label&gt;
+         &lt;input class="form-control" type="file" name="file" accept=".xlsx,.xls" required&gt;
+       &lt;/div&gt;
+-      &lt;div class="col-md-2"&gt;
+-        &lt;button class="btn btn-primary w-100" type="submit"&gt;导入&lt;/button&gt;
+-      &lt;/div&gt;
++    &lt;/div&gt;
++    &lt;div class="import-action-row mt-3"&gt;
++      &lt;button class="btn btn-primary" type="submit"&gt;导入面试记录&lt;/button&gt;
++      &lt;a class="btn btn-outline-primary" href="/interviews/import/template"&gt;下载 Excel 模板&lt;/a&gt;
+     &lt;/div&gt;
+   &lt;/form&gt;
++  &lt;div class="import-field-guide"&gt;
++    &lt;h3&gt;字段规范说明&lt;/h3&gt;
++    &lt;dl&gt;
++      &lt;dt&gt;工作表名称&lt;/dt&gt;
++      &lt;dd&gt;建议使用「面试记录」；系统读取第一个工作表。&lt;/dd&gt;
++      &lt;dt&gt;必填列&lt;/dt&gt;
++      &lt;dd&gt;&lt;span class="required-columns"&gt;职位名称、候选人名称、电话、面试官填写反馈时间、面试官反馈结果、面试官、猎头公司标签&lt;/span&gt;&lt;/dd&gt;
++      &lt;dt&gt;字段格式&lt;/dt&gt;
++      &lt;dd&gt;面试官填写反馈时间使用 YYYY-MM-DD，例如 2026-06-01；电话建议设置为文本格式，禁止科学计数法。&lt;/dd&gt;
++      &lt;dt&gt;导入模式&lt;/dt&gt;
++      &lt;dd&gt;按日追加保留历史数据；按日覆盖按反馈日期覆盖；历史全量覆盖会替换全部面试记录。&lt;/dd&gt;
++      &lt;dt&gt;校验规则&lt;/dt&gt;
++      &lt;dd&gt;必填列禁止空值；表头必须在第 1 行，禁止改名、合并单元格、换行或添加特殊符号。&lt;/dd&gt;
++      &lt;dt&gt;可选列&lt;/dt&gt;
++      &lt;dd&gt;性别、猎头合约名称、内推人、综合评价。&lt;/dd&gt;
++    &lt;/dl&gt;
++  &lt;/div&gt;
+ &lt;/section&gt;
+ 
+ &lt;%- include('../../partials/footer') %&gt;
+diff --git a/views/pages/targets/list.ejs b/views/pages/targets/list.ejs
+index 138f46f..97cc9a2 100644
+--- a/views/pages/targets/list.ejs
++++ b/views/pages/targets/list.ejs
+@@ -85,18 +85,6 @@
+   &lt;/div&gt;
+ &lt;/section&gt;
+ 
+-&lt;section class="import-card"&gt;
+-  &lt;form class="row g-2 align-items-end" action="/targets/import" method="post" enctype="multipart/form-data"&gt;
+-    &lt;div class="col-md-8"&gt;
+-      &lt;label class="form-label"&gt;导入月度招聘目标 Excel&lt;/label&gt;
+-      &lt;input class="form-control" type="file" name="file" accept=".xlsx,.xls" required&gt;
+-    &lt;/div&gt;
+-    &lt;div class="col-md-4"&gt;
+-      &lt;button class="btn btn-primary" type="submit"&gt;按月覆盖导入&lt;/button&gt;
+-    &lt;/div&gt;
+-  &lt;/form&gt;
+-&lt;/section&gt;
+-
+ &lt;section class="table-card"&gt;
+   &lt;%
+     const targetExportParams = new URLSearchParams();
+@@ -107,6 +95,7 @@
+   &lt;div class="table-actions"&gt;
+     &lt;h2 class="h5 mb-0"&gt;目标列表&lt;/h2&gt;
+     &lt;div class="table-action-buttons"&gt;
++      &lt;a class="btn btn-sm btn-outline-primary" href="/targets/import"&gt;导入招聘目标&lt;/a&gt;
+       &lt;a class="btn btn-sm btn-outline-secondary" href="&lt;%= &#96;/targets/export?${targetExportParams.toString()}&#96; %&gt;"&gt;导出&lt;/a&gt;
+       &lt;a class="btn btn-sm btn-outline-primary" href="/targets/progress"&gt;查看达成进度&lt;/a&gt;
+     &lt;/div&gt;
+diff --git a/views/partials/header.ejs b/views/partials/header.ejs
+index d90ac1a..55a4f4c 100644
+--- a/views/partials/header.ejs
++++ b/views/partials/header.ejs
+@@ -53,6 +53,7 @@
+           &lt;/section&gt;
+           &lt;section class="nav-group &lt;%= moduleActive === 'targets' ? 'open' : '' %&gt;"&gt;
+             &lt;div class="nav-group-title"&gt;需求管理&lt;/div&gt;
++            &lt;a class="&lt;%= active === 'targets-import' ? 'active' : '' %&gt;" href="/targets/import" title="招聘目标导入"&gt;&lt;%- navIcon('upload') %&gt;&lt;span class="nav-label"&gt;招聘目标导入&lt;/span&gt;&lt;/a&gt;
+             &lt;a class="&lt;%= active === 'targets-list' ? 'active' : '' %&gt;" href="/targets" title="目标列表"&gt;&lt;%- navIcon('list') %&gt;&lt;span class="nav-label"&gt;目标列表&lt;/span&gt;&lt;/a&gt;
+             &lt;a class="&lt;%= active === 'targets-progress' ? 'active' : '' %&gt;" href="/targets/progress" title="目标达成进度"&gt;&lt;%- navIcon('target') %&gt;&lt;span class="nav-label"&gt;目标达成进度&lt;/span&gt;&lt;/a&gt;
+           &lt;/section&gt;
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+
+```
+ M .specstory/statistics.json
+ M public/css/main.css
+ M routes/index.js
+ M service/employees/importer.js
+ M service/interviews/importer.js
+ M service/targets/importer.js
+ M test/recruitment-admin.test.js
+ M views/pages/employees/import.ejs
+ M views/pages/interviews/import.ejs
+ M views/pages/targets/list.ejs
+ M views/partials/header.ejs
+?? .specstory/history/2026-07-02_04-51-18Z-data-import-ui-improvements.md
+?? service/employees/importTemplate.js
+?? service/interviews/importTemplate.js
+?? service/targets/importTemplate.js
+?? views/pages/targets/import.ejs
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Reviewing git diff behavior**
+
+I see that the git diff command doesn't include content from new files because they are untracked by default. It seems I don't need to worry about that right now. I’ll just focus on making my final output concise and include tests. Though, I might want to mention existing untracked files, even if they're not included. I also need to take note of any prior employee changes and make sure to complete my to-do tasks.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "completed"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "completed"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "completed"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "completed"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "核对招聘目标与面试记录导入现有路由、模板和字段校验",
+      "id": "inspect",
+      "status": "completed"
+    },
+    {
+      "content": "先补模板配置与页面路由相关测试并确认失败",
+      "id": "tests",
+      "status": "completed"
+    },
+    {
+      "content": "实现招聘目标与面试记录 Excel 模板生成和下载路由",
+      "id": "templates",
+      "status": "completed"
+    },
+    {
+      "content": "拆出招聘目标导入页并改造面试记录导入页 UI",
+      "id": "pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行 lints 与全量测试验证",
+      "id": "verify",
+      "status": "in_progress"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+已按员工导入页标准同步改完：
+
+- 新增独立 `招聘目标导入` 页面：`/targets/import`，并在左侧“需求管理”导航加入入口。
+- `目标列表` 页移除了内嵌导入表单，只保留“导入招聘目标”入口按钮。
+- 招聘目标、面试记录导入页都已补齐：文件选择、`导入` + `下载 Excel 模板` 并排按钮、字段规范说明。
+- 新增模板下载：
+  - `/targets/import/template`
+  - `/interviews/import/template`
+- 新增 `service/targets/importTemplate.js`、`service/interviews/importTemplate.js`，并让 importer 复用模板里的必填列定义，避免模板和导入校验不一致。
+- 补了测试覆盖模板字段和招聘目标独立导入页。
+
+验证：
+- `ReadLints` 无错误
+- `npm test` 通过，42 个测试全部通过
