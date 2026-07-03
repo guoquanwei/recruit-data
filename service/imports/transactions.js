@@ -1,7 +1,7 @@
-const { getDatabase } = require('../../dao/db');
+const { queryOne, withTransaction } = require('../../dao/db');
 
-function createImportBatch(database, batch) {
-  const result = database.prepare(`
+async function createImportBatch(database, batch) {
+  const result = await database.query(`
     INSERT INTO import_batches (
       source_type,
       import_mode,
@@ -11,8 +11,9 @@ function createImportBatch(database, batch) {
       success_count,
       failure_count,
       error_summary
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id
+  `, [
     batch.sourceType,
     batch.importMode,
     batch.scope || '',
@@ -21,42 +22,55 @@ function createImportBatch(database, batch) {
     batch.successCount || 0,
     batch.failureCount || 0,
     batch.errorSummary || ''
-  );
+  ]);
 
-  return result.lastInsertRowid;
+  return result.rows[0].id;
 }
 
-function runImportTransaction(batch, operation) {
-  const database = getDatabase();
-
+async function runImportTransaction(batch, operation) {
   try {
-    database.exec('BEGIN');
-    const result = operation(database);
-    const successCount = result.successCount ?? result.count ?? 0;
-    const batchId = createImportBatch(database, {
-      ...batch,
-      status: 'success',
-      successCount,
-      failureCount: 0
-    });
-    database.exec('COMMIT');
+    return await withTransaction(async (database) => {
+      const result = await operation(database);
+      const successCount = result.successCount ?? result.count ?? 0;
+      const batchId = await createImportBatch(database, {
+        ...batch,
+        status: 'success',
+        successCount,
+        failureCount: 0
+      });
 
-    return {
-      ...result,
-      batchId,
-      successCount,
-      failureCount: 0,
-      status: 'success'
-    };
-  } catch (error) {
-    database.exec('ROLLBACK');
-    const batchId = createImportBatch(database, {
-      ...batch,
-      status: 'failed',
-      successCount: 0,
-      failureCount: 1,
-      errorSummary: error.message
+      return {
+        ...result,
+        batchId,
+        successCount,
+        failureCount: 0,
+        status: 'success'
+      };
     });
+  } catch (error) {
+    const row = await queryOne(`
+      INSERT INTO import_batches (
+        source_type,
+        import_mode,
+        scope,
+        file_name,
+        status,
+        success_count,
+        failure_count,
+        error_summary
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [
+      batch.sourceType,
+      batch.importMode,
+      batch.scope || '',
+      batch.fileName || '',
+      'failed',
+      0,
+      1,
+      error.message
+    ]);
+    const batchId = row.id;
 
     return {
       batchId,

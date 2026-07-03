@@ -1,10 +1,10 @@
-const { getDatabase } = require('../../dao/db');
+const { queryAll, queryOne } = require('../../dao/db');
 const { toText } = require('../shared/format');
 
-function replaceTargetsByMonth(database, yearMonth, targets) {
-  database.prepare('DELETE FROM recruitment_targets WHERE year_month = ?').run(yearMonth);
+async function replaceTargetsByMonth(database, yearMonth, targets) {
+  await database.query('DELETE FROM recruitment_targets WHERE year_month = $1', [yearMonth]);
 
-  const statement = database.prepare(`
+  const sql = `
     INSERT INTO recruitment_targets (
       year_month,
       base,
@@ -15,11 +15,11 @@ function replaceTargetsByMonth(database, yearMonth, targets) {
       retention_30_rate,
       monthly_target,
       day_targets_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  `;
 
-  targets.forEach((target) => {
-    statement.run(
+  for (const target of targets) {
+    await database.query(sql, [
       target.yearMonth,
       target.base,
       target.channel,
@@ -29,8 +29,8 @@ function replaceTargetsByMonth(database, yearMonth, targets) {
       target.retention30Rate,
       target.monthlyTarget,
       JSON.stringify(target.dailyTargets)
-    );
-  });
+    ]);
+  }
 
   return targets.length;
 }
@@ -52,23 +52,24 @@ function fromDatabaseRow(row) {
 
 function buildTargetFilters(filters = {}) {
   const where = [];
-  const params = {};
+  const params = [];
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
 
   if (filters.yearMonth) {
-    where.push('year_month = @yearMonth');
-    params.yearMonth = filters.yearMonth;
+    where.push(`year_month = ${addParam(filters.yearMonth)}`);
   }
   if (filters.base) {
-    where.push('base = @base');
-    params.base = filters.base;
+    where.push(`base = ${addParam(filters.base)}`);
   }
   if (filters.channel) {
-    where.push('channel = @channel');
-    params.channel = filters.channel;
+    where.push(`channel = ${addParam(filters.channel)}`);
   }
   if (filters.keyword) {
-    where.push('(base LIKE @keyword OR channel LIKE @keyword OR order_type LIKE @keyword)');
-    params.keyword = `%${filters.keyword}%`;
+    const keyword = addParam(`%${filters.keyword}%`);
+    where.push(`(base LIKE ${keyword} OR channel LIKE ${keyword} OR order_type LIKE ${keyword})`);
   }
 
   return {
@@ -77,57 +78,52 @@ function buildTargetFilters(filters = {}) {
   };
 }
 
-function listTargets({ filters = {}, page }) {
-  const database = getDatabase();
+async function listTargets({ filters = {}, page }) {
   const { whereSql, params } = buildTargetFilters(filters);
-  const total = database.prepare(`SELECT COUNT(*) AS total FROM recruitment_targets ${whereSql}`).get(params).total;
-  const rows = database.prepare(`
+  const total = await queryOne(`SELECT COUNT(*)::int AS total FROM recruitment_targets ${whereSql}`, params);
+  const rows = await queryAll(`
     SELECT *
     FROM recruitment_targets
     ${whereSql}
     ORDER BY year_month DESC, base ASC, channel ASC
-    LIMIT @limit OFFSET @offset
-  `).all({
-    ...params,
-    limit: page.limit,
-    offset: page.offset
-  });
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `, [...params, page.limit, page.offset]);
 
   return {
-    total,
+    total: total.total,
     rows: rows.map(fromDatabaseRow)
   };
 }
 
-function listTargetsByMonth(yearMonth) {
-  const database = getDatabase();
-  return database.prepare(`
+async function listTargetsByMonth(yearMonth) {
+  const rows = await queryAll(`
     SELECT *
     FROM recruitment_targets
-    WHERE year_month = ?
+    WHERE year_month = $1
     ORDER BY base ASC, channel ASC
-  `).all(yearMonth).map(fromDatabaseRow);
+  `, [yearMonth]);
+  return rows.map(fromDatabaseRow);
 }
 
-function listTargetsForSummary(filters = {}) {
-  const database = getDatabase();
+async function listTargetsForSummary(filters = {}) {
   const { whereSql, params } = buildTargetFilters(filters);
 
-  return database.prepare(`
+  const rows = await queryAll(`
     SELECT *
     FROM recruitment_targets
     ${whereSql}
     ORDER BY year_month DESC, base ASC, channel ASC
-  `).all(params).map(fromDatabaseRow);
+  `, params);
+  return rows.map(fromDatabaseRow);
 }
 
-function getAvailableMonths() {
-  const database = getDatabase();
-  return database.prepare(`
+async function getAvailableMonths() {
+  const rows = await queryAll(`
     SELECT DISTINCT year_month AS yearMonth
     FROM recruitment_targets
     ORDER BY year_month DESC
-  `).all().map((row) => row.yearMonth);
+  `);
+  return rows.map((row) => row.yearmonth);
 }
 
 function uniqueSorted(values) {
@@ -148,13 +144,12 @@ function formatDistinctTargetFilterOptions(targets = [], filters = {}) {
   };
 }
 
-function getDistinctTargetFilterOptions(filters = {}) {
-  const database = getDatabase();
-  const targets = database.prepare(`
-    SELECT year_month AS yearMonth, base, channel
+async function getDistinctTargetFilterOptions(filters = {}) {
+  const targets = await queryAll(`
+    SELECT year_month AS "yearMonth", base, channel
     FROM recruitment_targets
     ORDER BY year_month DESC, base ASC, channel ASC
-  `).all();
+  `);
 
   return formatDistinctTargetFilterOptions(targets, filters);
 }

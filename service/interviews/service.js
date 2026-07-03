@@ -24,26 +24,26 @@ function toInterviewViewModel(record) {
   };
 }
 
-function getInterviewList(query = {}) {
+async function getInterviewList(query = {}) {
   const page = parsePage(query);
   const filters = buildInterviewFilters(query);
-  const result = listInterviewRecords({ filters, page });
+  const result = await listInterviewRecords({ filters, page });
 
   return {
     ...result,
     rows: result.rows.map(toInterviewViewModel),
     page,
     filters,
-    options: getDistinctInterviewFilterOptions(),
+    options: await getDistinctInterviewFilterOptions(),
     emptyMessage: result.total === 0
       ? '没有符合筛选条件的面试记录，请调整筛选项后重试。'
       : ''
   };
 }
 
-function getInterviewExportRows(query = {}) {
+async function getInterviewExportRows(query = {}) {
   const filters = buildInterviewFilters(query);
-  const result = listInterviewRecords({
+  const result = await listInterviewRecords({
     filters,
     page: {
       limit: 1_000_000,
@@ -55,12 +55,12 @@ function getInterviewExportRows(query = {}) {
 }
 
 
-function getInterviewFunnel(query = {}) {
-  const options = getDistinctInterviewFilterOptions();
+async function getInterviewFunnel(query = {}) {
+  const options = await getDistinctInterviewFilterOptions();
   const filters = buildInterviewFilters(query);
   filters.yearMonth = filters.yearMonth || options.months[0] || '';
-  const records = listAllInterviewRecords(filters);
-  const employees = listAllEmployees();
+  const records = await listAllInterviewRecords(filters);
+  const employees = await listAllEmployees();
   const employeePhones = new Set(employees.map((employee) => toText(employee.phone)).filter(Boolean));
   const feedbackCounts = new Map();
 

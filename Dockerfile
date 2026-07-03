@@ -4,18 +4,21 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV SQLITE_MODE=file
-ENV SQLITE_FILE=data/recruitment.db
+ENV TZ=Asia/Shanghai
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+  && apk add --no-cache tzdata \
+  && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+  && echo "Asia/Shanghai" > /etc/timezone
 
 COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY . .
-RUN mkdir -p data && chown -R node:node /app
+RUN chown -R node:node /app
 
 USER node
 
 EXPOSE 3000
-VOLUME ["/app/data"]
 
 CMD ["npm", "start"]

@@ -709,34 +709,34 @@ router.post('/employees/import', upload.single('file'), async (req, res) => {
   redirectWithResult(res, '/employees/import', result);
 });
 
-router.get('/employees/recruiters', (req, res) => {
+router.get('/employees/recruiters', async (req, res) => {
   renderPage(res, 'pages/employees/list', {
     active: 'employees-recruiters',
     moduleActive: 'employees',
     pageTitle: '招聘专员列表',
     heading: '招聘专员列表',
     role: 'recruiter',
-    result: getEmployeeList(req.query, 'recruiter')
+    result: await getEmployeeList(req.query, 'recruiter')
   });
 });
 
-router.get('/employees/recruiters/export', (req, res) => {
-  sendCsv(res, '招聘专员列表.csv', employeeExportColumns(), getEmployeeExportRows(req.query, 'recruiter'));
+router.get('/employees/recruiters/export', async (req, res) => {
+  sendCsv(res, '招聘专员列表.csv', employeeExportColumns(), await getEmployeeExportRows(req.query, 'recruiter'));
 });
 
-router.get('/employees/frontline', (req, res) => {
+router.get('/employees/frontline', async (req, res) => {
   renderPage(res, 'pages/employees/list', {
     active: 'employees-frontline',
     moduleActive: 'employees',
     pageTitle: '一线员工列表',
     heading: '一线员工列表',
     role: 'frontline',
-    result: getEmployeeList(req.query, 'frontline')
+    result: await getEmployeeList(req.query, 'frontline')
   });
 });
 
-router.get('/employees/frontline/export', (req, res) => {
-  sendCsv(res, '一线员工列表.csv', employeeExportColumns(true), getEmployeeExportRows(req.query, 'frontline'));
+router.get('/employees/frontline/export', async (req, res) => {
+  sendCsv(res, '一线员工列表.csv', employeeExportColumns(true), await getEmployeeExportRows(req.query, 'frontline'));
 });
 
 router.post('/targets/import', upload.single('file'), async (req, res) => {
@@ -763,27 +763,27 @@ router.get('/targets/import/template', async (req, res) => {
   await sendWorkbookTemplate(res, getTargetImportTemplateConfig(), buildTargetImportTemplateWorkbook());
 });
 
-router.get('/targets', (req, res) => {
+router.get('/targets', async (req, res) => {
   renderPage(res, 'pages/targets/list', {
     active: 'targets-list',
     moduleActive: 'targets',
     pageTitle: '目标列表',
-    result: getTargetList(req.query),
+    result: await getTargetList(req.query),
     notice: req.query.notice,
     error: req.query.error
   });
 });
 
-router.get('/targets/export', (req, res) => {
-  sendCsv(res, '目标列表.csv', targetExportColumns(), getTargetExportRows(req.query));
+router.get('/targets/export', async (req, res) => {
+  sendCsv(res, '目标列表.csv', targetExportColumns(), await getTargetExportRows(req.query));
 });
 
-router.get('/targets/progress', (req, res) => {
+router.get('/targets/progress', async (req, res) => {
   renderPage(res, 'pages/targets/progress', {
     active: 'targets-progress',
     moduleActive: 'targets',
     pageTitle: '目标达成进度',
-    progress: getTargetProgress(req.query)
+    progress: await getTargetProgress(req.query)
   });
 });
 
@@ -811,52 +811,52 @@ router.post('/interviews/import', upload.single('file'), async (req, res) => {
   redirectWithResult(res, '/interviews/import', result);
 });
 
-router.get('/interviews', (req, res) => {
+router.get('/interviews', async (req, res) => {
   renderPage(res, 'pages/interviews/list', {
     active: 'interviews-list',
     moduleActive: 'interviews',
     pageTitle: '面试记录列表',
-    result: getInterviewList(req.query)
+    result: await getInterviewList(req.query)
   });
 });
 
-router.get('/interviews/export', (req, res) => {
-  sendCsv(res, '面试记录列表.csv', interviewExportColumns(), getInterviewExportRows(req.query));
+router.get('/interviews/export', async (req, res) => {
+  sendCsv(res, '面试记录列表.csv', interviewExportColumns(), await getInterviewExportRows(req.query));
 });
 
-router.get('/interviews/funnel', (req, res) => {
+router.get('/interviews/funnel', async (req, res) => {
   renderPage(res, 'pages/interviews/funnel', {
     active: 'interviews-funnel',
     moduleActive: 'interviews',
     pageTitle: '招聘漏斗分析',
-    funnel: getInterviewFunnel(req.query)
+    funnel: await getInterviewFunnel(req.query)
   });
 });
 
-router.get('/dashboard/overview', (req, res) => {
+router.get('/dashboard/overview', async (req, res) => {
   renderPage(res, 'pages/dashboard/overview', {
     active: 'dashboard-overview',
     moduleActive: 'dashboard',
     pageTitle: '人才开发运营看板',
-    dashboard: getDashboardOverview(req.query)
+    dashboard: await getDashboardOverview(req.query)
   });
 });
 
-router.get('/dashboard/base-risk', (req, res) => {
+router.get('/dashboard/base-risk', async (req, res) => {
   renderPage(res, 'pages/dashboard/base-risk', {
     active: 'dashboard-base-risk',
     moduleActive: 'dashboard',
     pageTitle: '基地风险分析',
-    dashboard: getDashboardOverview({ ...req.query, tab: 'base' })
+    dashboard: await getDashboardOverview({ ...req.query, tab: 'base' })
   });
 });
 
-router.get('/dashboard/self-sourcing', (req, res) => {
+router.get('/dashboard/self-sourcing', async (req, res) => {
   renderPage(res, 'pages/dashboard/self-sourcing', {
     active: 'dashboard-self-sourcing',
     moduleActive: 'dashboard',
     pageTitle: '自主社招人效',
-    dashboard: getDashboardOverview({ ...req.query, tab: 'self' })
+    dashboard: await getDashboardOverview({ ...req.query, tab: 'self' })
   });
 });
 

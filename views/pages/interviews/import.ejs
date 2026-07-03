@@ -7,7 +7,7 @@
   <div class="import-card-head">
     <div>
       <h2 class="h5 mb-1">面试记录导入</h2>
-      <p class="text-muted small mb-0">支持历史全量覆盖、按日追加、按日覆盖。按日覆盖以「面试官填写反馈时间」为覆盖范围。</p>
+      <p class="text-muted small mb-0">支持按日覆盖和历史全量覆盖。按日覆盖以「面试官填写反馈时间」中的日期列表为覆盖范围。</p>
     </div>
   </div>
   <form action="/interviews/import" method="post" enctype="multipart/form-data">
@@ -15,7 +15,6 @@
       <div class="col-md-4">
         <label class="form-label">导入模式</label>
         <select class="form-select" name="mode">
-          <option value="daily_append">按日追加</option>
           <option value="daily_overwrite">按日覆盖</option>
           <option value="full_overwrite">历史全量覆盖</option>
         </select>
@@ -40,7 +39,7 @@
       <dt>字段格式</dt>
       <dd>面试官填写反馈时间使用 YYYY-MM-DD，例如 2026-06-01；电话建议设置为文本格式，禁止科学计数法。</dd>
       <dt>导入模式</dt>
-      <dd>按日追加保留历史数据；按日覆盖按反馈日期覆盖；历史全量覆盖会替换全部面试记录。</dd>
+      <dd>按日覆盖会先删除表格日期列表对应的旧数据，再插入本次 Excel 的最新数据；历史全量覆盖会替换全部面试记录。</dd>
       <dt>校验规则</dt>
       <dd>必填列禁止空值；表头必须在第 1 行，禁止改名、合并单元格、换行或添加特殊符号。</dd>
       <dt>可选列</dt>

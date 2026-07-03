@@ -75,7 +75,7 @@ web_modules/
 # dotenv environment variable files
 .env
 .env.*
-.env.example
+!.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -167,6 +167,7 @@ Thumbs.db
 
 # Local documents and sample data
 docs/
+systerm_data/
 *.xlsx
 *.xls
 *.csv

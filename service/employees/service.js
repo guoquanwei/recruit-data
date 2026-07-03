@@ -35,19 +35,19 @@ function hasEmployeeFilter(filters) {
   );
 }
 
-function getEmployeeList(query = {}, role) {
+async function getEmployeeList(query = {}, role) {
   const page = parsePage(query);
   const filters = buildEmployeeFilters(query, role);
-  const result = listEmployees({ filters, page });
+  const result = await listEmployees({ filters, page });
   const roleOnlyFilters = { role };
-  const roleTotal = countEmployees(roleOnlyFilters);
+  const roleTotal = await countEmployees(roleOnlyFilters);
 
   return {
     ...result,
     rows: result.rows.map(toEmployeeViewModel),
     page,
     filters,
-    options: getDistinctEmployeeFilterOptions(roleOnlyFilters),
+    options: await getDistinctEmployeeFilterOptions(roleOnlyFilters),
     hasFilters: hasEmployeeFilter(filters),
     emptyMessage: roleTotal === 0
       ? '暂无数据，请先导入员工表。'
@@ -55,9 +55,9 @@ function getEmployeeList(query = {}, role) {
   };
 }
 
-function getEmployeeExportRows(query = {}, role) {
+async function getEmployeeExportRows(query = {}, role) {
   const filters = buildEmployeeFilters(query, role);
-  const result = listEmployees({
+  const result = await listEmployees({
     filters,
     page: {
       limit: 1_000_000,

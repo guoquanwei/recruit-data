@@ -4,7 +4,7 @@ const { formatDate, getMonthLastDay, normalizeDate } = require('../shared/date')
 const { formatPercent, maskPhone, toText } = require('../shared/format');
 const { getTargetProgress } = require('../targets/service');
 const { getDistinctTargetFilterOptions, listTargetsByMonth } = require('../targets/repository');
-const { getDatabase } = require('../../dao/db');
+const { execute } = require('../../dao/db');
 
 const PASSED_INTERVIEW_RESULTS = new Set(['推荐', '强烈推荐']);
 const EXPECTED_INTERVIEW_PASS_RATE = 0.6;
@@ -43,7 +43,7 @@ function getTrainingDetails(query = {}, preloadedEmployees) {
   const cutoffDate = normalizeDate(query.cutoffDate);
   const baseFilter = toText(query.base);
   const channelFilter = toText(query.channel);
-  return (preloadedEmployees || listAllEmployees())
+  return (preloadedEmployees || [])
     .filter((employee) => !yearMonth || employee.trainingDate.startsWith(yearMonth))
     .filter((employee) => !cutoffDate || normalizeDate(employee.trainingDate) <= cutoffDate)
     .filter((employee) => !baseFilter || toText(employee.base) === baseFilter)
@@ -601,39 +601,34 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
   });
 }
 
-function saveRecruiterMonthlyScales(yearMonth, scales = []) {
+async function saveRecruiterMonthlyScales(yearMonth, scales = []) {
   if (!yearMonth) {
     return;
   }
-  const database = getDatabase();
-  const statement = database.prepare(`
-    INSERT INTO recruiter_monthly_scales (year_month, stage, recruiter_count, updated_at)
-    VALUES (@yearMonth, @stage, @recruiterCount, CURRENT_TIMESTAMP)
-    ON CONFLICT(year_month, stage) DO UPDATE SET
-      recruiter_count = excluded.recruiter_count,
-      updated_at = CURRENT_TIMESTAMP
-  `);
 
-  scales.forEach((scale) => {
-    statement.run({
-      yearMonth,
-      stage: scale.stage,
-      recruiterCount: scale.recruiterCount
-    });
-  });
+  for (const scale of scales) {
+    await execute(`
+    INSERT INTO recruiter_monthly_scales (year_month, stage, recruiter_count, updated_at)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+    ON CONFLICT(year_month, stage) DO UPDATE SET
+        recruiter_count = EXCLUDED.recruiter_count,
+      updated_at = CURRENT_TIMESTAMP
+    `, [yearMonth, scale.stage, scale.recruiterCount]);
+  }
 }
 
-function getSelfSourcingEfficiency(query = {}, preloadedEmployees) {
+async function getSelfSourcingEfficiency(query = {}, preloadedEmployees) {
   const yearMonth = toText(query.yearMonth);
+  const employees = preloadedEmployees || await listAllEmployees();
   const rows = buildSelfSourcingEfficiency({
     yearMonth,
     asOfDate: query.cutoffDate,
-    employees: preloadedEmployees || listAllEmployees(),
+    employees,
     filters: {
       recruiter: query.recruiter
     }
   });
-  saveRecruiterMonthlyScales(yearMonth, rows.scales);
+  await saveRecruiterMonthlyScales(yearMonth, rows.scales);
   return rows;
 }
 
@@ -2059,9 +2054,9 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
   };
 }
 
-function getDashboardOverview(query = {}) {
-  const employees = listAllEmployees();
-  const progress = getTargetProgress(query, employees);
+async function getDashboardOverview(query = {}) {
+  const employees = await listAllEmployees();
+  const progress = await getTargetProgress(query, employees);
   const yearMonth = progress.yearMonth;
   const asOfDate = progress.cutoffDate;
   const filters = {
@@ -2076,7 +2071,7 @@ function getDashboardOverview(query = {}) {
     channel: toText(query.selectedChannel),
     selectedBatchDay: toText(query.selectedBatchDay)
   };
-  const targets = yearMonth ? listTargetsByMonth(yearMonth) : [];
+  const targets = yearMonth ? await listTargetsByMonth(yearMonth) : [];
   const details = getTrainingDetails({
     yearMonth,
     cutoffDate: asOfDate,
@@ -2084,7 +2079,7 @@ function getDashboardOverview(query = {}) {
     channel: filters.channel
   }, employees);
   const selfSourcingCount = details.filter((item) => item.channelType === '自主社招').length;
-  const selfSourcingEfficiency = getSelfSourcingEfficiency({
+  const selfSourcingEfficiency = await getSelfSourcingEfficiency({
     yearMonth,
     cutoffDate: asOfDate,
     recruiter: filters.recruiter
@@ -2096,7 +2091,7 @@ function getDashboardOverview(query = {}) {
     selfSourcingEfficiency
   });
   const matrix = overviewTab === 'base' ? buildDashboardMatrix(progress, filters) : { channels: [], rows: [] };
-  const interviews = (overviewTab === 'base' || overviewTab === 'self') ? (yearMonth ? listAllInterviewRecords({ yearMonth }) : []) : [];
+  const interviews = (overviewTab === 'base' || overviewTab === 'self') ? (yearMonth ? await listAllInterviewRecords({ yearMonth }) : []) : [];
   const batchMatrix = overviewTab === 'base'
     ? buildBatchMatrix({
       yearMonth,
@@ -2191,7 +2186,7 @@ function getDashboardOverview(query = {}) {
     overviewInsights,
     overviewTab,
     filters,
-    options: getDistinctTargetFilterOptions({
+    options: await getDistinctTargetFilterOptions({
       yearMonth,
       base: filters.base
     }),

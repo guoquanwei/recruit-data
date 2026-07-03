@@ -1,7 +1,7 @@
-const { getDatabase } = require('../../dao/db');
+const { queryAll, queryOne } = require('../../dao/db');
 
-function insertInterviewRecords(database, records) {
-  const statement = database.prepare(`
+async function insertInterviewRecords(database, records) {
+  const sql = `
     INSERT INTO interview_records (
       base,
       position_name,
@@ -17,11 +17,11 @@ function insertInterviewRecords(database, records) {
       contract_name,
       referrer,
       evaluation
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+  `;
 
-  records.forEach((record) => {
-    statement.run(
+  for (const record of records) {
+    await database.query(sql, [
       record.base,
       record.positionName,
       record.candidateName,
@@ -36,20 +36,21 @@ function insertInterviewRecords(database, records) {
       record.contractName,
       record.referrer,
       record.evaluation
-    );
-  });
+    ]);
+  }
 
   return records.length;
 }
 
-function replaceAllInterviewRecords(database, records) {
-  database.prepare('DELETE FROM interview_records').run();
+async function replaceAllInterviewRecords(database, records) {
+  await database.query('DELETE FROM interview_records');
   return insertInterviewRecords(database, records);
 }
 
-function replaceInterviewRecordsByDates(database, dates, records) {
-  const statement = database.prepare('DELETE FROM interview_records WHERE feedback_date = ?');
-  dates.forEach((date) => statement.run(date));
+async function replaceInterviewRecordsByDates(database, dates, records) {
+  for (const date of dates) {
+    await database.query('DELETE FROM interview_records WHERE feedback_date = $1', [date]);
+  }
 
   return insertInterviewRecords(database, records);
 }
@@ -76,48 +77,42 @@ function fromDatabaseRow(row) {
 
 function buildInterviewFilters(filters = {}) {
   const where = [];
-  const params = {};
+  const params = [];
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
 
   if (filters.keyword) {
-    where.push('(position_name LIKE @keyword OR candidate_name LIKE @keyword OR phone LIKE @keyword OR evaluation LIKE @keyword)');
-    params.keyword = `%${filters.keyword}%`;
+    const keyword = addParam(`%${filters.keyword}%`);
+    where.push(`(position_name LIKE ${keyword} OR candidate_name LIKE ${keyword} OR phone LIKE ${keyword} OR evaluation LIKE ${keyword})`);
   }
   if (filters.yearMonth) {
-    where.push('feedback_date >= @monthStart AND feedback_date <= @monthEnd');
-    params.monthStart = `${filters.yearMonth}-01`;
-    params.monthEnd = `${filters.yearMonth}-31`;
+    where.push(`feedback_date >= ${addParam(`${filters.yearMonth}-01`)} AND feedback_date <= ${addParam(`${filters.yearMonth}-31`)}`);
   }
   if (filters.base) {
-    where.push('base = @base');
-    params.base = filters.base;
+    where.push(`base = ${addParam(filters.base)}`);
   }
   if (filters.positionName) {
-    where.push('position_name = @positionName');
-    params.positionName = filters.positionName;
+    where.push(`position_name = ${addParam(filters.positionName)}`);
   }
   if (filters.feedbackDate) {
-    where.push('feedback_date = @feedbackDate');
-    params.feedbackDate = filters.feedbackDate;
+    where.push(`feedback_date = ${addParam(filters.feedbackDate)}`);
   }
   if (filters.feedbackResult) {
-    where.push('feedback_result = @feedbackResult');
-    params.feedbackResult = filters.feedbackResult;
+    where.push(`feedback_result = ${addParam(filters.feedbackResult)}`);
   }
   if (filters.interviewer) {
-    where.push('interviewer = @interviewer');
-    params.interviewer = filters.interviewer;
+    where.push(`interviewer = ${addParam(filters.interviewer)}`);
   }
   if (filters.channelTag) {
-    where.push('channel_tag = @channelTag');
-    params.channelTag = filters.channelTag;
+    where.push(`channel_tag = ${addParam(filters.channelTag)}`);
   }
   if (filters.channelType) {
-    where.push('channel_type = @channelType');
-    params.channelType = filters.channelType;
+    where.push(`channel_type = ${addParam(filters.channelType)}`);
   }
   if (filters.channelName) {
-    where.push('channel_name = @channelName');
-    params.channelName = filters.channelName;
+    where.push(`channel_name = ${addParam(filters.channelName)}`);
   }
 
   return {
@@ -126,47 +121,41 @@ function buildInterviewFilters(filters = {}) {
   };
 }
 
-function listInterviewRecords({ filters = {}, page }) {
-  const database = getDatabase();
+async function listInterviewRecords({ filters = {}, page }) {
   const { whereSql, params } = buildInterviewFilters(filters);
-  const total = database.prepare(`SELECT COUNT(*) AS total FROM interview_records ${whereSql}`).get(params).total;
-  const rows = database.prepare(`
+  const total = await queryOne(`SELECT COUNT(*)::int AS total FROM interview_records ${whereSql}`, params);
+  const rows = await queryAll(`
     SELECT *
     FROM interview_records
     ${whereSql}
     ORDER BY feedback_date DESC, id DESC
-    LIMIT @limit OFFSET @offset
-  `).all({
-    ...params,
-    limit: page.limit,
-    offset: page.offset
-  });
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `, [...params, page.limit, page.offset]);
 
   return {
-    total,
+    total: total.total,
     rows: rows.map(fromDatabaseRow)
   };
 }
 
-function listAllInterviewRecords(filters = {}) {
-  const database = getDatabase();
+async function listAllInterviewRecords(filters = {}) {
   const { whereSql, params } = buildInterviewFilters(filters);
-  return database.prepare(`SELECT * FROM interview_records ${whereSql}`).all(params).map(fromDatabaseRow);
+  const rows = await queryAll(`SELECT * FROM interview_records ${whereSql}`, params);
+  return rows.map(fromDatabaseRow);
 }
 
-function getDistinctInterviewFilterOptions() {
-  const database = getDatabase();
-  const pluck = (sql, field) => database.prepare(sql).all().map((row) => row[field]).filter(Boolean);
+async function getDistinctInterviewFilterOptions() {
+  const pluck = async (sql, field) => (await queryAll(sql)).map((row) => row[field]).filter(Boolean);
 
   return {
-    months: pluck("SELECT DISTINCT substr(feedback_date, 1, 7) AS month FROM interview_records WHERE feedback_date <> '' ORDER BY month DESC", 'month'),
-    bases: pluck("SELECT DISTINCT base FROM interview_records WHERE base <> '' ORDER BY base", 'base'),
-    positionNames: pluck('SELECT DISTINCT position_name FROM interview_records ORDER BY position_name', 'position_name'),
-    feedbackResults: pluck('SELECT DISTINCT feedback_result FROM interview_records ORDER BY feedback_result', 'feedback_result'),
-    interviewers: pluck('SELECT DISTINCT interviewer FROM interview_records ORDER BY interviewer', 'interviewer'),
-    channelTags: pluck('SELECT DISTINCT channel_tag FROM interview_records ORDER BY channel_tag', 'channel_tag'),
-    channelTypes: pluck('SELECT DISTINCT channel_type FROM interview_records ORDER BY channel_type', 'channel_type'),
-    channelNames: pluck('SELECT DISTINCT channel_name FROM interview_records ORDER BY channel_name', 'channel_name')
+    months: await pluck("SELECT DISTINCT substring(feedback_date from 1 for 7) AS month FROM interview_records WHERE feedback_date <> '' ORDER BY month DESC", 'month'),
+    bases: await pluck("SELECT DISTINCT base FROM interview_records WHERE base <> '' ORDER BY base", 'base'),
+    positionNames: await pluck('SELECT DISTINCT position_name FROM interview_records ORDER BY position_name', 'position_name'),
+    feedbackResults: await pluck('SELECT DISTINCT feedback_result FROM interview_records ORDER BY feedback_result', 'feedback_result'),
+    interviewers: await pluck('SELECT DISTINCT interviewer FROM interview_records ORDER BY interviewer', 'interviewer'),
+    channelTags: await pluck('SELECT DISTINCT channel_tag FROM interview_records ORDER BY channel_tag', 'channel_tag'),
+    channelTypes: await pluck('SELECT DISTINCT channel_type FROM interview_records ORDER BY channel_type', 'channel_type'),
+    channelNames: await pluck('SELECT DISTINCT channel_name FROM interview_records ORDER BY channel_name', 'channel_name')
   };
 }
 

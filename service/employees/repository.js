@@ -1,4 +1,4 @@
-const { getDatabase } = require('../../dao/db');
+const { queryAll, queryOne } = require('../../dao/db');
 const { isFrontlineEmployee } = require('./normalize');
 
 const EMPLOYEE_COLUMNS = [
@@ -94,58 +94,38 @@ function fromDatabaseRow(row) {
   };
 }
 
-function replaceEmployeesBySource(database, sourceType, employees) {
-  database.prepare('DELETE FROM employees WHERE source_type = ?').run(sourceType);
-  clearEmployeeCache();
-
-  const placeholders = EMPLOYEE_COLUMNS.map((column) => `@${column}`).join(', ');
-  const statement = database.prepare(`
-    INSERT INTO employees (${EMPLOYEE_COLUMNS.join(', ')})
-    VALUES (${placeholders})
-  `);
-
-  employees.forEach((employee) => {
-    statement.run(toDatabaseRow(employee));
-  });
-
-  return employees.length;
-}
-
 function buildEmployeeFilters(filters = {}) {
   const where = [];
-  const params = {};
+  const params = [];
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
 
   if (filters.keyword) {
-    where.push('(employee_no LIKE @keyword OR name LIKE @keyword OR phone LIKE @keyword)');
-    params.keyword = `%${filters.keyword}%`;
+    const keyword = addParam(`%${filters.keyword}%`);
+    where.push(`(employee_no LIKE ${keyword} OR name LIKE ${keyword} OR phone LIKE ${keyword})`);
   }
   if (filters.base) {
-    where.push('base = @base');
-    params.base = filters.base;
+    where.push(`base = ${addParam(filters.base)}`);
   }
   if (filters.position) {
-    where.push('position = @position');
-    params.position = filters.position;
+    where.push(`position = ${addParam(filters.position)}`);
   }
   if (filters.status) {
-    where.push('employee_status = @status');
-    params.status = filters.status;
+    where.push(`employee_status = ${addParam(filters.status)}`);
   }
   if (filters.channelName) {
-    where.push('channel_name LIKE @channelName');
-    params.channelName = `%${filters.channelName}%`;
+    where.push(`channel_name LIKE ${addParam(`%${filters.channelName}%`)}`);
   }
   if (filters.channelType) {
-    where.push('channel_type = @channelType');
-    params.channelType = filters.channelType;
+    where.push(`channel_type = ${addParam(filters.channelType)}`);
   }
   if (filters.startDate) {
-    where.push('training_date >= @startDate');
-    params.startDate = filters.startDate;
+    where.push(`training_date >= ${addParam(filters.startDate)}`);
   }
   if (filters.endDate) {
-    where.push('training_date <= @endDate');
-    params.endDate = filters.endDate;
+    where.push(`training_date <= ${addParam(filters.endDate)}`);
   }
   if (filters.role === 'recruiter') {
     where.push("department LIKE '%人才开发部%'");
@@ -161,40 +141,52 @@ function buildEmployeeFilters(filters = {}) {
   };
 }
 
-function countEmployees(filters = {}) {
-  const database = getDatabase();
-  const { whereSql, params } = buildEmployeeFilters(filters);
-  return database.prepare(`SELECT COUNT(*) AS total FROM employees ${whereSql}`).get(params).total;
+async function replaceEmployeesBySource(database, sourceType, employees) {
+  await database.query('DELETE FROM employees WHERE source_type = $1', [sourceType]);
+  clearEmployeeCache();
+
+  const placeholders = EMPLOYEE_COLUMNS.map((_, index) => `$${index + 1}`).join(', ');
+  const sql = `
+    INSERT INTO employees (${EMPLOYEE_COLUMNS.join(', ')})
+    VALUES (${placeholders})
+  `;
+
+  for (const employee of employees) {
+    const row = toDatabaseRow(employee);
+    await database.query(sql, EMPLOYEE_COLUMNS.map((column) => row[column]));
+  }
+
+  return employees.length;
 }
 
-function listEmployees({ filters = {}, page }) {
-  const database = getDatabase();
+async function countEmployees(filters = {}) {
   const { whereSql, params } = buildEmployeeFilters(filters);
-  const count = database.prepare(`SELECT COUNT(*) AS total FROM employees ${whereSql}`).get(params).total;
-  const rows = database.prepare(`
+  const row = await queryOne(`SELECT COUNT(*)::int AS total FROM employees ${whereSql}`, params);
+  return row.total;
+}
+
+async function listEmployees({ filters = {}, page }) {
+  const { whereSql, params } = buildEmployeeFilters(filters);
+  const count = await queryOne(`SELECT COUNT(*)::int AS total FROM employees ${whereSql}`, params);
+  const rows = await queryAll(`
     SELECT *
     FROM employees
     ${whereSql}
     ORDER BY training_date DESC, id DESC
-    LIMIT @limit OFFSET @offset
-  `).all({
-    ...params,
-    limit: page.limit,
-    offset: page.offset
-  });
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `, [...params, page.limit, page.offset]);
 
   return {
-    total: count,
+    total: count.total,
     rows: rows.map(fromDatabaseRow)
   };
 }
 
-function listAllEmployees() {
+async function listAllEmployees() {
   if (allEmployeesCache) {
     return allEmployeesCache;
   }
-  const database = getDatabase();
-  allEmployeesCache = database.prepare('SELECT * FROM employees').all().map(fromDatabaseRow);
+  allEmployeesCache = (await queryAll('SELECT * FROM employees')).map(fromDatabaseRow);
   return allEmployeesCache;
 }
 
@@ -214,17 +206,16 @@ function formatBaseOptions(bases) {
     });
 }
 
-function getDistinctEmployeeFilterOptions(filters = {}) {
-  const database = getDatabase();
+async function getDistinctEmployeeFilterOptions(filters = {}) {
   const { whereSql, params } = buildEmployeeFilters(filters);
 
-  function pluck(sql, field) {
-    return database.prepare(sql).all(params).map((row) => row[field]).filter(Boolean);
+  async function pluck(sql, field) {
+    return (await queryAll(sql, params)).map((row) => row[field]).filter(Boolean);
   }
 
   return {
-    bases: formatBaseOptions(pluck(`SELECT DISTINCT base FROM employees ${whereSql} ORDER BY base`, 'base')),
-    channelTypes: pluck(`SELECT DISTINCT channel_type FROM employees ${whereSql} ORDER BY channel_type`, 'channel_type')
+    bases: formatBaseOptions(await pluck(`SELECT DISTINCT base FROM employees ${whereSql} ORDER BY base`, 'base')),
+    channelTypes: await pluck(`SELECT DISTINCT channel_type FROM employees ${whereSql} ORDER BY channel_type`, 'channel_type')
   };
 }
 

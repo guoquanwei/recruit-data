@@ -1,10 +1,18 @@
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
 const { connectDatabase, closeDatabase } = require('../config/database');
 const { importActiveEmployees, importResignedEmployees } = require('../service/employees/importer');
+const { buildEmployeeImportTemplateWorkbook } = require('../service/employees/importTemplate');
 const { getEmployeeList } = require('../service/employees/service');
 const { importInterviewRecords } = require('../service/interviews/importer');
+const { buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
 const { getInterviewFunnel } = require('../service/interviews/service');
 const { importMonthlyTargets } = require('../service/targets/importer');
+const { buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
 const { getTargetProgress } = require('../service/targets/service');
+const { getSystemDataFile } = require('../service/systemData');
 
 function assertSuccess(label, result) {
   if (result.status !== 'success') {
@@ -14,19 +22,56 @@ function assertSuccess(label, result) {
   console.log(`${label}: ${result.successCount} rows`);
 }
 
+async function resolveWorkbookPath(preferredPath, fallbackName, workbookFactory, tempDir) {
+  if (fs.existsSync(preferredPath)) {
+    return preferredPath;
+  }
+
+  const fallbackPath = path.join(tempDir, fallbackName);
+  await workbookFactory().xlsx.writeFile(fallbackPath);
+  return fallbackPath;
+}
+
 async function main() {
-  connectDatabase();
+  await connectDatabase();
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'recruit-data-samples-'));
 
   try {
-    assertSuccess('active employees', await importActiveEmployees('在职员工信息_20260627.xlsx'));
-    assertSuccess('resigned employees', await importResignedEmployees('离职员工信息_20260627.xlsx'));
-    assertSuccess('monthly targets', await importMonthlyTargets('docs/2026年月度招聘目标/人才开发目标拆解-5月-0622.xlsx'));
-    assertSuccess('interview records', await importInterviewRecords('docs/面试记录_0625.xlsx', 'full_overwrite'));
+    const activePath = await resolveWorkbookPath(
+      getSystemDataFile('active-employees').absolutePath,
+      'active-employees.xlsx',
+      () => buildEmployeeImportTemplateWorkbook('active'),
+      tempDir
+    );
+    const resignedPath = await resolveWorkbookPath(
+      getSystemDataFile('resigned-employees').absolutePath,
+      'resigned-employees.xlsx',
+      () => buildEmployeeImportTemplateWorkbook('resigned'),
+      tempDir
+    );
+    const targetsPath = await resolveWorkbookPath(
+      getSystemDataFile('target-2026-05').absolutePath,
+      'monthly-targets.xlsx',
+      buildTargetImportTemplateWorkbook,
+      tempDir
+    );
+    const interviewsPath = await resolveWorkbookPath(
+      getSystemDataFile('interviews').absolutePath,
+      'interviews.xlsx',
+      buildInterviewImportTemplateWorkbook,
+      tempDir
+    );
 
-    const recruiters = getEmployeeList({}, 'recruiter').total;
-    const frontline = getEmployeeList({}, 'frontline').total;
-    const progress = getTargetProgress({ yearMonth: '2026-05' }).overall;
-    const funnel = getInterviewFunnel();
+    assertSuccess('active employees', await importActiveEmployees(activePath));
+    assertSuccess('resigned employees', await importResignedEmployees(resignedPath));
+    const targetResult = await importMonthlyTargets(targetsPath);
+    assertSuccess('monthly targets', targetResult);
+    assertSuccess('interview records', await importInterviewRecords(interviewsPath, 'full_overwrite'));
+
+    const recruiters = (await getEmployeeList({}, 'recruiter')).total;
+    const frontline = (await getEmployeeList({}, 'frontline')).total;
+    const progress = (await getTargetProgress({ yearMonth: targetResult.yearMonth })).overall;
+    const funnel = await getInterviewFunnel();
 
     if (recruiters <= 0 || frontline <= 0) {
       throw new Error('employee list verification failed');
@@ -45,7 +90,8 @@ async function main() {
     console.log(`target progress: ${JSON.stringify(progress)}`);
     console.log(`feedback results: ${JSON.stringify(funnel.feedbackResults)}`);
   } finally {
-    closeDatabase();
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    await closeDatabase();
   }
 }
 

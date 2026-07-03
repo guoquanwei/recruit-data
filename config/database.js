@@ -1,40 +1,50 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { DatabaseSync } = require('node:sqlite');
+const { Pool } = require('pg');
 
+const { initializeAiModelConfig } = require('./ai');
 const { initializeBusinessSchema } = require('../dao/schema');
 const runtime = require('./runtime');
 
-let database;
+let pool;
 
-function ensureDatabaseDirectory() {
-  if (runtime.sqlite.mode === 'memory') {
+function quoteConnectionValue(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+function createPool() {
+  if (!runtime.databaseUrl) {
+    throw new Error('DATABASE_URL is required for PostgreSQL connection');
+  }
+
+  return new Pool({
+    connectionString: runtime.databaseUrl,
+    max: Number(process.env.DB_POOL_MAX || 10),
+    idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS || 30_000),
+    options: runtime.databaseSchema
+      ? `-c search_path=${quoteConnectionValue(runtime.databaseSchema)},public`
+      : undefined
+  });
+}
+
+async function connectDatabase() {
+  if (pool) {
+    return pool;
+  }
+
+  pool = createPool();
+  await pool.query('SELECT 1');
+  await initializeBusinessSchema(pool, runtime.databaseSchema);
+  await initializeAiModelConfig(pool);
+
+  return pool;
+}
+
+async function closeDatabase() {
+  if (!pool) {
     return;
   }
 
-  fs.mkdirSync(path.dirname(runtime.sqlite.path), { recursive: true });
-}
-
-function connectDatabase() {
-  if (database) {
-    return database;
-  }
-
-  ensureDatabaseDirectory();
-  database = new DatabaseSync(runtime.sqlite.path);
-  database.exec('PRAGMA foreign_keys = ON;');
-  initializeBusinessSchema(database);
-
-  return database;
-}
-
-function closeDatabase() {
-  if (!database) {
-    return;
-  }
-
-  database.close();
-  database = undefined;
+  await pool.end();
+  pool = undefined;
 }
 
 module.exports = {

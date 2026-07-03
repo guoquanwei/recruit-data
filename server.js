@@ -49,18 +49,18 @@ function createApp() {
   return app;
 }
 
-function startServer() {
-  connectDatabase();
+async function startServer() {
+  await connectDatabase();
 
   const app = createApp();
   const server = app.listen(runtime.port, () => {
     console.log(`${runtime.platformName} 已启动：http://localhost:${runtime.port}`);
-    console.log(`SQLite 模式：${runtime.sqlite.mode}，路径：${runtime.sqlite.path}`);
+    console.log('PostgreSQL 数据库已连接');
   });
 
   const shutdown = () => {
-    server.close(() => {
-      closeDatabase();
+    server.close(async () => {
+      await closeDatabase();
       process.exit(0);
     });
   };
@@ -70,7 +70,10 @@ function startServer() {
 }
 
 if (require.main === module) {
-  startServer();
+  startServer().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
 
 module.exports = {

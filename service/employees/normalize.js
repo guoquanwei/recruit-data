@@ -120,8 +120,8 @@ function normalizeEmployeeRow(row, sourceType) {
   const position = sourceType === 'resigned' ? row.离职前职位 : row.职位;
   const employeeStatus = sourceType === 'resigned' ? '离职' : toText(row.员工状态) || '在职';
   const officeLocation = row.办公地点;
-  const trainingDate = normalizeDate(row.入培时间);
   const entryDate = normalizeDate(row.入职日期);
+  const trainingDate = normalizeDate(row.入培时间) || entryDate;
   const resignedDate = normalizeDate(row.离职日期);
   const base = inferBase({ department, officeLocation });
 

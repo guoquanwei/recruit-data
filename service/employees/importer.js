@@ -19,8 +19,8 @@ async function importActiveEmployees(filePath) {
     importMode: 'full_overwrite',
     scope: 'active',
     fileName: path.basename(filePath)
-  }, (database) => ({
-    successCount: replaceEmployeesBySource(database, 'active', records)
+  }, async (database) => ({
+    successCount: await replaceEmployeesBySource(database, 'active', records)
   }));
 }
 
@@ -37,8 +37,8 @@ async function importResignedEmployees(filePath) {
     importMode: 'full_overwrite',
     scope: 'resigned',
     fileName: path.basename(filePath)
-  }, (database) => ({
-    successCount: replaceEmployeesBySource(database, 'resigned', records)
+  }, async (database) => ({
+    successCount: await replaceEmployeesBySource(database, 'resigned', records)
   }));
 }
 

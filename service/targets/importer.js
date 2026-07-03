@@ -30,9 +30,9 @@ async function importMonthlyTargets(filePath) {
     importMode: 'month_overwrite',
     scope: yearMonth,
     fileName: path.basename(filePath)
-  }, (database) => ({
+  }, async (database) => ({
     yearMonth,
-    successCount: replaceTargetsByMonth(database, yearMonth, records)
+    successCount: await replaceTargetsByMonth(database, yearMonth, records)
   }));
 }
 

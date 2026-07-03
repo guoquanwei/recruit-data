@@ -13,12 +13,12 @@ function buildTargetFilters(query = {}) {
   };
 }
 
-function getDefaultMonth(query = {}) {
+async function getDefaultMonth(query = {}) {
   if (query.yearMonth) {
     return query.yearMonth;
   }
 
-  return getAvailableMonths()[0] || '';
+  return (await getAvailableMonths())[0] || '';
 }
 
 function getCutoffDate(yearMonth, query = {}) {
@@ -37,16 +37,16 @@ function getCutoffDate(yearMonth, query = {}) {
   return `${yearMonth}-${String(getMonthLastDay(yearMonth)).padStart(2, '0')}`;
 }
 
-function getTargetList(query = {}) {
+async function getTargetList(query = {}) {
   const page = parsePage(query);
   const filters = buildTargetFilters(query);
-  const employees = listAllEmployees();
+  const employees = await listAllEmployees();
   const hasYearMonthQuery = Object.prototype.hasOwnProperty.call(query, 'yearMonth');
-  const displayMonth = hasYearMonthQuery ? filters.yearMonth : getDefaultMonth(query);
+  const displayMonth = hasYearMonthQuery ? filters.yearMonth : await getDefaultMonth(query);
   filters.yearMonth = displayMonth;
   const cutoffDate = getCutoffDate(displayMonth, query);
-  const result = listTargets({ filters, page });
-  const summaryTargets = listTargetsForSummary(filters);
+  const result = await listTargets({ filters, page });
+  const summaryTargets = await listTargetsForSummary(filters);
   const actualTrainingIndex = buildActualTrainingIndex(employees);
 
   return {
@@ -57,7 +57,7 @@ function getTargetList(query = {}) {
     })),
     page,
     filters,
-    options: getDistinctTargetFilterOptions(filters),
+    options: await getDistinctTargetFilterOptions(filters),
     summary: summarizeTargetPlan(summaryTargets, displayMonth),
     emptyMessage: result.total === 0
       ? '没有符合筛选条件的目标数据，请调整筛选项后重试。'
@@ -65,14 +65,14 @@ function getTargetList(query = {}) {
   };
 }
 
-function getTargetExportRows(query = {}) {
+async function getTargetExportRows(query = {}) {
   const filters = buildTargetFilters(query);
   const hasYearMonthQuery = Object.prototype.hasOwnProperty.call(query, 'yearMonth');
-  filters.yearMonth = hasYearMonthQuery ? filters.yearMonth : getDefaultMonth(query);
-  const employees = listAllEmployees();
+  filters.yearMonth = hasYearMonthQuery ? filters.yearMonth : await getDefaultMonth(query);
+  const employees = await listAllEmployees();
   const actualTrainingIndex = buildActualTrainingIndex(employees);
   const cutoffDate = getCutoffDate(filters.yearMonth, query);
-  const result = listTargets({
+  const result = await listTargets({
     filters,
     page: {
       limit: 1_000_000,
@@ -399,16 +399,16 @@ function includeActualOnlyTargets({ targets, employees, yearMonth }) {
   return [...targets, ...additions.values()];
 }
 
-function getTargetProgress(query = {}, preloadedEmployees) {
-  const yearMonth = getDefaultMonth(query);
+async function getTargetProgress(query = {}, preloadedEmployees) {
+  const yearMonth = await getDefaultMonth(query);
   const cutoffDate = getCutoffDate(yearMonth, query);
-  const targets = yearMonth ? listTargetsByMonth(yearMonth) : [];
-  const employees = preloadedEmployees || listAllEmployees();
+  const targets = yearMonth ? await listTargetsByMonth(yearMonth) : [];
+  const employees = preloadedEmployees || await listAllEmployees();
 
   return {
     yearMonth,
     cutoffDate,
-    months: getAvailableMonths(),
+    months: await getAvailableMonths(),
     ...summarizeTargets(targets, employees, cutoffDate, query)
   };
 }

@@ -3,15 +3,14 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const test = require('node:test');
-const { DatabaseSync } = require('node:sqlite');
 
 const { createApp } = require('../server');
-const { initializeBusinessSchema } = require('../dao/schema');
 const { makeUniqueHeaders } = require('../service/imports/excel');
 const { buildCsv } = require('../service/export/csv');
 const { getEmployeeImportTemplateConfig, buildEmployeeImportTemplateWorkbook } = require('../service/employees/importTemplate');
 const { getTargetImportTemplateConfig, buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
 const { getInterviewImportTemplateConfig, buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
+const { importInterviewRecords } = require('../service/interviews/importer');
 const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
 const { buildInterviewFilters, insertInterviewRecords } = require('../service/interviews/repository');
 const { formatDistinctTargetFilterOptions } = require('../service/targets/repository');
@@ -22,6 +21,21 @@ const { getCutoffDate, includeActualOnlyTargets, summarizeTargetPlan, summarizeT
 const { buildBatchDrilldown, buildBatchMatrix, buildDashboardMatrix, buildOverviewInsights, buildPositionChannelBoard, buildSelfSourcingEfficiency, buildSelfSourcingRecruiterOptions, buildSelfSourcingRecruiterRows, filterSelfSourcingTrainingDetails, getTrainingDetails, normalizeOverviewTab } = require('../service/dashboard/service');
 const { inferInterviewBase, normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('../service/interviews/normalize');
 const { buildFunnelRows, buildMonthlyFunnelRows } = require('../service/interviews/service');
+const { initializeAiModelConfig, getAiModelConfig, maskAiModelConfig } = require('../config/ai');
+
+function loadRuntimeWithEnv(env) {
+  const runtimePath = require.resolve('../config/runtime');
+  const previousEnv = { ...process.env };
+  delete require.cache[runtimePath];
+  Object.assign(process.env, env);
+
+  try {
+    return require('../config/runtime');
+  } finally {
+    process.env = previousEnv;
+    delete require.cache[runtimePath];
+  }
+}
 
 async function requestApp(pathName) {
   const app = createApp();
@@ -44,6 +58,46 @@ test('shared formatting masks phone numbers and parses pagination defaults', () 
   assert.deepEqual(parsePage({}), { page: 1, pageSize: 10, limit: 10, offset: 0 });
   assert.equal(formatPercent(0.875), '87.50%');
   assert.equal(formatPercent(null), '0.00%');
+});
+
+test('runtime exposes PostgreSQL database url and removes SQLite config', () => {
+  const runtime = loadRuntimeWithEnv({
+    DATABASE_URL: 'postgresql://team_030_user:secret@localhost:5432/team_030',
+    PORT: '4000'
+  });
+
+  assert.equal(runtime.port, 4000);
+  assert.equal(runtime.databaseUrl, 'postgresql://team_030_user:secret@localhost:5432/team_030');
+  assert.equal(Object.hasOwn(runtime, 'sqlite'), false);
+});
+
+test('AI model config loads active provider into process globals and masks api key', async () => {
+  const database = {
+    async query(sql, params) {
+      assert.match(sql, /FROM ai_model_configs/);
+      assert.deepEqual(params, ['doubao']);
+      return {
+        rows: [{
+          provider: 'doubao',
+          base_url: 'https://ark.cn-beijing.volces.com/api/v3',
+          api_key: 'secret-key-value',
+          endpoint: 'ep-test'
+        }]
+      };
+    }
+  };
+
+  const config = await initializeAiModelConfig(database, 'doubao');
+
+  assert.deepEqual(config, {
+    provider: 'doubao',
+    baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
+    apiKey: 'secret-key-value',
+    endpoint: 'ep-test'
+  });
+  assert.equal(getAiModelConfig().endpoint, 'ep-test');
+  assert.equal(global.aiModelConfig.endpoint, 'ep-test');
+  assert.equal(maskAiModelConfig(config).apiKey, 'se************ue');
 });
 
 test('excel helper keeps duplicate headers addressable like spreadsheet tools', () => {
@@ -120,6 +174,13 @@ test('target and interview import templates match required sheets and columns', 
   assert.equal(buildInterviewImportTemplateWorkbook().getWorksheet('面试记录').getRow(2).getCell(4).value, '2026-06-01');
 });
 
+test('interview import rejects daily append mode', async () => {
+  await assert.rejects(
+    () => importInterviewRecords('unused.xlsx', 'daily_append'),
+    /不支持的面试记录导入模式/
+  );
+});
+
 test('target import is rendered on its own page', async () => {
   const importPage = await requestApp('/targets/import');
   assert.equal(importPage.response.status, 200);
@@ -193,36 +254,37 @@ test('csv export escapes values and includes utf8 bom', () => {
   assert.equal(csv.includes('"换行\n内容"'), true);
 });
 
-test('interview repository inserts every normalized interview field', () => {
-  const database = new DatabaseSync(':memory:');
-  initializeBusinessSchema(database);
+test('interview repository inserts every normalized interview field', async () => {
+  const calls = [];
+  const database = {
+    async query(sql, params) {
+      calls.push({ sql, params });
+      return { rows: [], rowCount: 1 };
+    }
+  };
+  const records = [{
+    base: '石家庄基地',
+    positionName: '客服专员',
+    candidateName: '张三',
+    gender: '男',
+    phone: '13900000000',
+    feedbackDate: '2026-06-25',
+    feedbackResult: '通过',
+    interviewer: '李四',
+    channelType: '自主社招',
+    channelName: '李四+JZ001',
+    channelTag: '自主社招',
+    contractName: '李四+JZ001',
+    referrer: '',
+    evaluation: '沟通表达良好'
+  }];
 
-  try {
-    const records = [{
-      base: '石家庄基地',
-      positionName: '客服专员',
-      candidateName: '张三',
-      gender: '男',
-      phone: '13900000000',
-      feedbackDate: '2026-06-25',
-      feedbackResult: '通过',
-      interviewer: '李四',
-      channelType: '自主社招',
-      channelName: '李四+JZ001',
-      channelTag: '自主社招',
-      contractName: '李四+JZ001',
-      referrer: '',
-      evaluation: '沟通表达良好'
-    }];
+  assert.equal(await insertInterviewRecords(database, records), 1);
 
-    assert.equal(insertInterviewRecords(database, records), 1);
-
-    const row = database.prepare('SELECT * FROM interview_records').get();
-    assert.equal(row.channel_name, '李四+JZ001');
-    assert.equal(row.evaluation, '沟通表达良好');
-  } finally {
-    database.close();
-  }
+  assert.match(calls[0].sql, /channel_name/);
+  assert.match(calls[0].sql, /evaluation/);
+  assert.equal(calls[0].params[9], '李四+JZ001');
+  assert.equal(calls[0].params[13], '沟通表达良好');
 });
 
 test('employee normalization maps active and resigned source columns to one model', () => {
@@ -263,6 +325,38 @@ test('employee normalization maps active and resigned source columns to one mode
   assert.equal(resigned.employeeStatus, '离职');
   assert.equal(resigned.department, '伽睿集团 - NEO-OPS - 天津基地 - 联通天津');
   assert.equal(resigned.position, '招聘专员');
+});
+
+test('employee normalization uses entry date when training date is blank', () => {
+  const active = normalizeActiveEmployee({
+    工号: 'JZ010',
+    姓名: '未入培员工',
+    入培时间: '',
+    入职日期: '2026/06/15',
+    手机号码: '13900000010',
+    招聘渠道: '自主社招',
+    渠道名称: '张三+JZ010',
+    办公地点: 'HB01-石家庄广安大厦',
+    部门: '伽睿集团 / NEO-OPS / 河北基地 / 联通河北',
+    职位: '客服专员',
+    员工状态: '在职'
+  });
+  const resigned = normalizeResignedEmployee({
+    工号: 'JZ011',
+    姓名: '未入培离职员工',
+    入培时间: '',
+    入职日期: '2026/06/16',
+    手机号码: '13900000011',
+    招聘渠道: '内推',
+    渠道名称: '李四',
+    办公地点: 'TJ-天津基地',
+    离职前部门: '伽睿集团 / NEO-OPS / 天津基地 / 联通天津',
+    离职前职位: '客服专员',
+    离职日期: '2026/06/30'
+  });
+
+  assert.equal(active.trainingDate, '2026-06-15');
+  assert.equal(resigned.trainingDate, '2026-06-16');
 });
 
 test('talent development department base uses third-level department', () => {
@@ -355,15 +449,19 @@ test('employee filters support single-select enums and fuzzy channel names', () 
     endDate: '2026-06-30'
   });
 
-  assert.match(whereSql, /base = @base/);
-  assert.match(whereSql, /channel_name LIKE @channelName/);
-  assert.match(whereSql, /channel_type = @channelType/);
-  assert.match(whereSql, /training_date >= @startDate/);
-  assert.match(whereSql, /training_date <= @endDate/);
+  assert.match(whereSql, /base = \$1/);
+  assert.match(whereSql, /channel_name LIKE \$2/);
+  assert.match(whereSql, /channel_type = \$3/);
+  assert.match(whereSql, /training_date >= \$4/);
+  assert.match(whereSql, /training_date <= \$5/);
   assert.doesNotMatch(whereSql, /entry_date/);
-  assert.equal(params.base, '江苏基地-南京');
-  assert.equal(params.channelName, '%尹翔宇+JZ005942%');
-  assert.equal(params.channelType, '自主社招');
+  assert.deepEqual(params, [
+    '江苏基地-南京',
+    '%尹翔宇+JZ005942%',
+    '自主社招',
+    '2026-01-01',
+    '2026-06-30'
+  ]);
 });
 
 test('employee base filter options hide ignored and raw department paths', () => {
@@ -1841,11 +1939,17 @@ test('interview filters use cleaned funnel dimensions', () => {
     channelName: '刘薇+JZ073036'
   });
 
-  assert.match(whereSql, /feedback_date >= @monthStart/);
-  assert.match(whereSql, /base = @base/);
-  assert.match(whereSql, /channel_type = @channelType/);
-  assert.match(whereSql, /channel_name = @channelName/);
-  assert.equal(params.base, '江苏基地-南京');
+  assert.match(whereSql, /feedback_date >= \$1/);
+  assert.match(whereSql, /base = \$3/);
+  assert.match(whereSql, /channel_type = \$4/);
+  assert.match(whereSql, /channel_name = \$5/);
+  assert.deepEqual(params, [
+    '2026-06-01',
+    '2026-06-31',
+    '江苏基地-南京',
+    '自主社招',
+    '刘薇+JZ073036'
+  ]);
 });
 
 test('interview funnel rows use cleaned dimensions', () => {

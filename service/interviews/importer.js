@@ -4,7 +4,7 @@ const { readValidatedRecords } = require('../imports/excel');
 const { runImportTransaction } = require('../imports/transactions');
 const { REQUIRED_COLUMNS } = require('./importTemplate');
 const { normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('./normalize');
-const { insertInterviewRecords, replaceAllInterviewRecords, replaceInterviewRecordsByDates } = require('./repository');
+const { replaceAllInterviewRecords, replaceInterviewRecordsByDates } = require('./repository');
 
 async function readInterviewRecords(filePath) {
   return readValidatedRecords({
@@ -15,7 +15,11 @@ async function readInterviewRecords(filePath) {
   });
 }
 
-async function importInterviewRecords(filePath, mode = 'daily_append') {
+async function importInterviewRecords(filePath, mode = 'daily_overwrite') {
+  if (!['daily_overwrite', 'full_overwrite'].includes(mode)) {
+    throw new Error(`不支持的面试记录导入模式：${mode}`);
+  }
+
   const records = await readInterviewRecords(filePath);
   const fileName = path.basename(filePath);
 
@@ -25,8 +29,8 @@ async function importInterviewRecords(filePath, mode = 'daily_append') {
       importMode: mode,
       scope: 'all',
       fileName
-    }, (database) => ({
-      successCount: replaceAllInterviewRecords(database, records)
+    }, async (database) => ({
+      successCount: await replaceAllInterviewRecords(database, records)
     }));
   }
 
@@ -37,18 +41,19 @@ async function importInterviewRecords(filePath, mode = 'daily_append') {
       importMode: mode,
       scope: dates.join(','),
       fileName
-    }, (database) => ({
-      successCount: replaceInterviewRecordsByDates(database, dates, records)
+    }, async (database) => ({
+      successCount: await replaceInterviewRecordsByDates(database, dates, records)
     }));
   }
 
+  const dates = resolveInterviewOverwriteDates(records);
   return runImportTransaction({
     sourceType: 'interview_records',
-    importMode: 'daily_append',
-    scope: 'append',
+    importMode: 'daily_overwrite',
+    scope: dates.join(','),
     fileName
-  }, (database) => ({
-    successCount: insertInterviewRecords(database, records)
+  }, async (database) => ({
+    successCount: await replaceInterviewRecordsByDates(database, dates, records)
   }));
 }
 

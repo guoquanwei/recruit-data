@@ -3,16 +3,24 @@ const path = require('node:path');
 require('dotenv').config({ quiet: true });
 
 const appRoot = path.resolve(__dirname, '..');
-const sqliteMode = process.env.SQLITE_MODE === 'memory' ? 'memory' : 'file';
-const sqliteFile = process.env.SQLITE_FILE || 'data/recruitment.db';
+const databaseUrl = process.env.DATABASE_URL || '';
+
+function getDefaultDatabaseSchema(url) {
+  if (!url) {
+    return '';
+  }
+
+  try {
+    return decodeURIComponent(new URL(url).username);
+  } catch {
+    return '';
+  }
+}
 
 module.exports = {
   appRoot,
   port: Number(process.env.PORT || 3000),
+  databaseUrl,
+  databaseSchema: process.env.DB_SCHEMA || getDefaultDatabaseSchema(databaseUrl),
   platformName: '人力招聘数据分析后台',
-  sqlite: {
-    mode: sqliteMode,
-    file: sqliteFile,
-    path: sqliteMode === 'memory' ? ':memory:' : path.resolve(appRoot, sqliteFile)
-  }
 };
