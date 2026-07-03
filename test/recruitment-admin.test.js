@@ -132,6 +132,14 @@ test('target import is rendered on its own page', async () => {
   assert.match(listPage.text, /href="\/targets\/import"/);
 });
 
+test('self sourcing page omits personal risk diagnosis column', async () => {
+  const page = await requestApp('/dashboard/self-sourcing?yearMonth=2026-05');
+  assert.equal(page.response.status, 200);
+  assert.match(page.text, /月度7天人效/);
+  assert.match(page.text, /detail-modal-table/);
+  assert.doesNotMatch(page.text, /个人风险诊断/);
+});
+
 test('base risk funnel prototype renders as an isolated prototype page', async () => {
   const page = await requestApp('/prototype/base-risk-funnel');
   assert.equal(page.response.status, 200);
@@ -309,6 +317,33 @@ test('frontline base maps special office locations to business target names', ()
     department: '伽睿集团 - NEO-OPS - ITO项目',
     officeLocation: 'GZ01-贵阳德福中心'
   }), 'ITO项目');
+});
+
+test('current year non-standard employee bases fall back to ITO project', () => {
+  const currentYear = new Date().getFullYear();
+  const currentYearEmployee = normalizeActiveEmployee({
+    工号: 'JZ900',
+    姓名: '测试员工',
+    入培时间: `${currentYear}/06/01`,
+    入职日期: `${currentYear}/06/02`,
+    办公地点: 'GX01-广西基地',
+    部门: '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地',
+    职位: '初级远程服务工程师-ITO',
+    员工状态: '在职'
+  });
+  const historicalEmployee = normalizeResignedEmployee({
+    工号: 'JZ901',
+    姓名: '历史员工',
+    入培时间: `${currentYear - 1}/06/01`,
+    入职日期: `${currentYear - 1}/06/02`,
+    办公地点: 'GX01-广西基地',
+    离职前部门: '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地',
+    离职前职位: '初级远程服务工程师-ITO',
+    离职日期: `${currentYear - 1}/06/30`
+  });
+
+  assert.equal(currentYearEmployee.base, 'ITO项目');
+  assert.equal(historicalEmployee.base, 'GX01-广西基地');
 });
 
 test('employee filters support single-select enums and fuzzy channel names', () => {
@@ -1538,11 +1573,23 @@ test('self sourcing recruiter rows summarize months through selected month', () 
         entryDate: '2025-01-01',
         resignedDate: '2025-12-31'
       },
+      {
+        employeeNo: 'R005',
+        name: '当月离职',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'resigned',
+        employeeStatus: '离职',
+        trainingDate: '2025-01-01',
+        entryDate: '2025-01-01',
+        resignedDate: '2026-05-20'
+      },
       { employeeNo: 'A', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-01-10', resignedDate: '' },
       { employeeNo: 'B', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-01', resignedDate: '' },
       { employeeNo: 'C', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-25', resignedDate: '' },
       { employeeNo: 'D', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-03', resignedDate: '2026-05-05' },
       { employeeNo: 'E', channelType: '自主社招', channelName: '李四+R002', trainingDate: '2026-05-12', resignedDate: '' },
+      { employeeNo: 'G', channelType: '自主社招', channelName: '当月离职+R005', trainingDate: '2026-05-08', resignedDate: '' },
       { employeeNo: 'F', channelType: '自主社招', channelName: '未匹配招聘+R999', trainingDate: '2026-05-12', resignedDate: '' }
     ]
   });
@@ -1550,7 +1597,8 @@ test('self sourcing recruiter rows summarize months through selected month', () 
 
   assert.deepEqual(rows.map((row) => [row.name, row.employeeStatus]), [
     ['李四', '在职'],
-    ['张三', '在职']
+    ['张三', '在职'],
+    ['当月离职', '离职']
   ]);
   assert.deepEqual(zhang.months.map((month) => month.label), ['1月', '2月', '3月', '4月', '5月']);
   assert.equal(zhang.actualAchievement, 3);
@@ -1571,14 +1619,21 @@ test('self sourcing recruiter rows summarize months through selected month', () 
   assert.equal(lisi.sevenDayTrainingTarget, 8);
   assert.equal(lisi.sevenDayCutoffTarget, 8);
   assert.deepEqual(zhang.months.map((month) => month.sevenDayRetainedCount), [1, 0, 0, 0, 1]);
+  assert.deepEqual(zhang.efficiencyChartMonths.map((month) => month.label), ['1月', '2月', '3月', '4月', '5月']);
+  assert.deepEqual(zhang.cumulativeSevenDayDetails.map((item) => item.employeeNo), ['A', 'B']);
+  assert.deepEqual(lisi.efficiencyChartMonths.map((month) => month.label), ['5月']);
+  assert.deepEqual(lisi.cumulativeSevenDayDetails.map((item) => item.employeeNo), ['E']);
+  assert.equal(lisi.cutoffMonthlyAverageSevenDayEfficiency, '1.0');
+  assert.equal(lisi.cumulativeSevenDayEfficiency, '1.0');
   assert.equal(zhang.cutoffMonthlyAverageSevenDayEfficiency, '0.4');
   assert.equal(zhang.cumulativeSevenDayEfficiency, '2.0');
   assert.equal(zhang.riskStatus, '高风险');
-  assert.match(zhang.riskReason, /连续3个月7天人效低于目标/);
+  assert.doesNotMatch(zhang.riskReason, /连续3个月7天人效低于目标/);
   assert.match(zhang.riskReason, /流失偏高33%/);
-  assert.equal(zhang.diagnosis.hasThreeMonthLowSevenDayEfficiency, true);
+  assert.equal(zhang.diagnosis.hasThreeMonthLowSevenDayEfficiency, false);
   assert.equal(zhang.diagnosis.hasHighAttrition, true);
   assert.equal(rows.some((row) => row.name === '王五'), false);
+  assert.equal(rows.some((row) => row.name === '去年离职'), false);
   assert.equal(rows.some((row) => row.name === '未匹配招聘'), false);
 });
 
@@ -1610,8 +1665,64 @@ test('self sourcing recruiter rows include current month funnel diagnosis', () =
   assert.equal(zhang.recruitmentFunnel.interviewCount, 2);
   assert.equal(zhang.recruitmentFunnel.passedCount, 1);
   assert.equal(zhang.recruitmentFunnel.trainingCount, 1);
-  assert.deepEqual(zhang.recruitmentFunnel.diagnosisPath.map((item) => item.stage), ['到面', '面通', '参培', '7天留存']);
+  assert.deepEqual(zhang.recruitmentFunnel.diagnosisPath.map((item) => item.stage), ['参培达成', '7天留存']);
+  assert.match(zhang.recruitmentFunnel.diagnosisPath[0].diagnosis, /参培未达标/);
+  assert.match(zhang.recruitmentFunnel.diagnosisPath[0].suggestion, /提升参培率/);
+  assert.match(zhang.recruitmentFunnel.diagnosisPath[1].diagnosis, /7天人效未达标/);
+  assert.match(zhang.recruitmentFunnel.diagnosisPath[1].suggestion, /提升留存率/);
   assert.equal(zhang.recruitmentFunnel.diagnosisPath.every((item) => item.suggestion), true);
+});
+
+test('self sourcing recruiter diagnosis follows risk flags', () => {
+  const employees = [
+    {
+      employeeNo: 'R001',
+      name: '曹洋',
+      position: '招聘专员',
+      department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+      sourceType: 'active',
+      employeeStatus: '在职',
+      trainingDate: '2025-01-01',
+      entryDate: '2025-01-01',
+      resignedDate: ''
+    },
+    ...Array.from({ length: 8 }, (_, index) => ({
+      employeeNo: `MAY${index + 1}`,
+      channelType: '自主社招',
+      channelName: '曹洋+R001',
+      trainingDate: `2026-05-${String(index + 1).padStart(2, '0')}`,
+      resignedDate: ''
+    })),
+    ...Array.from({ length: 8 }, (_, index) => ({
+      employeeNo: `APR${index + 1}`,
+      channelType: '自主社招',
+      channelName: '曹洋+R001',
+      trainingDate: `2026-04-${String(index + 1).padStart(2, '0')}`,
+      resignedDate: ''
+    })),
+    ...Array.from({ length: 8 }, (_, index) => ({
+      employeeNo: `MAR${index + 1}`,
+      channelType: '自主社招',
+      channelName: '曹洋+R001',
+      trainingDate: `2026-03-${String(index + 1).padStart(2, '0')}`,
+      resignedDate: ''
+    }))
+  ];
+  const rows = buildSelfSourcingRecruiterRows({
+    yearMonth: '2026-05',
+    asOfDate: '2026-05-31',
+    employees
+  });
+
+  const caoyang = rows.find((row) => row.name === '曹洋');
+  assert.equal(caoyang.sevenDayRetainedCount, 8);
+  assert.equal(caoyang.sevenDayTrainingTarget, 12);
+  assert.equal(caoyang.riskStatus, '需关注');
+  assert.equal(caoyang.diagnosis.hasThreeMonthLowSevenDayEfficiency, true);
+  assert.match(caoyang.riskReason, /连续3个月7天人效低于目标/);
+  assert.deepEqual(caoyang.recruitmentFunnel.diagnosisPath.map((item) => item.stage), ['参培达成', '7天留存', '连续人效']);
+  assert.match(caoyang.recruitmentFunnel.diagnosisPath[1].diagnosis, /7天人效未达标/);
+  assert.match(caoyang.recruitmentFunnel.diagnosisPath[2].diagnosis, /连续3个月7天人效低于目标/);
 });
 
 test('self sourcing risk status follows seven day achievement rate', () => {
@@ -1646,6 +1757,50 @@ test('self sourcing risk status follows seven day achievement rate', () => {
   assert.equal(row.sevenDayCutoffTarget, 12);
   assert.equal(row.sevenDayAchievementRateText, '83.33%');
   assert.equal(row.monthlyGap, -10);
+  assert.equal(row.riskStatus, '正常达标');
+});
+
+test('self sourcing achieved recruiter with high attrition is normal by seven day rate', () => {
+  const retainedEmployees = Array.from({ length: 18 }, (_, index) => ({
+    employeeNo: `RETAINED${index + 1}`,
+    channelType: '自主社招',
+    channelName: '达标招聘+R001',
+    trainingDate: `2026-05-${String(index + 1).padStart(2, '0')}`,
+    resignedDate: ''
+  }));
+  const resignedEmployees = Array.from({ length: 10 }, (_, index) => ({
+    employeeNo: `RESIGNED${index + 1}`,
+    channelType: '自主社招',
+    channelName: '达标招聘+R001',
+    trainingDate: `2026-05-${String(index + 1).padStart(2, '0')}`,
+    resignedDate: `2026-05-${String(index + 2).padStart(2, '0')}`
+  }));
+  const rows = buildSelfSourcingRecruiterRows({
+    yearMonth: '2026-05',
+    asOfDate: '2026-05-31',
+    employees: [
+      {
+        employeeNo: 'R001',
+        name: '达标招聘',
+        position: '招聘专员',
+        department: '伽睿集团 / NEO-OPS / 人才开发部 / 北方招聘组',
+        sourceType: 'active',
+        employeeStatus: '在职',
+        trainingDate: '2025-01-01',
+        entryDate: '2025-01-01',
+        resignedDate: ''
+      },
+      ...retainedEmployees,
+      ...resignedEmployees
+    ]
+  });
+
+  const row = rows.find((item) => item.name === '达标招聘');
+  assert.equal(row.actualAchievement, 28);
+  assert.equal(row.monthlyCutoffTarget, 20);
+  assert.equal(row.sevenDayRetainedCount, 18);
+  assert.equal(row.sevenDayCutoffTarget, 12);
+  assert.match(row.riskReason, /流失偏高/);
   assert.equal(row.riskStatus, '正常达标');
 });
 

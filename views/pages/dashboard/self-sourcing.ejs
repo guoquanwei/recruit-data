@@ -129,12 +129,7 @@
         <col class="col-rate">
         <col class="col-efficiency">
         <col class="col-efficiency">
-        <% const monthColumns = dashboard.selfSourcingRecruiterRows[0]?.months || []; %>
-        <% monthColumns.forEach(() => { %>
-          <col class="col-month">
-        <% }) %>
-        <col class="col-trend">
-        <col class="col-diagnosis">
+        <col class="col-efficiency-chart">
       </colgroup>
       <thead>
         <tr>
@@ -148,31 +143,37 @@
           <th>7天人效</th>
           <th>7天达成率</th>
           <th>截止月均7天人效</th>
-          <th>累计7天人效</th>
-          <% monthColumns.forEach((month) => { %>
-            <th><%= month.label %></th>
-          <% }) %>
-          <th>趋势</th>
-          <th>个人风险诊断</th>
+          <th>累计人效</th>
+          <th>月度7天人效</th>
         </tr>
       </thead>
       <tbody>
         <% if (dashboard.selfSourcingRecruiterRows.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="<%= 13 + (dashboard.selfSourcingRecruiterRows[0]?.months.length || 0) %>">暂无符合筛选条件的招聘专员达成数据。</td></tr>
+          <tr><td class="text-center text-muted" colspan="12">暂无符合筛选条件的招聘专员达成数据。</td></tr>
         <% } %>
         <% dashboard.selfSourcingRecruiterRows.forEach((item) => { %>
-          <% const values = item.months.map((month) => month.sevenDayRetainedCount); %>
+          <% const chartMonths = item.efficiencyChartMonths || item.months || []; %>
+          <% const values = chartMonths.map((month) => month.sevenDayRetainedCount); %>
           <% const maxValue = Math.max(...values, 1); %>
-          <% const points = values.map((value, index) => `${values.length === 1 ? 50 : (index / (values.length - 1) * 100).toFixed(1)},${(32 - value / maxValue * 28).toFixed(1)}`).join(' '); %>
+          <% const chartPoints = chartMonths.map((month, index) => ({
+            ...month,
+            x: chartMonths.length === 1 ? 90 : Number((18 + index / (chartMonths.length - 1) * 144).toFixed(1)),
+            y: Number((54 - month.sevenDayRetainedCount / maxValue * 38).toFixed(1))
+          })); %>
+          <% const points = chartPoints.map((point) => `${point.x},${point.y}`).join(' '); %>
           <% addDetailPayload(`actual-${item.name}`, `${item.name} - 实际达成明细`, item.actualDetails); %>
           <% addDetailPayload(`seven-${item.name}`, `${item.name} - 7天留存明细`, item.sevenDayRetainedDetails); %>
+          <% addDetailPayload(`cumulative-${item.name}`, `${item.name} - 累计人效明细`, item.cumulativeSevenDayDetails); %>
           <% addDiagnosisPayload(`diagnosis-${item.name}`, `${item.name} - 诊断路径与提升方案`, item.recruitmentFunnel && item.recruitmentFunnel.diagnosisPath); %>
           <tr class="self-diagnosis-row" data-detail-key="diagnosis-<%= item.name %>">
             <td>
               <div class="self-person-cell">
                 <span class="self-risk-dot <%= riskClass(item.riskStatus) %>" title="<%= item.riskReason %>"></span>
                 <div>
-                  <strong><%= item.name %></strong>
+                  <strong>
+                    <%= item.name %>
+                    <span class="self-status-chip <%= item.employeeStatus === '离职' ? 'is-resigned' : 'is-active' %>"><%= item.employeeStatus || '未知' %></span>
+                  </strong>
                   <em><%= item.employeeNo || '--' %> · <%= item.entryDate || '--' %></em>
                 </div>
               </div>
@@ -186,19 +187,26 @@
             <td><%- detailButton(`seven-${item.name}`, item.sevenDayRetainedCount) %></td>
             <td><%= item.sevenDayAchievementRateText %></td>
             <td><%= item.cutoffMonthlyAverageSevenDayEfficiency %></td>
-            <td><%= item.cumulativeSevenDayEfficiency %></td>
-            <% item.months.forEach((month) => { %>
-              <% addDetailPayload(`month-${item.name}-${month.yearMonth}`, `${item.name} - ${month.label} 7天留存明细`, month.sevenDayRetainedDetails); %>
-              <td><%- detailButton(`month-${item.name}-${month.yearMonth}`, month.sevenDayRetainedCount) %></td>
-            <% }) %>
+            <td><%- detailButton(`cumulative-${item.name}`, item.cumulativeSevenDayEfficiency) %></td>
             <td>
-              <svg class="mini-sparkline" viewBox="0 0 100 36" role="img" aria-label="7天留存趋势">
-                <polyline points="<%= points %>" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
-              </svg>
-            </td>
-            <td>
-              <span class="self-risk-chip <%= riskClass(item.riskStatus) %>" title="<%= item.riskReason %>"><%= item.riskStatus %></span>
-              <em class="self-risk-reason"><%= item.riskReason %></em>
+              <div class="monthly-efficiency-chart" aria-label="<%= item.name %> 月度7天人效">
+                <svg viewBox="0 0 180 72" role="img" aria-label="月度7天人效趋势">
+                  <text class="chart-axis-title" x="16" y="9">7天人效</text>
+                  <line class="chart-axis" x1="14" y1="56" x2="168" y2="56"></line>
+                  <line class="chart-axis" x1="14" y1="10" x2="14" y2="56"></line>
+                  <% if (chartPoints.length > 1) { %>
+                    <polyline class="chart-line" points="<%= points %>"></polyline>
+                  <% } %>
+                  <% chartPoints.forEach((month) => { %>
+                    <% addDetailPayload(`month-${item.name}-${month.yearMonth}`, `${item.name} - ${month.label} 7天留存明细`, month.sevenDayRetainedDetails); %>
+                    <text class="chart-value" x="<%= month.x %>" y="<%= Math.max(10, month.y - 7) %>"><%= month.sevenDayRetainedCount %></text>
+                    <circle class="chart-point" cx="<%= month.x %>" cy="<%= month.y %>" r="4.5" data-detail-key="month-<%= item.name %>-<%= month.yearMonth %>">
+                      <title><%= `${month.label}：${month.sevenDayRetainedCount}人，点击查看明细` %></title>
+                    </circle>
+                    <text class="chart-month" x="<%= month.x %>" y="68"><%= month.label %></text>
+                  <% }) %>
+                </svg>
+              </div>
             </td>
           </tr>
         <% }) %>
@@ -243,7 +251,7 @@
           const cells = item.columns.map((column) => `<td>${escapeHtml(row[column])}</td>`).join('');
           return `<tr>${cells}</tr>`;
         }).join('');
-        body.innerHTML = `<div class="table-responsive"><table class="table table-hover"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        body.innerHTML = `<div class="table-responsive"><table class="table table-hover detail-modal-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
       }
       modal.classList.add('open');
     };

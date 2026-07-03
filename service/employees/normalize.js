@@ -6,6 +6,29 @@ const FRONTLINE_POSITIONS = new Set([
   '培训期学员'
 ]);
 
+const STANDARD_BASES = new Set([
+  '联通河北',
+  '联通天津',
+  '联通北京',
+  '10015升投',
+  '南二在线客服项目',
+  '长春热线项目',
+  '吉林外呼项目',
+  '江苏基地-南京',
+  '江苏基地-淮安',
+  '济南基地-济阳',
+  '济南基地-夏都',
+  '湖南基地-空港',
+  '湖南基地-荷花',
+  '成都基地',
+  '宜宾基地',
+  '合肥基地',
+  '新业务运营中心',
+  'ITO项目',
+  '人才开发部',
+  '忽略'
+]);
+
 function inferBase({ department, officeLocation }) {
   const departmentText = toText(department);
   const officeText = toText(officeLocation);
@@ -79,26 +102,43 @@ function inferBase({ department, officeLocation }) {
   return officeText || departmentText;
 }
 
+function hasCurrentYearDate(...dates) {
+  const currentYear = String(new Date().getFullYear());
+  return dates.some((date) => toText(date).startsWith(`${currentYear}-`));
+}
+
+function normalizeInferredBase(base, dates) {
+  const baseText = toText(base);
+  if (baseText && !STANDARD_BASES.has(baseText) && hasCurrentYearDate(...dates)) {
+    return 'ITO项目';
+  }
+  return baseText;
+}
+
 function normalizeEmployeeRow(row, sourceType) {
   const department = sourceType === 'resigned' ? row.离职前部门 : row.部门;
   const position = sourceType === 'resigned' ? row.离职前职位 : row.职位;
   const employeeStatus = sourceType === 'resigned' ? '离职' : toText(row.员工状态) || '在职';
   const officeLocation = row.办公地点;
+  const trainingDate = normalizeDate(row.入培时间);
+  const entryDate = normalizeDate(row.入职日期);
+  const resignedDate = normalizeDate(row.离职日期);
+  const base = inferBase({ department, officeLocation });
 
   return {
     employeeNo: toText(row.工号),
     name: toText(row.姓名),
     sourceType,
     employeeStatus,
-    base: inferBase({ department, officeLocation }),
+    base: normalizeInferredBase(base, [trainingDate, entryDate, resignedDate]),
     department: toText(department),
     position: toText(position),
     channelType: toText(row.招聘渠道),
     channelName: toText(row.渠道名称),
     officeLocation: toText(officeLocation),
-    trainingDate: normalizeDate(row.入培时间),
-    entryDate: normalizeDate(row.入职日期),
-    resignedDate: normalizeDate(row.离职日期),
+    trainingDate,
+    entryDate,
+    resignedDate,
     phone: toText(row.手机号码),
     idCard: toText(row.证件号),
     handoverDate: normalizeDate(row.通关交接时间)

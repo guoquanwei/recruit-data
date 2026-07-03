@@ -106,3 +106,3356 @@ npm run dev
 ```
 
 启动成功后终端应该会看到类似：`人力招聘数据分析后台 已启动：http://localhost:3000`。如果你设置了 `PORT`，就用对应端口访问。
+
+---
+
+_**User**_
+
+为什么又打不开了 
+
+---
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/systematic-debugging/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.claude/skills/webapp-testing/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+我先按故障排查看一下当前服务到底有没有在跑，以及终端里有没有报错；先确认根因，再决定是重启还是修配置。
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Inspecting terminal file**
+
+I need to inspect a terminal file. Instead of using shell commands like `cat`, I should use a function like `ReadFile`. Curl might also be an option, but I'm not sure about that yet. Shell commands are okay, but I think I should avoid them for a longer setup right now. It seems better to open and read the file directly in the terminal. Let’s clarify and figure out the most effective way to do this!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/projects/Users-guo1-Desktop-recruit-data/terminals/1.txt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/package.json</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/config/runtime.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+终端里关键线索是：服务打印了“已启动”，随后马上出现 `[nodemon] clean exit - waiting for changes before restart`，说明 Node 进程已经退出了，所以浏览器当然连不上。我再用端口探测确认一下。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: curl -I --max-time 3 http://localhost:3000</summary>
+
+```bash
+curl -I --max-time 3 http://localhost:3000
+```
+
+```
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+curl: (7) Failed to connect to localhost port 3000 after 0 ms: Couldn't connect to server
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: lsof -nP -iTCP:3000 -sTCP:LISTEN</summary>
+
+```bash
+lsof -nP -iTCP:3000 -sTCP:LISTEN
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+端口检测确认 `3000` 没有任何进程监听。现在要看为什么 `node server.js` 会启动后退出，我会直接跑一次启动命令捕获完整输出。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/config/database.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/nodemon.json</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+配置看起来是 `node:sqlite` + Express，端口默认 `3000`。我现在用生产启动命令复现一次，看它是报错退出还是保持运行。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm start</summary>
+
+```bash
+npm start
+```
+
+```
+]633;C
+&gt; recruit-data-platform@0.1.0 start
+&gt; node server.js
+
+人力招聘数据分析后台 已启动：http://localhost:3000
+SQLite 模式：file，路径：/Users/guo1/Desktop/recruit-data/data/recruitment.db
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Checking server status**
+
+I’ve got the server running, but I need to do a smoke check now. I think I need to check something about the background direct, as it seems like a block moved due to it running. I’m considering whether I need Await 0, maybe? And then there’s also the curl command to consider. It’s a bit chaotic, but I’m hoping to sort it all out to ensure everything is functioning properly!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+用 `npm start` 启动后这次没有立即退出，服务保持在后台运行了。我再访问首页确认页面是否能正常返回。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="await">
+<details>
+<summary>Tool use: **await**</summary>
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="await"><details>
+<summary>Tool use: **await**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: curl -I --max-time 3 http://localhost:3000/dashboard/overview</summary>
+
+```bash
+curl -I --max-time 3 http://localhost:3000/dashboard/overview
+```
+
+```
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0 24245    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0 24245    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/html; charset=utf-8
+Content-Length: 24245
+ETag: W/"5eb5-AU0V/36v2kVj117uPc7+5eYUe5g"
+Date: Fri, 03 Jul 2026 05:08:12 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Explaining the response process**
+
+I need to offer a concise final answer. The issue was a typo in "opm," which led to npm commands not running correctly; npm run dev just listed scripts and nodemon exited without listening. Now that I've started with npm start and verified the status as 200, I should mention the URL. I should remind to keep the terminal open and suggest using npm run dev in a separate terminal if needed. If the page doesn't open, a refresh might help, and I need to ensure I’m not claiming too much since we've verified everything.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+现在可以打开了：
+
+`http://localhost:3000/dashboard/overview`
+
+原因是刚才服务其实没在跑：终端里前面输入过 `opm run dev`，这是拼错命令；后面 `npm run dev` 虽然启动过，但 `nodemon` 显示了 `clean exit - waiting for changes before restart`，所以 `3000` 端口没有进程监听。
+
+我已经用 `npm start` 重新启动，并验证 `/dashboard/overview` 返回 `200 OK`。保持这个终端/后台服务不关，就能访问。
+
+---
+
+_**User**_
+
+我重新导人了在职和离职表，你在重跑一下数据，看有没有问题  包括一线员工列表和招聘专员列表
+
+---
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Planning SQLite Queries and Testing**
+
+I need to query SQLite with Node.js, and it looks like no file edits are necessary. I might run npm test to verify the pages, but I’m considering using Playwright for web app testing. If the server is running, I can navigate and inspect, though curl might be enough. I should also check SQL counts for active and resigned users and verify the schema. Parallel processes should be planned, and I need to check running terminals before starting anything.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.claude/skills/webapp-testing/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/systematic-debugging/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/verification-before-completion/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/.cursor/skills/recruitment-progress-report/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+我会重新跑一遍导入后的数据校验：先确认服务和数据库状态，再检查一线员工列表、招聘专员列表页面是否能正常渲染，最后跑自动化测试/数据统计看有没有异常。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "in_progress"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "pending"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "pending"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "pending"
+    }
+  ],
+  "success": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Inspecting service and schema**
+
+I need to inspect the service and possibly the repository schema. First, I’ll check if the server is running since we had the background npm start command from before, which might still be active. I'll use terminal commands like Shell's lsof or curl, and then run a Node query to the database. It's important for me to understand the tables, so reviewing the schema and repository will be essential.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/projects/Users-guo1-Desktop-recruit-data/terminals/729730.txt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/dao/schema.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/employees/repository.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/employees/service.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Investigating potential issues**
+
+I need to consider using Shell to query the database. There could be an issue with the terminal server being stale after new data is imported, possibly due to caching. It's important to note that the app might store the employee list cache only for the dashboards, not the list page. The service process could be holding the DB connection. SQLite reads persisted data, so if the import was done through the app, it shouldn’t be a problem. If the user re-imports via the app, the cache needs to be cleared, and we should check the import_batches. I need to read from the dao/db.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+服务现在还在 `npm start` 进程里跑着；我看到员工表的筛选规则是招聘专员按“人才开发部 + 招聘”筛，一线员工按“客服专员/培训期学员”筛。下一步我直接查数据库的导入批次和角色数量，再访问两个列表页核对。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/dao/db.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/views/pages/employees/list.ejs</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: curl -I --max-time 5 http://localhost:3000/employees/frontline && curl -I --max-time 5 http://localhost:3000/employees/recruiters</summary>
+
+```bash
+curl -I --max-time 5 http://localhost:3000/employees/frontline && curl -I --max-time 5 http://localhost:3000/employees/recruiters
+```
+
+```
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0 26430    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/html; charset=utf-8
+Content-Length: 26430
+ETag: W/"673e-sXIDU3wsFp72yv76JEsbrk52Iro"
+Date: Fri, 03 Jul 2026 05:44:22 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0 20948    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/html; charset=utf-8
+Content-Length: 20948
+ETag: W/"51d4-MwqCW7rm/jadtkoKCpbW/9esH/I"
+Date: Fri, 03 Jul 2026 05:44:22 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const one = (sql, params=[]) => db.prepare(sql).get(...params);
+const all = (sql, params=[]) => db.prepare(sql).all(...params);
+const summary = {
+  totalEmployees: one('SELECT COUNT(*) total FROM employees').total,
+  activeRows: one("SELECT COUNT(*) total FROM employees WHERE source_type='active'").total,
+  resignedRows: one("SELECT COUNT(*) total FROM employees WHERE source_type='resigned'").total,
+  frontlineRows: one("SELECT COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员')").total,
+  recruiterRows: one("SELECT COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%'").total,
+  duplicateEmployeeNos: one('SELECT COUNT(*) total FROM (SELECT employee_no, COUNT(*) c FROM employees GROUP BY employee_no HAVING c > 1)').total,
+  missingEmployeeNo: one("SELECT COUNT(*) total FROM employees WHERE employee_no IS NULL OR employee_no = ''").total,
+  missingName: one("SELECT COUNT(*) total FROM employees WHERE name IS NULL OR name = ''").total,
+  missingBase: one("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").total,
+  missingPosition: one("SELECT COUNT(*) total FROM employees WHERE position IS NULL OR position = ''").total,
+  missingTrainingDateFrontline: one("SELECT COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '')").total
+};
+console.log(JSON.stringify(summary, null, 2));
+console.log('\nlatest import batches:');
+console.table(all('SELECT id, source_type, import_mode, file_name, status, success_count, failure_count, error_summary, created_at FROM import_batches ORDER BY id DESC LIMIT 8'));
+console.log('\nsource/status distribution:');
+console.table(all('SELECT source_type, employee_status, COUNT(*) total FROM employees GROUP BY source_type, employee_status ORDER BY source_type, total DESC'));
+console.log('\nrole/base distribution:');
+console.table(all("SELECT 'frontline' role, base, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') GROUP BY base UNION ALL SELECT 'recruiter' role, base, COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%' GROUP BY base ORDER BY role, total DESC"));
+db.close();
+NODE</summary>
+
+```bash
+node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const one = (sql, params=[]) => db.prepare(sql).get(...params);
+const all = (sql, params=[]) => db.prepare(sql).all(...params);
+const summary = {
+  totalEmployees: one('SELECT COUNT(*) total FROM employees').total,
+  activeRows: one("SELECT COUNT(*) total FROM employees WHERE source_type='active'").total,
+  resignedRows: one("SELECT COUNT(*) total FROM employees WHERE source_type='resigned'").total,
+  frontlineRows: one("SELECT COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员')").total,
+  recruiterRows: one("SELECT COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%'").total,
+  duplicateEmployeeNos: one('SELECT COUNT(*) total FROM (SELECT employee_no, COUNT(*) c FROM employees GROUP BY employee_no HAVING c > 1)').total,
+  missingEmployeeNo: one("SELECT COUNT(*) total FROM employees WHERE employee_no IS NULL OR employee_no = ''").total,
+  missingName: one("SELECT COUNT(*) total FROM employees WHERE name IS NULL OR name = ''").total,
+  missingBase: one("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").total,
+  missingPosition: one("SELECT COUNT(*) total FROM employees WHERE position IS NULL OR position = ''").total,
+  missingTrainingDateFrontline: one("SELECT COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '')").total
+};
+console.log(JSON.stringify(summary, null, 2));
+console.log('\nlatest import batches:');
+console.table(all('SELECT id, source_type, import_mode, file_name, status, success_count, failure_count, error_summary, created_at FROM import_batches ORDER BY id DESC LIMIT 8'));
+console.log('\nsource/status distribution:');
+console.table(all('SELECT source_type, employee_status, COUNT(*) total FROM employees GROUP BY source_type, employee_status ORDER BY source_type, total DESC'));
+console.log('\nrole/base distribution:');
+console.table(all("SELECT 'frontline' role, base, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') GROUP BY base UNION ALL SELECT 'recruiter' role, base, COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%' GROUP BY base ORDER BY role, total DESC"));
+db.close();
+NODE
+```
+
+```
+{
+  "totalEmployees": 35889,
+  "activeRows": 2848,
+  "resignedRows": 33041,
+  "frontlineRows": 33467,
+  "recruiterRows": 130,
+  "duplicateEmployeeNos": 0,
+  "missingEmployeeNo": 0,
+  "missingName": 0,
+  "missingBase": 0,
+  "missingPosition": 166,
+  "missingTrainingDateFrontline": 9625
+}
+
+latest import batches:
+┌─────────┬────┬───────────────────────┬───────────────────┬────────────────────────────────────┬───────────┬───────────────┬───────────────┬───────────────┬───────────────────────┐
+│ (index) │ id │ source_type           │ import_mode       │ file_name                          │ status    │ success_count │ failure_count │ error_summary │ created_at            │
+├─────────┼────┼───────────────────────┼───────────────────┼────────────────────────────────────┼───────────┼───────────────┼───────────────┼───────────────┼───────────────────────┤
+│ 0       │ 21 │ 'employees.resigned'  │ 'full_overwrite'  │ '6c930c0bd38dcb5483411dcdb59a5835' │ 'success' │ 33041         │ 0             │ ''            │ '2026-07-03 05:26:56' │
+│ 1       │ 20 │ 'employees.active'    │ 'full_overwrite'  │ '09229a2a46827d4b2bc0d3553747c591' │ 'success' │ 2848          │ 0             │ ''            │ '2026-07-03 05:26:42' │
+│ 2       │ 19 │ 'interview_records'   │ 'full_overwrite'  │ '0b059a3a682b115c616155d6d8f2bff9' │ 'success' │ 50000         │ 0             │ ''            │ '2026-06-30 09:03:35' │
+│ 3       │ 18 │ 'interview_records'   │ 'full_overwrite'  │ '93386083ad49ecffc740eec8ec65aedc' │ 'success' │ 1906          │ 0             │ ''            │ '2026-06-30 08:34:07' │
+│ 4       │ 17 │ 'recruitment_targets' │ 'month_overwrite' │ '6d27198d2da24a56c587c9aacde587f4' │ 'success' │ 46            │ 0             │ ''            │ '2026-06-30 03:07:18' │
+│ 5       │ 16 │ 'recruitment_targets' │ 'month_overwrite' │ '7cd8b94f7a5833d97674ecb2054d4c08' │ 'success' │ 36            │ 0             │ ''            │ '2026-06-30 03:07:02' │
+│ 6       │ 15 │ 'recruitment_targets' │ 'month_overwrite' │ 'd13988ace7f18fa4db9af42aa4acc690' │ 'success' │ 45            │ 0             │ ''            │ '2026-06-30 03:06:56' │
+│ 7       │ 14 │ 'recruitment_targets' │ 'month_overwrite' │ 'd6cf16c6f0f157ebee05713c01a4c0c5' │ 'success' │ 42            │ 0             │ ''            │ '2026-06-30 03:06:50' │
+└─────────┴────┴───────────────────────┴───────────────────┴────────────────────────────────────┴───────────┴───────────────┴───────────────┴───────────────┴───────────────────────┘
+
+source/status distribution:
+┌─────────┬─────────────┬─────────────────┬───────┐
+│ (index) │ source_type │ employee_status │ total │
+├─────────┼─────────────┼─────────────────┼───────┤
+│ 0       │ 'active'    │ '在职'          │ 2848  │
+│ 1       │ 'resigned'  │ '离职'          │ 33041 │
+└─────────┴─────────────┴─────────────────┴───────┘
+
+role/base distribution:
+┌─────────┬─────────────┬───────────────────────────────────────────────────────────────────────────────┬───────┐
+│ (index) │ role        │ base                                                                          │ total │
+├─────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────┼───────┤
+│ 0       │ 'frontline' │ '联通河北'                                                                    │ 8055  │
+│ 1       │ 'frontline' │ '济南基地-济阳'                                                               │ 6622  │
+│ 2       │ 'frontline' │ '成都基地'                                                                    │ 6336  │
+│ 3       │ 'frontline' │ '忽略'                                                                        │ 3078  │
+│ 4       │ 'frontline' │ '联通天津'                                                                    │ 1784  │
+│ 5       │ 'frontline' │ '南二在线客服项目'                                                            │ 1728  │
+│ 6       │ 'frontline' │ '长春热线项目'                                                                │ 1211  │
+│ 7       │ 'frontline' │ '吉林外呼项目'                                                                │ 1066  │
+│ 8       │ 'frontline' │ '江苏基地-淮安'                                                               │ 1060  │
+│ 9       │ 'frontline' │ '江苏基地-南京'                                                               │ 680   │
+│ 10      │ 'frontline' │ '湖南基地-空港'                                                               │ 502   │
+│ 11      │ 'frontline' │ '济南基地-夏都'                                                               │ 431   │
+│ 12      │ 'frontline' │ '湖南基地-荷花'                                                               │ 370   │
+│ 13      │ 'frontline' │ '10015升投'                                                                   │ 288   │
+│ 14      │ 'frontline' │ '宜宾基地'                                                                    │ 137   │
+│ 15      │ 'frontline' │ '合肥基地'                                                                    │ 78    │
+│ 16      │ 'frontline' │ '新业务运营中心'                                                              │ 28    │
+│ 17      │ 'frontline' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ 6     │
+│ 18      │ 'frontline' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ 3     │
+│ 19      │ 'frontline' │ 'ITO项目'                                                                     │ 1     │
+│ 20      │ 'frontline' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班' │ 1     │
+│ 21      │ 'frontline' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'   │ 1     │
+│ 22      │ 'frontline' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班' │ 1     │
+│ 23      │ 'recruiter' │ '人才开发部'                                                                  │ 130   │
+└─────────┴─────────────┴───────────────────────────────────────────────────────────────────────────────┴───────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Identifying potential issues**
+
+I’m noting some possible issues like a missing training date for frontline 9625, which could indicate they've resigned without a training date. I need to check if the pages are showing 200 responses. It might be useful to run tests and consider using Playwright for this. I’m also thinking of inspecting the rendered page for total counts, using curl for pagination text, and exploring routes for export since previous attempts didn't yield complete results.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+数据库里这次导入批次是成功的：在职 `2848` 行、离职 `33041` 行，导入失败数都是 `0`；两个列表页 HTTP 都是 `200`。我也发现了一个需要关注的数据质量点：一线员工里有不少记录没有入培日期，接下来会确认它是否影响页面/测试。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "in_progress"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "pending"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "in_progress"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "pending"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "pending"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Exploring web inspection options**
+
+I need to consider using Playwright to inspect web pages. First, I'll check if the helper scripts are available. The web app suggests that if the server is running, reconnaissance is needed. Should I create a script? I might run Python with Playwright, but I should ensure it's installed. Alternatively, I could verify list totals using curl and regex or Node fetch to parse the HTML. I want to be cautious about external packages like Cheerio and check export endpoint routes too.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+我会把页面 HTML 拉下来做一次内容校验，不只看状态码：确认标题、首屏行数、分页总数文案，以及是否出现“暂无数据/服务异常”。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/routes/index.js",
+  "pattern": "employees/.+export|exportRows|/export"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/routes/index.js",
+  "pattern": "employees/.+export|exportRows|/export",
+  "topFiles": [
+    {
+      "matchCount": 5,
+      "uri": "routes/index.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 5
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: node - <<'NODE'
+async function inspect(path) {
+  const response = await fetch(`http://localhost:3000${path}`);
+  const html = await response.text();
+  const title = html.match(/<title>(.*?)<\/title>/s)?.[1]?.trim();
+  const heading = html.match(/<h2[^>]*>(.*?)<\/h2>/s)?.[1]?.replace(/<[^>]+>/g, '').trim();
+  const bodyText = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const dataRows = [...html.matchAll(/<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/g)].filter((m) => !m[1].includes('暂无数据') && !m[1].includes('没有符合筛选条件')).length;
+  const hasEmpty = /暂无数据|没有符合筛选条件/.test(html);
+  const hasError = /服务异常|页面不存在|Cannot|Error:|ReferenceError|TypeError/.test(html);
+  const totalText = bodyText.match(/共\s*\d+\s*条|第\s*\d+\s*\/\s*\d+\s*页|上一页|下一页/g)?.join(' | ') || '';
+  console.log(JSON.stringify({ path, status: response.status, title, heading, dataRows, hasEmpty, hasError, totalText }, null, 2));
+}
+await inspect('/employees/frontline');
+await inspect('/employees/recruiters');
+await inspect('/employees/frontline?status=%E5%9C%A8%E8%81%8C');
+await inspect('/employees/recruiters?status=%E5%9C%A8%E8%81%8C');
+NODE</summary>
+
+```bash
+node - <<'NODE'
+async function inspect(path) {
+  const response = await fetch(`http://localhost:3000${path}`);
+  const html = await response.text();
+  const title = html.match(/<title>(.*?)<\/title>/s)?.[1]?.trim();
+  const heading = html.match(/<h2[^>]*>(.*?)<\/h2>/s)?.[1]?.replace(/<[^>]+>/g, '').trim();
+  const bodyText = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const dataRows = [...html.matchAll(/<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/g)].filter((m) => !m[1].includes('暂无数据') && !m[1].includes('没有符合筛选条件')).length;
+  const hasEmpty = /暂无数据|没有符合筛选条件/.test(html);
+  const hasError = /服务异常|页面不存在|Cannot|Error:|ReferenceError|TypeError/.test(html);
+  const totalText = bodyText.match(/共\s*\d+\s*条|第\s*\d+\s*\/\s*\d+\s*页|上一页|下一页/g)?.join(' | ') || '';
+  console.log(JSON.stringify({ path, status: response.status, title, heading, dataRows, hasEmpty, hasError, totalText }, null, 2));
+}
+await inspect('/employees/frontline');
+await inspect('/employees/recruiters');
+await inspect('/employees/frontline?status=%E5%9C%A8%E8%81%8C');
+await inspect('/employees/recruiters?status=%E5%9C%A8%E8%81%8C');
+NODE
+```
+
+```
+{
+  "path": "/employees/frontline",
+  "status": 200,
+  "title": "一线员工列表 - 人力招聘数据分析后台",
+  "heading": "一线员工列表",
+  "dataRows": 1,
+  "hasEmpty": false,
+  "hasError": false,
+  "totalText": "共 33467 条"
+}
+{
+  "path": "/employees/recruiters",
+  "status": 200,
+  "title": "招聘专员列表 - 人力招聘数据分析后台",
+  "heading": "招聘专员列表",
+  "dataRows": 1,
+  "hasEmpty": false,
+  "hasError": false,
+  "totalText": "共 130 条"
+}
+{
+  "path": "/employees/frontline?status=%E5%9C%A8%E8%81%8C",
+  "status": 200,
+  "title": "一线员工列表 - 人力招聘数据分析后台",
+  "heading": "一线员工列表",
+  "dataRows": 1,
+  "hasEmpty": false,
+  "hasError": false,
+  "totalText": "共 2437 条"
+}
+{
+  "path": "/employees/recruiters?status=%E5%9C%A8%E8%81%8C",
+  "status": 200,
+  "title": "招聘专员列表 - 人力招聘数据分析后台",
+  "heading": "招聘专员列表",
+  "dataRows": 1,
+  "hasEmpty": false,
+  "hasError": false,
+  "totalText": "共 27 条"
+}
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Reviewing regex flaws**
+
+I've realized that the regex for dataRows is flawed because it only matches one `<tr>` element, likely due to the `tbody` regex not being global. I think I need to tweak this to ensure it captures all instances. It might be helpful to incorporate routes and offsets around the exports to resolve the issue. I’ll look into how I can adjust this regex to work better with multiple rows.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+页面内容校验也正常：一线员工总数显示 `33467`，招聘专员总数显示 `130`；按“在职”筛选分别是 `2437` 和 `27`。我继续验证导出接口和项目测试。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "in_progress"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "pending"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "in_progress"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "pending"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: curl -I --max-time 5 'http://localhost:3000/employees/frontline/export' && curl -I --max-time 5 'http://localhost:3000/employees/recruiters/export'</summary>
+
+```bash
+curl -I --max-time 5 'http://localhost:3000/employees/frontline/export' && curl -I --max-time 5 'http://localhost:3000/employees/recruiters/export'
+```
+
+```
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0 4267k    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/csv; charset=utf-8
+Content-Disposition: attachment; filename*=UTF-8''%E4%B8%80%E7%BA%BF%E5%91%98%E5%B7%A5%E5%88%97%E8%A1%A8.csv
+Content-Length: 4369909
+ETag: W/"42adf5-ChYwbxWF+Fynu9BQdKkPlBVA3QY"
+Date: Fri, 03 Jul 2026 05:44:57 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0 16349    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/csv; charset=utf-8
+Content-Disposition: attachment; filename*=UTF-8''%E6%8B%9B%E8%81%98%E4%B8%93%E5%91%98%E5%88%97%E8%A1%A8.csv
+Content-Length: 16349
+ETag: W/"3fdd-UnIssoq9bA6xq/+VhkiZ2fGoBf0"
+Date: Fri, 03 Jul 2026 05:44:57 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm test</summary>
+
+```bash
+npm test
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test
+
+✔ shared formatting masks phone numbers and parses pagination defaults (2.874235ms)
+✔ excel helper keeps duplicate headers addressable like spreadsheet tools (0.266121ms)
+✔ employee import templates match required sheet names and column headers (2.384457ms)
+✔ target and interview import templates match required sheets and columns (1.218432ms)
+✔ target import is rendered on its own page (1109.973003ms)
+✔ self sourcing page omits personal risk diagnosis column (292.633234ms)
+✔ base risk funnel prototype renders as an isolated prototype page (71.978165ms)
+✔ csv export escapes values and includes utf8 bom (0.564893ms)
+✔ interview repository inserts every normalized interview field (1.420957ms)
+✔ employee normalization maps active and resigned source columns to one model (0.702273ms)
+✔ talent development department base uses third-level department (0.145391ms)
+✔ frontline base maps special office locations to business target names (0.17588ms)
+✔ employee filters support single-select enums and fuzzy channel names (0.231287ms)
+✔ employee base filter options hide ignored and raw department paths (0.175129ms)
+✔ recruiter role requires talent development department and recruitment position (0.148131ms)
+✔ target progress sums cutoff targets and actuals through cutoff date (0.271097ms)
+✔ target progress default cutoff uses today for current month and month end for past month (0.157853ms)
+✔ target plan summary calculates channel shares (0.411265ms)
+✔ target plan summary uses month breakdown when month is all (0.263884ms)
+✔ target filter options use bases from selected month only (0.182411ms)
+✔ target progress summary exposes self sourcing actual share (0.435435ms)
+✔ target progress includes actual-only base channel combinations (0.296966ms)
+✔ target progress summary follows base filter (0.285511ms)
+✔ dashboard training details follow base filter (0.345089ms)
+✔ dashboard matrix exposes base channel status cells (0.653706ms)
+✔ dashboard batch drilldown groups funnel by batch feedback window (1.211216ms)
+✔ dashboard batch drilldown diagnoses gap by funnel stage (0.384254ms)
+✔ dashboard batch matrix uses base channel rows and batch columns (1.606296ms)
+✔ dashboard funnel diagnosis excludes return and campus channels (2.339199ms)
+✔ dashboard position channel board summarizes one base across channels and batches (3.485314ms)
+✔ dashboard position channel board exposes funnel rows and channel action plans (1.809211ms)
+✔ dashboard position channel board action plans follow selected channel scope (1.263204ms)
+✔ dashboard position channel board shows healthy diagnosis when base is achieved (1.60093ms)
+✔ dashboard position channel board marks achieved batch as healthy even when one channel is short (1.734875ms)
+✔ dashboard position channel board treats actual-only channels as healthy (1.03675ms)
+✔ dashboard position board keeps batch overview embedded and vertical (4.516704ms)
+✔ dashboard position channel board switches to base achievement overview when base is all (1.063768ms)
+✔ dashboard overview insights expose executive cards, channel shares and vendor top three (1.2558ms)
+✔ dashboard overview base achievements sort by achievement rate and keep actual-only bases last (2.24933ms)
+✔ dashboard overview tab normalizes unknown tab to overview (0.352061ms)
+✔ self sourcing efficiency uses monthly active recruiter scale by stage (0.960768ms)
+✔ self sourcing efficiency follows recruiter filter (0.457929ms)
+✔ self sourcing details expose recruiter options and support recruiter filter (0.308164ms)
+✔ self sourcing recruiter rows summarize months through selected month (1.442024ms)
+✔ self sourcing recruiter rows include current month funnel diagnosis (0.555166ms)
+✔ self sourcing recruiter diagnosis follows risk flags (0.905322ms)
+✔ self sourcing risk status follows seven day achievement rate (0.595735ms)
+✔ self sourcing achieved recruiter with high attrition is normal by seven day rate (0.971871ms)
+✔ interview normalization resolves feedback dates for daily overwrite (0.323268ms)
+✔ interview position name infers base (0.099818ms)
+✔ interview filters use cleaned funnel dimensions (0.143625ms)
+✔ interview funnel rows use cleaned dimensions (0.536074ms)
+✔ monthly interview funnel uses monthly employee training totals by base (0.456083ms)
+ℹ tests 53
+ℹ suites 0
+ℹ pass 53
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2748.160623
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+function table(title, sql) {
+  console.log(`\n${title}`);
+  console.table(db.prepare(sql).all());
+}
+table('frontline positions', "SELECT position, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') GROUP BY position ORDER BY total DESC");
+table('frontline status', "SELECT employee_status, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') GROUP BY employee_status ORDER BY total DESC");
+table('recruiter positions', "SELECT position, COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%' GROUP BY position ORDER BY total DESC");
+table('recruiter status', "SELECT employee_status, COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%' GROUP BY employee_status ORDER BY total DESC");
+table('frontline missing training date by status', "SELECT source_type, employee_status, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '') GROUP BY source_type, employee_status ORDER BY total DESC");
+table('non-normalized bases sample', "SELECT base, COUNT(*) total FROM employees WHERE base LIKE '伽睿集团%' GROUP BY base ORDER BY total DESC LIMIT 10");
+db.close();
+NODE</summary>
+
+```bash
+node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+function table(title, sql) {
+  console.log(`\n${title}`);
+  console.table(db.prepare(sql).all());
+}
+table('frontline positions', "SELECT position, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') GROUP BY position ORDER BY total DESC");
+table('frontline status', "SELECT employee_status, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') GROUP BY employee_status ORDER BY total DESC");
+table('recruiter positions', "SELECT position, COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%' GROUP BY position ORDER BY total DESC");
+table('recruiter status', "SELECT employee_status, COUNT(*) total FROM employees WHERE department LIKE '%人才开发部%' AND position LIKE '%招聘%' GROUP BY employee_status ORDER BY total DESC");
+table('frontline missing training date by status', "SELECT source_type, employee_status, COUNT(*) total FROM employees WHERE position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '') GROUP BY source_type, employee_status ORDER BY total DESC");
+table('non-normalized bases sample', "SELECT base, COUNT(*) total FROM employees WHERE base LIKE '伽睿集团%' GROUP BY base ORDER BY total DESC LIMIT 10");
+db.close();
+NODE
+```
+
+```
+
+frontline positions
+┌─────────┬──────────────┬───────┐
+│ (index) │ position     │ total │
+├─────────┼──────────────┼───────┤
+│ 0       │ '客服专员'   │ 19779 │
+│ 1       │ '培训期学员' │ 13688 │
+└─────────┴──────────────┴───────┘
+
+frontline status
+┌─────────┬─────────────────┬───────┐
+│ (index) │ employee_status │ total │
+├─────────┼─────────────────┼───────┤
+│ 0       │ '离职'          │ 31030 │
+│ 1       │ '在职'          │ 2437  │
+└─────────┴─────────────────┴───────┘
+
+recruiter positions
+┌─────────┬────────────────────┬───────┐
+│ (index) │ position           │ total │
+├─────────┼────────────────────┼───────┤
+│ 0       │ '招聘专员'         │ 83    │
+│ 1       │ '招聘实习生'       │ 32    │
+│ 2       │ '招聘经理'         │ 6     │
+│ 3       │ '招聘运营专员'     │ 4     │
+│ 4       │ '初级招聘主管'     │ 1     │
+│ 5       │ '招聘主管'         │ 1     │
+│ 6       │ '招聘负责人'       │ 1     │
+│ 7       │ '招聘运营主管'     │ 1     │
+│ 8       │ '高级招聘运营经理' │ 1     │
+└─────────┴────────────────────┴───────┘
+
+recruiter status
+┌─────────┬─────────────────┬───────┐
+│ (index) │ employee_status │ total │
+├─────────┼─────────────────┼───────┤
+│ 0       │ '离职'          │ 103   │
+│ 1       │ '在职'          │ 27    │
+└─────────┴─────────────────┴───────┘
+
+frontline missing training date by status
+┌─────────┬─────────────┬─────────────────┬───────┐
+│ (index) │ source_type │ employee_status │ total │
+├─────────┼─────────────┼─────────────────┼───────┤
+│ 0       │ 'resigned'  │ '离职'          │ 9309  │
+│ 1       │ 'active'    │ '在职'          │ 316   │
+└─────────┴─────────────┴─────────────────┴───────┘
+
+non-normalized bases sample
+┌─────────┬───────────────────────────────────────────────────────────────────────────────┬───────┐
+│ (index) │ base                                                                          │ total │
+├─────────┼───────────────────────────────────────────────────────────────────────────────┼───────┤
+│ 0       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ 6     │
+│ 1       │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                    │ 3     │
+│ 2       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ 3     │
+│ 3       │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广州基地'                      │ 1     │
+│ 4       │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                      │ 1     │
+│ 5       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班' │ 1     │
+│ 6       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'   │ 1     │
+│ 7       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班' │ 1     │
+└─────────┴───────────────────────────────────────────────────────────────────────────────┴───────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+测试套件全部通过，导出接口也正常返回 CSV。数据层面目前不是程序报错，而是导入数据本身有两个可疑点：一线员工缺入培日期、少量基地没有被归一到标准基地名；我再抽样确认具体记录形态。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+function show(title, sql) { console.log(`\n${title}`); console.table(db.prepare(sql).all()); }
+show('active frontline missing training date samples', "SELECT employee_no, name, employee_status, base, department, position, entry_date, training_date FROM employees WHERE source_type='active' AND position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '') LIMIT 10");
+show('resigned frontline missing training date samples', "SELECT employee_no, name, employee_status, base, department, position, entry_date, resigned_date, training_date FROM employees WHERE source_type='resigned' AND position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '') LIMIT 10");
+show('frontline raw base path samples', "SELECT employee_no, name, employee_status, base, department, position, office_location, training_date FROM employees WHERE position IN ('客服专员', '培训期学员') AND base LIKE '伽睿集团%' LIMIT 10");
+show('missing position samples', "SELECT source_type, employee_no, name, employee_status, base, department, position, entry_date, training_date FROM employees WHERE position IS NULL OR position = '' LIMIT 10");
+db.close();
+NODE</summary>
+
+```bash
+node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+function show(title, sql) { console.log(`\n${title}`); console.table(db.prepare(sql).all()); }
+show('active frontline missing training date samples', "SELECT employee_no, name, employee_status, base, department, position, entry_date, training_date FROM employees WHERE source_type='active' AND position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '') LIMIT 10");
+show('resigned frontline missing training date samples', "SELECT employee_no, name, employee_status, base, department, position, entry_date, resigned_date, training_date FROM employees WHERE source_type='resigned' AND position IN ('客服专员', '培训期学员') AND (training_date IS NULL OR training_date = '') LIMIT 10");
+show('frontline raw base path samples', "SELECT employee_no, name, employee_status, base, department, position, office_location, training_date FROM employees WHERE position IN ('客服专员', '培训期学员') AND base LIKE '伽睿集团%' LIMIT 10");
+show('missing position samples', "SELECT source_type, employee_no, name, employee_status, base, department, position, entry_date, training_date FROM employees WHERE position IS NULL OR position = '' LIMIT 10");
+db.close();
+NODE
+```
+
+```
+
+active frontline missing training date samples
+┌─────────┬─────────────┬──────────┬─────────────────┬─────────────┬─────────────────────────────────────────────────────────────────────────────────┬────────────┬──────────────┬───────────────┐
+│ (index) │ employee_no │ name     │ employee_status │ base        │ department                                                                      │ position   │ entry_date   │ training_date │
+├─────────┼─────────────┼──────────┼─────────────────┼─────────────┼─────────────────────────────────────────────────────────────────────────────────┼────────────┼──────────────┼───────────────┤
+│ 0       │ 'JZ000287'  │ '朱明月' │ '在职'          │ '10015升投' │ '伽睿集团 / NEO-OPS / 河北基地 / 10015升投 / 专席服务部 / 申诉疑难专席区 / 1班' │ '客服专员' │ '2020-07-13' │ ''            │
+│ 1       │ 'JZ000691'  │ '张川悦' │ '在职'          │ '10015升投' │ '伽睿集团 / NEO-OPS / 河北基地 / 10015升投 / 前台 / 普通客服一区 / 10班'        │ '客服专员' │ '2020-11-23' │ ''            │
+│ 2       │ 'JZ000757'  │ '王欣雨' │ '在职'          │ '联通河北'  │ '伽睿集团 / NEO-OPS / 河北基地 / 联通河北 / 河北交付部 / 河北一区 / 1班'        │ '客服专员' │ '2020-12-02' │ ''            │
+│ 3       │ 'JZ000887'  │ '张永娜' │ '在职'          │ '联通河北'  │ '伽睿集团 / NEO-OPS / 河北基地 / 联通河北 / 400联通在线专席 / 一区 / 1班'       │ '客服专员' │ '2020-12-11' │ ''            │
+│ 4       │ 'JZ001032'  │ '安红霞' │ '在职'          │ '联通河北'  │ '伽睿集团 / NEO-OPS / 河北基地 / 联通河北 / 河北交付部 / 河北一区 / 2班'        │ '客服专员' │ '2021-04-19' │ ''            │
+│ 5       │ 'JZ001033'  │ '安永兴' │ '在职'          │ '10015升投' │ '伽睿集团 / NEO-OPS / 河北基地 / 10015升投 / 专席服务部 / 申诉疑难专席区 / 1班' │ '客服专员' │ '2021-01-01' │ ''            │
+│ 6       │ 'JZ001035'  │ '白雪'   │ '在职'          │ '10015升投' │ '伽睿集团 / NEO-OPS / 河北基地 / 10015升投 / 前台 / 普通客服一区 / 2班'         │ '客服专员' │ '2021-01-01' │ ''            │
+│ 7       │ 'JZ001040'  │ '曹旭瑶' │ '在职'          │ '联通河北'  │ '伽睿集团 / NEO-OPS / 河北基地 / 联通河北 / 河北交付部 / 河北一区 / 4班'        │ '客服专员' │ '2021-01-01' │ ''            │
+│ 8       │ 'JZ001044'  │ '陈彩云' │ '在职'          │ '10015升投' │ '伽睿集团 / NEO-OPS / 河北基地 / 10015升投 / 前台 / 普通客服一区 / 6班'         │ '客服专员' │ '2021-01-01' │ ''            │
+│ 9       │ 'JZ001058'  │ '丁汶汶' │ '在职'          │ '联通河北'  │ '伽睿集团 / NEO-OPS / 河北基地 / 联通河北 / 河北交付部 / 河北一区 / 4班'        │ '客服专员' │ '2021-01-01' │ ''            │
+└─────────┴─────────────┴──────────┴─────────────────┴─────────────┴─────────────────────────────────────────────────────────────────────────────────┴────────────┴──────────────┴───────────────┘
+
+resigned frontline missing training date samples
+┌─────────┬─────────────┬──────────┬─────────────────┬────────┬───────────────────────────────────────────────────────────────────────────────────────────┬────────────┬──────────────┬───────────────┬───────────────┐
+│ (index) │ employee_no │ name     │ employee_status │ base   │ department                                                                                │ position   │ entry_date   │ resigned_date │ training_date │
+├─────────┼─────────────┼──────────┼─────────────────┼────────┼───────────────────────────────────────────────────────────────────────────────────────────┼────────────┼──────────────┼───────────────┼───────────────┤
+│ 0       │ 'JZ000114'  │ '程俊国' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 联想项目'                                  │ '客服专员' │ '2015-05-28' │ '2021-01-31'  │ ''            │
+│ 1       │ 'JZ000124'  │ '丁志强' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - 宽带专家席 - 1班'                   │ '客服专员' │ '2016-03-08' │ '2021-05-31'  │ ''            │
+│ 2       │ 'JZ000129'  │ '张奥利' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - 宽带专家席'                         │ '客服专员' │ '2016-11-30' │ '2021-01-07'  │ ''            │
+│ 3       │ 'JZ000132'  │ '刘茜茜' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - 网络客服'                           │ '客服专员' │ '2017-03-13' │ '2021-12-31'  │ ''            │
+│ 4       │ 'JZ000137'  │ '兰阳'   │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - 集中处理席'                         │ '客服专员' │ '2017-07-21' │ '2021-06-30'  │ ''            │
+│ 5       │ 'JZ000140'  │ '董建旭' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - 宽带专家席'                         │ '客服专员' │ '2017-10-26' │ '2021-04-16'  │ ''            │
+│ 6       │ 'JZ000143'  │ '马英杰' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - VIP运营中心'                        │ '客服专员' │ '2017-11-15' │ '2021-03-24'  │ ''            │
+│ 7       │ 'JZ000146'  │ '孙佳佳' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - 集中处理席'                         │ '客服专员' │ '2017-11-27' │ '2021-05-26'  │ ''            │
+│ 8       │ 'JZ000147'  │ '许国华' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10015 - 督办专席 - 普通客服一区 - 普通一组' │ '客服专员' │ '2022-10-26' │ '2024-09-24'  │ ''            │
+│ 9       │ 'JZ000150'  │ '王誉锋' │ '离职'          │ '忽略' │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10015 - 二线高星客服'                       │ '客服专员' │ '2022-10-26' │ '2023-01-06'  │ ''            │
+└─────────┴─────────────┴──────────┴─────────────────┴────────┴───────────────────────────────────────────────────────────────────────────────────────────┴────────────┴──────────────┴───────────────┴───────────────┘
+
+frontline raw base path samples
+┌─────────┬─────────────┬──────────┬─────────────────┬───────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────┬──────────────┬─────────────────┬───────────────┐
+│ (index) │ employee_no │ name     │ employee_status │ base                                                                          │ department                                                                    │ position     │ office_location │ training_date │
+├─────────┼─────────────┼──────────┼─────────────────┼───────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────┼──────────────┼─────────────────┼───────────────┤
+│ 0       │ 'JZ063406'  │ '黄元帅' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '培训期学员' │ ''              │ '2024-07-18'  │
+│ 1       │ 'JZ063412'  │ '李念钰' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '培训期学员' │ ''              │ '2024-07-18'  │
+│ 2       │ 'JZ063417'  │ '刘宇航' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '培训期学员' │ ''              │ '2024-07-18'  │
+│ 3       │ 'JZ062916'  │ '苗东亮' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班' │ '培训期学员' │ ''              │ '2024-06-27'  │
+│ 4       │ 'JZ062644'  │ '辛文叶' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班' │ '培训期学员' │ ''              │ '2024-06-13'  │
+│ 5       │ 'JZ052166'  │ '孙霞'   │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'   │ '客服专员'   │ ''              │ '2023-02-10'  │
+│ 6       │ 'JZ051563'  │ '赵铭钰' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '客服专员'   │ ''              │ '2022-12-16'  │
+│ 7       │ 'JZ051557'  │ '王秀娟' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '客服专员'   │ ''              │ '2022-12-16'  │
+│ 8       │ 'JZ051567'  │ '徐兆晨' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '客服专员'   │ ''              │ '2022-12-15'  │
+│ 9       │ 'JZ051572'  │ '陈杰'   │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '客服专员'   │ ''              │ '2022-12-15'  │
+└─────────┴─────────────┴──────────┴─────────────────┴───────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────┴──────────────┴─────────────────┴───────────────┘
+
+missing position samples
+┌─────────┬─────────────┬─────────────┬──────────┬─────────────────┬────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────────┬──────────┬──────────────┬───────────────┐
+│ (index) │ source_type │ employee_no │ name     │ employee_status │ base               │ department                                                                                   │ position │ entry_date   │ training_date │
+├─────────┼─────────────┼─────────────┼──────────┼─────────────────┼────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────────┼──────────┼──────────────┼───────────────┤
+│ 0       │ 'resigned'  │ 'JZ070444'  │ '王婷'   │ '离职'          │ '江苏基地-南京'    │ '伽睿集团 - NEO-OPS - 江苏项目 - 运营支持部 - 热线运营支持部 - 二线工单组'                   │ ''       │ '2025-09-02' │ '2025-09-02'  │
+│ 1       │ 'resigned'  │ 'JZ067715'  │ '赵欣羽' │ '离职'          │ '江苏基地-南京'    │ '伽睿集团 - NEO-OPS - 江苏项目 - 运营支持部 - 热线运营支持部 - 二线工单组'                   │ ''       │ '2025-05-13' │ '2025-04-17'  │
+│ 2       │ 'resigned'  │ 'JZ000437'  │ '赵彤岩' │ '离职'          │ '忽略'             │ '伽睿集团 - NEO-OPS - 北京基地 - 客户服务部 - 10010 - VIP运营中心 - 普通客服一区 - 普通一组' │ ''       │ '2020-08-01' │ ''            │
+│ 3       │ 'resigned'  │ 'JZ057638'  │ '邹倩雯' │ '离职'          │ '南二在线客服项目' │ '伽睿集团 - NEO-OPS - 韶关基地 - 运营交付部 - 在线客服 - 二线服务区'                         │ ''       │ '2023-09-28' │ '2023-09-26'  │
+│ 4       │ 'resigned'  │ 'JZ100432'  │ '高昱滢' │ '离职'          │ '南二在线客服项目' │ '伽睿集团 - NEO-OPS - 韶关基地 - 运营交付部 - 在线客服 - 二线服务区'                         │ ''       │ '2023-09-01' │ ''            │
+│ 5       │ 'resigned'  │ 'JZ011326'  │ '朱强'   │ '离职'          │ '成都基地'         │ '伽睿集团 - NEO-OPS - 成都基地 - 运营交付部 - 浙江交付部 - 浙江一区 - 4班'                   │ ''       │ '2022-09-23' │ ''            │
+│ 6       │ 'resigned'  │ 'JZ051433'  │ '王兆宇' │ '离职'          │ '成都基地'         │ '伽睿集团 - NEO-OPS - 成都基地 - 运营交付部 - 浙江交付部 - 浙江一区 - 4班'                   │ ''       │ '2023-01-05' │ '2022-12-06'  │
+│ 7       │ 'resigned'  │ 'JZ011320'  │ '岳绍兰' │ '离职'          │ '成都基地'         │ '伽睿集团 - NEO-OPS - 成都基地 - 运营交付部 - 浙江交付部 - 浙江一区 - 4班'                   │ ''       │ '2022-09-23' │ ''            │
+│ 8       │ 'resigned'  │ 'JZ051476'  │ '王琳'   │ '离职'          │ '成都基地'         │ '伽睿集团 - NEO-OPS - 成都基地 - 运营交付部 - 浙江交付部 - 浙江一区 - 4班'                   │ ''       │ '2023-01-05' │ '2022-12-06'  │
+│ 9       │ 'resigned'  │ 'JZ051435'  │ '朱麒霖' │ '离职'          │ '成都基地'         │ '伽睿集团 - NEO-OPS - 成都基地 - 运营交付部 - 浙江交付部 - 浙江一区 - 4班'                   │ ''       │ '2023-01-05' │ '2022-12-06'  │
+└─────────┴─────────────┴─────────────┴──────────┴─────────────────┴────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────────┴──────────┴──────────────┴───────────────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: for path in /dashboard/overview /employees/frontline /employees/recruiters /targets/progress /interviews/funnel; do printf '%s ' "$path"; curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 "http://localhost:3000$path"; done</summary>
+
+```bash
+for path in /dashboard/overview /employees/frontline /employees/recruiters /targets/progress /interviews/funnel; do printf '%s ' "$path"; curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 "http://localhost:3000$path"; done
+```
+
+```
+/dashboard/overview (eval):1: command not found: curl
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Troubleshooting curl command**
+
+I'm encountering an issue where the curl command isn't found in zsh. It seems that a variable named "path" might be conflicting with the system's PATH variable, possibly overwriting it. Earlier, curl worked fine, but now it's causing problems in the shell session. To fix this, I need to restore the PATH variable and consider using the absolute path for curl. It's essential to avoid using "path" as a variable name in zsh to prevent this issue in future sessions.
+**Determining the normal PATH**
+
+I need to identify the normal PATH settings, which are likely something like /usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/usr/local/bin. To fix any issues, I should run an export command with this PATH in the same shell session. It’s important to perform a shell check afterward to ensure everything is working correctly. I must be careful with these changes, as they can impact the shell environment significantly.
+**Checking dashboard and environment**
+
+I need to run a dashboard check. I’m wondering if we should have run tests before the path got messed up. It looks like the issues arose after tests, possibly in the same persistent shell session? It seems that the shell state persists across calls, but parallel tool calls might share that state. I’ll need to repair it and check the shell environment, making sure no command-not-found errors pop up.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+刚才核心页面状态检查那条命令本身写法踩了 zsh 的 `path` 变量，导致那条检查失败；这不是应用错误。我会修正命令变量名后重新跑页面检查。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; for url_path in /dashboard/overview /employees/frontline /employees/recruiters /targets/progress /interviews/funnel; do printf '%s ' "$url_path"; /usr/bin/curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 "http://localhost:3000$url_path"; done</summary>
+
+```bash
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"; for url_path in /dashboard/overview /employees/frontline /employees/recruiters /targets/progress /interviews/funnel; do printf '%s ' "$url_path"; /usr/bin/curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 "http://localhost:3000$url_path"; done
+```
+
+```
+/dashboard/overview 200
+/employees/frontline 200
+/employees/recruiters 200
+/targets/progress 200
+/interviews/funnel 200
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+核心页面也都返回 `200`，包括看板、目标进度、面试漏斗和两个员工列表。现在我整理一下结果，重点说明程序状态和数据可疑点。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "completed"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "in_progress"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "in_progress"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "pending"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write">
+<details>
+<summary>Tool use: **todo_write**</summary>
+
+
+Parameters:
+
+```json
+{
+  "merge": true
+}
+```
+Result:
+
+```json
+{
+  "finalTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "completed"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "completed"
+    }
+  ],
+  "initialTodos": [
+    {
+      "content": "确认服务是否运行并读取当前数据库统计",
+      "id": "check-server-db",
+      "status": "completed"
+    },
+    {
+      "content": "验证一线员工列表和招聘专员列表页面渲染",
+      "id": "verify-pages",
+      "status": "completed"
+    },
+    {
+      "content": "运行项目测试或针对导入数据的校验命令",
+      "id": "run-tests",
+      "status": "completed"
+    },
+    {
+      "content": "汇总发现的问题和可访问链接",
+      "id": "summarize-findings",
+      "status": "in_progress"
+    }
+  ],
+  "success": true,
+  "wasMerge": true
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="todo_write"><details>
+<summary>Tool use: **todo_write**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+我重跑检查了，程序层面没发现报错。
+
+当前导入结果：
+- 在职表导入成功：`2848` 行，失败 `0`
+- 离职表导入成功：`33041` 行，失败 `0`
+- 一线员工列表：`33467` 条，页面正常；在职筛选后 `2437` 条
+- 招聘专员列表：`130` 条，页面正常；在职筛选后 `27` 条
+- 两个列表的导出接口也正常返回 CSV
+- 核心页面 `/dashboard/overview`、`/targets/progress`、`/interviews/funnel` 都是 `200`
+- `npm test` 通过：`53/53`
+
+需要关注的数据点有两个：
+1. 一线员工有 `9625` 条缺少入培日期，其中在职 `316` 条、离职 `9309` 条。这会影响按入培日期统计/筛选的准确性。
+2. 一线员工里有少量基地还是原始部门路径，例如 `伽睿集团 - NEO-OPS - 济南基地...`，没有归一到标准基地名，共十几条左右，可能需要补基地映射规则。
+
+你现在可以看：
+`http://localhost:3000/employees/frontline`
+`http://localhost:3000/employees/recruiters`
+
+---
+
+_**User**_
+
+把没有归类标准基地名的理出来
+
+---
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Assessing data inspection tasks**
+
+I’m considering how to approach the task of running queries for unclassified standard bases. I wonder if I might need to use skills in data inspection, but maybe not. It's a systematic issue, and I need to carefully inspect the data first. I’m also thinking about the potential problem with altered shell PATH and whether a SQL output might be too large. The user wants to sort or list records, which makes me think of generating a CSV file for clarity.
+**Determining how to handle file operations**
+
+I’m considering the developer’s guidance not to use shell commands for file operations like reading, writing, or editing. But generating a database query output to a file seems like it’s still a terminal operation. Maybe I should prefer using ApplyPatch for dynamic outcomes instead. I also want to focus on the exact employee numbers, which total around 17, and see if I can create a list from that. I’ll query counts for all nonstandard bases while excluding recognized standards. I think it’s essential to run the node query.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+我把“标准基地名之外”的记录按基地值汇总，并把对应人员明细也拉出来，确认哪些是需要补映射规则的原始部门路径。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const summarySql = `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  GROUP BY base
+  ORDER BY total DESC, base
+`;
+const detailSql = `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  ORDER BY base, training_date, employee_no
+`;
+console.log('non-standard base summary');
+console.table(db.prepare(summarySql).all(...standardBases));
+console.log('\nnon-standard base details');
+console.table(db.prepare(detailSql).all(...standardBases));
+console.log('\nblank base count');
+console.table(db.prepare("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").all());
+db.close();
+NODE</summary>
+
+```bash
+node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const summarySql = `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  GROUP BY base
+  ORDER BY total DESC, base
+`;
+const detailSql = `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  ORDER BY base, training_date, employee_no
+`;
+console.log('non-standard base summary');
+console.table(db.prepare(summarySql).all(...standardBases));
+console.log('\nnon-standard base details');
+console.table(db.prepare(detailSql).all(...standardBases));
+console.log('\nblank base count');
+console.table(db.prepare("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").all());
+db.close();
+NODE
+```
+
+```
+node:internal/modules/cjs/loader:916
+      throw new ERR_UNKNOWN_BUILTIN_MODULE(request);
+      ^
+
+Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite
+    at new NodeError (node:internal/errors:405:5)
+    at Module._load (node:internal/modules/cjs/loader:916:13)
+    at Module.require (node:internal/modules/cjs/loader:1143:19)
+    at require (node:internal/modules/cjs/helpers:121:18)
+    at [stdin]:1:26
+    at Script.runInThisContext (node:vm:123:12)
+    at Object.runInThisContext (node:vm:299:38)
+    at node:internal/process/execution:79:19
+    at [stdin]-wrapper:6:22
+    at evalScript (node:internal/process/execution:78:60) {
+  code: 'ERR_UNKNOWN_BUILTIN_MODULE'
+}
+
+Node.js v18.17.1
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering Node version**
+
+It looks like the Node version changed due to the PATH export. I might need to use the project-specific version, possibly located at /opt/homebrew/bin/node. I should check which Node is currently being used. A shell command should be allowed for this, so I could run a quick check to figure out my options. This is important to ensure that my project runs with the correct Node version!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+这次查询命令碰到环境里的默认 `node` 是 v18，不支持项目用的 `node:sqlite`；我改用当前服务同一套 Node 运行时再查。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: which node && node -v && /opt/homebrew/bin/node -v</summary>
+
+```bash
+which node && node -v && /opt/homebrew/bin/node -v
+```
+
+```
+/usr/local/bin/node
+v18.17.1
+(eval):1: no such file or directory: /opt/homebrew/bin/node
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /opt/homebrew/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const summarySql = `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  GROUP BY base
+  ORDER BY total DESC, base
+`;
+const detailSql = `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  ORDER BY base, training_date, employee_no
+`;
+console.log('non-standard base summary');
+console.table(db.prepare(summarySql).all(...standardBases));
+console.log('\nnon-standard base details');
+console.table(db.prepare(detailSql).all(...standardBases));
+console.log('\nblank base count');
+console.table(db.prepare("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").all());
+db.close();
+NODE</summary>
+
+```bash
+/opt/homebrew/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const summarySql = `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  GROUP BY base
+  ORDER BY total DESC, base
+`;
+const detailSql = `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  ORDER BY base, training_date, employee_no
+`;
+console.log('non-standard base summary');
+console.table(db.prepare(summarySql).all(...standardBases));
+console.log('\nnon-standard base details');
+console.table(db.prepare(detailSql).all(...standardBases));
+console.log('\nblank base count');
+console.table(db.prepare("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").all());
+db.close();
+NODE
+```
+
+```
+(eval):1: no such file or directory: /opt/homebrew/bin/node
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Figuring out node path**
+
+I need to find the node path but can't use the typical find command. So, I'm wondering if I can use ls for verification instead. Maybe I could run the command -v? It seems like the service might've started before the PATH export. Terminal 729 is showing something, but what's the full path? I could also use ps -p pid -o command to check the running processes in the shell. Let's see if that works!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+当前 shell 的 `PATH` 被切到了 v18，但后台服务是用另一个 Node 启动起来的。我先定位服务进程实际用的 Node 路径。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ps -p 91309 -o pid= -o command=</summary>
+
+```bash
+ps -p 91309 -o pid= -o command=
+```
+
+```
+91309 /bin/zsh -c snap=$(command cat &lt;&amp;3); builtin unsetopt aliases 2&gt;/dev/null; builtin unalias -m '*' 2&gt;/dev/null || true; builtin eval "$snap" &amp;&amp; { builtin unsetopt nounset 2&gt;/dev/null || true; builtin eval "${__CURSOR_SANDBOX_ENV_RESTORE:-}" 2&gt;/dev/null; builtin export PWD="$(builtin pwd)"; builtin setopt aliases 2&gt;/dev/null; builtin eval "$1"; }; COMMAND_EXIT_CODE=$?; dump_zsh_state &gt;&amp;4; builtin exit $COMMAND_EXIT_CODE -- npm start
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls -l /usr/local/bin/node /usr/bin/node /opt/homebrew/bin/node /Users/guo1/.nvm/versions/node/*/bin/node</summary>
+
+```bash
+ls -l /usr/local/bin/node /usr/bin/node /opt/homebrew/bin/node /Users/guo1/.nvm/versions/node/*/bin/node
+```
+
+```
+ls: /opt/homebrew/bin/node: No such file or directory
+ls: /usr/bin/node: No such file or directory
+-rwxr-xr-x  1 guo1  staff   93236448 Aug  9  2023 /Users/guo1/.nvm/versions/node/v18.17.1/bin/node
+-rwxr-xr-x  1 guo1  staff   98531264 Nov 22  2023 /Users/guo1/.nvm/versions/node/v20.10.0/bin/node
+-rwxr-xr-x@ 1 guo1  staff   91438688 Mar 13  2025 /Users/guo1/.nvm/versions/node/v20.19.0/bin/node
+-rwxr-xr-x  1 guo1  staff  121457552 Feb 10 09:15 /Users/guo1/.nvm/versions/node/v24.13.1/bin/node
+-rwxr-xr-x@ 1 guo1  staff  122917328 Jun 18 02:53 /Users/guo1/.nvm/versions/node/v24.17.0/bin/node
+-rwxr-xr-x  1 root  wheel  181706784 Aug  9  2023 /usr/local/bin/node
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+找到了本机有 Node v24，我会用 v24 直接读取 SQLite，避免 v18 的模块不支持问题。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const summarySql = `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  GROUP BY base
+  ORDER BY total DESC, base
+`;
+const detailSql = `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  ORDER BY base, training_date, employee_no
+`;
+console.log('non-standard base summary');
+console.table(db.prepare(summarySql).all(...standardBases));
+console.log('\nnon-standard base details');
+console.table(db.prepare(detailSql).all(...standardBases));
+console.log('\nblank base count');
+console.table(db.prepare("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").all());
+db.close();
+NODE</summary>
+
+```bash
+/Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const summarySql = `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  GROUP BY base
+  ORDER BY total DESC, base
+`;
+const detailSql = `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+  ORDER BY base, training_date, employee_no
+`;
+console.log('non-standard base summary');
+console.table(db.prepare(summarySql).all(...standardBases));
+console.log('\nnon-standard base details');
+console.table(db.prepare(detailSql).all(...standardBases));
+console.log('\nblank base count');
+console.table(db.prepare("SELECT COUNT(*) total FROM employees WHERE base IS NULL OR base = ''").all());
+db.close();
+NODE
+```
+
+```
+non-standard base summary
+┌─────────┬───────────────────────────────────────────────────────────────────────────────┬───────┐
+│ (index) │ base                                                                          │ total │
+├─────────┼───────────────────────────────────────────────────────────────────────────────┼───────┤
+│ 0       │ 'GX01-广西基地'                                                               │ 228   │
+│ 1       │ 'BJ05-北京中电科'                                                             │ 30    │
+│ 2       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ 6     │
+│ 3       │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                    │ 3     │
+│ 4       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ 3     │
+│ 5       │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广州基地'                      │ 1     │
+│ 6       │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                      │ 1     │
+│ 7       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班' │ 1     │
+│ 8       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'   │ 1     │
+│ 9       │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班' │ 1     │
+└─────────┴───────────────────────────────────────────────────────────────────────────────┴───────┘
+
+non-standard base details
+┌─────────┬─────────────┬─────────────┬──────────┬─────────────────┬───────────────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────┬──────────────────────────────┬───────────────────┬──────────────┬───────────────┬───────────────┐
+│ (index) │ source_type │ employee_no │ name     │ employee_status │ base                                                                          │ department                                                                         │ position                     │ office_location   │ entry_date   │ training_date │ resigned_date │
+├─────────┼─────────────┼─────────────┼──────────┼─────────────────┼───────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┼──────────────────────────────┼───────────────────┼──────────────┼───────────────┼───────────────┤
+│ 0       │ 'resigned'  │ 'JZ000501'  │ '姜硕'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2020-08-24' │ ''            │ '2021-04-21'  │
+│ 1       │ 'resigned'  │ 'JZ000502'  │ '刘红玉' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2020-08-24' │ ''            │ '2021-04-09'  │
+│ 2       │ 'resigned'  │ 'JZ000503'  │ '潘江山' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2020-08-24' │ ''            │ '2023-01-18'  │
+│ 3       │ 'resigned'  │ 'JZ000504'  │ '赵洪潇' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2020-08-24' │ ''            │ '2022-01-28'  │
+│ 4       │ 'resigned'  │ 'JZ000520'  │ '韩东洋' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '运营主管'                   │ 'BJ05-北京中电科' │ '2020-08-31' │ ''            │ '2022-08-18'  │
+│ 5       │ 'resigned'  │ 'JZ000726'  │ '郭军军' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '运营班长'                   │ 'BJ05-北京中电科' │ '2020-11-30' │ ''            │ '2023-07-24'  │
+│ 6       │ 'resigned'  │ 'JZ000935'  │ '何永智' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'ITO运维实习生'              │ 'BJ05-北京中电科' │ '2020-12-21' │ ''            │ '2021-09-03'  │
+│ 7       │ 'resigned'  │ 'JZ000989'  │ '张旭'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2020-12-25' │ ''            │ '2021-07-16'  │
+│ 8       │ 'resigned'  │ 'JZ001324'  │ '朱字祥' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-01-08' │ ''            │ '2021-03-31'  │
+│ 9       │ 'resigned'  │ 'JZ001785'  │ '李振龙' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-06' │ ''            │ '2021-11-30'  │
+│ 10      │ 'resigned'  │ 'JZ001786'  │ '张贺'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-06' │ ''            │ '2022-11-04'  │
+│ 11      │ 'resigned'  │ 'JZ001815'  │ '黄涛'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-07' │ ''            │ '2021-04-08'  │
+│ 12      │ 'resigned'  │ 'JZ002000'  │ '李亚盟' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-19' │ ''            │ '2023-01-18'  │
+│ 13      │ 'resigned'  │ 'JZ002002'  │ '米增满' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-19' │ ''            │ '2021-04-20'  │
+│ 14      │ 'resigned'  │ 'JZ002268'  │ '张磊澳' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-26' │ ''            │ '2022-11-04'  │
+│ 15      │ 'resigned'  │ 'JZ002272'  │ '付涛'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-26' │ ''            │ '2022-06-02'  │
+│ 16      │ 'resigned'  │ 'JZ002273'  │ '孙嘉奇' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-04-26' │ ''            │ '2022-03-18'  │
+│ 17      │ 'resigned'  │ 'JZ002431'  │ '高旭'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2021-05-06' │ ''            │ '2022-02-28'  │
+│ 18      │ 'resigned'  │ 'JZ004326'  │ '余宝石' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目 - 中电科一区 - 运维一组' │ '运营班长'                   │ 'BJ05-北京中电科' │ '2021-08-02' │ ''            │ '2025-06-30'  │
+│ 19      │ 'resigned'  │ 'JZ050286'  │ '罗大龙' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '中级运维工程师'             │ 'BJ05-北京中电科' │ '2022-09-26' │ ''            │ '2022-09-27'  │
+│ 20      │ 'resigned'  │ 'JZ050397'  │ '李长虹' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2022-10-08' │ ''            │ '2022-10-13'  │
+│ 21      │ 'resigned'  │ 'JZ050523'  │ '姚天琦' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '初级运维工程师'             │ 'BJ05-北京中电科' │ '2022-10-12' │ ''            │ '2023-07-21'  │
+│ 22      │ 'resigned'  │ 'JZ050966'  │ '朱丽丽' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2022-11-07' │ ''            │ '2022-12-30'  │
+│ 23      │ 'resigned'  │ 'JZ052088'  │ '何宁'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '中级运维工程师'             │ 'BJ05-北京中电科' │ '2023-02-09' │ ''            │ '2023-02-14'  │
+│ 24      │ 'resigned'  │ 'JZ052089'  │ '尹金标' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '中级运维工程师'             │ 'BJ05-北京中电科' │ '2023-02-09' │ ''            │ '2023-02-14'  │
+│ 25      │ 'resigned'  │ 'JZ052150'  │ '王敬伟' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '初级运维工程师'             │ 'BJ05-北京中电科' │ '2023-02-09' │ ''            │ '2023-04-03'  │
+│ 26      │ 'resigned'  │ 'JZ054183'  │ '费杰'   │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目 - 中电科一区 - 运维一组' │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2023-05-30' │ ''            │ '2025-06-30'  │
+│ 27      │ 'resigned'  │ 'JZ056904'  │ '曹晶晶' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目 - 中电科一区 - 运维一组' │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2023-09-05' │ ''            │ '2025-06-30'  │
+│ 28      │ 'resigned'  │ 'JZ059491'  │ '刘欣宇' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目 - 中电科一区 - 运维一组' │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2024-01-22' │ ''            │ '2025-06-30'  │
+│ 29      │ 'resigned'  │ 'JZ059492'  │ '路檬檬' │ '离职'          │ 'BJ05-北京中电科'                                                             │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目 - 中电科一区 - 运维一组' │ 'IT运维工程师'               │ 'BJ05-北京中电科' │ '2024-01-22' │ ''            │ '2025-06-30'  │
+│ 30      │ 'resigned'  │ 'JZ002847'  │ '李建通' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '知识库组长-ITO'             │ 'GX01-广西基地'   │ '2021-05-24' │ ''            │ '2023-06-13'  │
+│ 31      │ 'resigned'  │ 'JZ002848'  │ '蒙秀发' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '数据组长-ITO'               │ 'GX01-广西基地'   │ '2021-05-24' │ ''            │ '2022-09-30'  │
+│ 32      │ 'resigned'  │ 'JZ002952'  │ '叶美琴' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-05-25' │ ''            │ '2021-06-11'  │
+│ 33      │ 'resigned'  │ 'JZ004052'  │ '谭春林' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级运维工程师'             │ 'GX01-广西基地'   │ '2021-07-05' │ ''            │ '2021-09-03'  │
+│ 34      │ 'resigned'  │ 'JZ005302'  │ '何光辉' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2021-09-06' │ ''            │ '2022-04-29'  │
+│ 35      │ 'resigned'  │ 'JZ005303'  │ '胡雄俊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '质检专员'                   │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2021-09-30'  │
+│ 36      │ 'resigned'  │ 'JZ005304'  │ '李青梅' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-07-18'  │
+│ 37      │ 'resigned'  │ 'JZ005305'  │ '韦晓凤' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '高级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-07-15'  │
+│ 38      │ 'resigned'  │ 'JZ005306'  │ '王琪'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '组织管理-ITO'               │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-07-01'  │
+│ 39      │ 'resigned'  │ 'JZ005307'  │ '李祖进' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-06-13'  │
+│ 40      │ 'resigned'  │ 'JZ005308'  │ '李纤'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-04-29'  │
+│ 41      │ 'resigned'  │ 'JZ005309'  │ '黄日娟' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-01-30'  │
+│ 42      │ 'resigned'  │ 'JZ005310'  │ '覃垠斌' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-03-25'  │
+│ 43      │ 'resigned'  │ 'JZ005311'  │ '梁爽'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-02-08'  │
+│ 44      │ 'resigned'  │ 'JZ005312'  │ '陆佳政' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-10-25'  │
+│ 45      │ 'resigned'  │ 'JZ005313'  │ '韦燕'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-01-30'  │
+│ 46      │ 'resigned'  │ 'JZ005314'  │ '杨月秋' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-07-29'  │
+│ 47      │ 'resigned'  │ 'JZ005315'  │ '何开兄' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2021-10-18'  │
+│ 48      │ 'resigned'  │ 'JZ005316'  │ '唐桂兰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-07-15'  │
+│ 49      │ 'resigned'  │ 'JZ005317'  │ '韩林杉' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-06-13'  │
+│ 50      │ 'resigned'  │ 'JZ005318'  │ '蒙慧芳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-06-13'  │
+│ 51      │ 'resigned'  │ 'JZ005319'  │ '蒋林轩' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-06-13'  │
+│ 52      │ 'resigned'  │ 'JZ005320'  │ '张巧菲' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-06-13'  │
+│ 53      │ 'resigned'  │ 'JZ005321'  │ '卢培樑' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '培训专员'                   │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-09-26'  │
+│ 54      │ 'resigned'  │ 'JZ005322'  │ '潘演钊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2022-12-01'  │
+│ 55      │ 'resigned'  │ 'JZ005323'  │ '黄薪民' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2023-06-13'  │
+│ 56      │ 'resigned'  │ 'JZ005324'  │ '朱春先' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-13' │ ''            │ '2021-10-14'  │
+│ 57      │ 'resigned'  │ 'JZ005325'  │ '古惠秀' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '数据分析专员-ITO'           │ 'GX01-广西基地'   │ '2021-09-14' │ ''            │ '2022-03-07'  │
+│ 58      │ 'resigned'  │ 'JZ005326'  │ '何虹燕' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '组织管理-ITO'               │ 'GX01-广西基地'   │ '2021-09-14' │ ''            │ '2022-10-14'  │
+│ 59      │ 'resigned'  │ 'JZ005327'  │ '韦胜新' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-14' │ ''            │ '2023-02-15'  │
+│ 60      │ 'resigned'  │ 'JZ005328'  │ '蒋智华' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2021-09-14' │ ''            │ '2023-06-13'  │
+│ 61      │ 'resigned'  │ 'JZ005330'  │ '张捷兰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '培训组长'                   │ 'GX01-广西基地'   │ '2021-09-16' │ ''            │ '2023-06-13'  │
+│ 62      │ 'resigned'  │ 'JZ005331'  │ '刘永娟' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2022-03-11'  │
+│ 63      │ 'resigned'  │ 'JZ005332'  │ '杨森杰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2023-06-13'  │
+│ 64      │ 'resigned'  │ 'JZ005333'  │ '梁立帆' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2021-09-26'  │
+│ 65      │ 'resigned'  │ 'JZ005334'  │ '韦雨雪' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2022-04-29'  │
+│ 66      │ 'resigned'  │ 'JZ005335'  │ '李佳'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '培训专员'                   │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2023-06-13'  │
+│ 67      │ 'resigned'  │ 'JZ005336'  │ '肖凡'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2021-11-08'  │
+│ 68      │ 'resigned'  │ 'JZ005337'  │ '李铭宇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2022-03-11'  │
+│ 69      │ 'resigned'  │ 'JZ005338'  │ '韦树艳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2022-04-29'  │
+│ 70      │ 'resigned'  │ 'JZ005339'  │ '陈思思' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2021-10-21'  │
+│ 71      │ 'resigned'  │ 'JZ005340'  │ '杜坤竑' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2021-11-15'  │
+│ 72      │ 'resigned'  │ 'JZ005341'  │ '韦源杰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-09-20' │ ''            │ '2023-06-13'  │
+│ 73      │ 'resigned'  │ 'JZ005342'  │ '谢东婷' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '数据分析专员-ITO'           │ 'GX01-广西基地'   │ '2021-09-18' │ ''            │ '2022-12-23'  │
+│ 74      │ 'resigned'  │ 'JZ005343'  │ '刘诗桓' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2023-06-13'  │
+│ 75      │ 'resigned'  │ 'JZ005344'  │ '韦茂恩' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2023-01-31'  │
+│ 76      │ 'resigned'  │ 'JZ005345'  │ '谢耀正' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2021-12-15'  │
+│ 77      │ 'resigned'  │ 'JZ005346'  │ '钟醒醒' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2022-05-31'  │
+│ 78      │ 'resigned'  │ 'JZ005347'  │ '蒲怡'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-26' │ ''            │ '2021-09-27'  │
+│ 79      │ 'resigned'  │ 'JZ005348'  │ '华家远' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2021-09-24' │ ''            │ '2022-01-14'  │
+│ 80      │ 'resigned'  │ 'JZ005414'  │ '蒙俊廷' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-26' │ ''            │ '2022-04-11'  │
+│ 81      │ 'resigned'  │ 'JZ005415'  │ '赵珊'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '项目专员'                   │ 'GX01-广西基地'   │ '2021-09-27' │ ''            │ '2023-06-13'  │
+│ 82      │ 'resigned'  │ 'JZ005416'  │ '赵丽芳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-27' │ ''            │ '2022-05-31'  │
+│ 83      │ 'resigned'  │ 'JZ005417'  │ '覃练旺' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-27' │ ''            │ '2023-04-13'  │
+│ 84      │ 'resigned'  │ 'JZ005418'  │ '韦钊文' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2021-09-27' │ ''            │ '2023-06-13'  │
+│ 85      │ 'resigned'  │ 'JZ005419'  │ '陆忠友' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-27' │ ''            │ '2021-11-17'  │
+│ 86      │ 'resigned'  │ 'JZ005420'  │ '赵健威' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-09-27' │ ''            │ '2021-11-26'  │
+│ 87      │ 'resigned'  │ 'JZ005489'  │ '易忠'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-04-13'  │
+│ 88      │ 'resigned'  │ 'JZ005490'  │ '曾庆幸' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-06-13'  │
+│ 89      │ 'resigned'  │ 'JZ005491'  │ '赵咏雪' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级远程服务工程师'         │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-06-13'  │
+│ 90      │ 'resigned'  │ 'JZ005492'  │ '赵大凤' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2022-04-29'  │
+│ 91      │ 'resigned'  │ 'JZ005493'  │ '陈基杰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-06-13'  │
+│ 92      │ 'resigned'  │ 'JZ005494'  │ '张玲芳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-03-31'  │
+│ 93      │ 'resigned'  │ 'JZ005495'  │ '覃薪羽' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-06-13'  │
+│ 94      │ 'resigned'  │ 'JZ005496'  │ '黄龙醒' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2022-02-21'  │
+│ 95      │ 'resigned'  │ 'JZ005497'  │ '钟涵鹏' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2022-04-29'  │
+│ 96      │ 'resigned'  │ 'JZ005498'  │ '卢珊珊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '质检专员'                   │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2023-06-13'  │
+│ 97      │ 'resigned'  │ 'JZ005499'  │ '杨滨萌' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-09' │ ''            │ '2021-10-29'  │
+│ 98      │ 'resigned'  │ 'JZ005723'  │ '覃明时' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-11' │ ''            │ '2022-04-29'  │
+│ 99      │ 'resigned'  │ 'JZ005724'  │ '全桂良' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2023-04-12'  │
+│ 100     │ 'resigned'  │ 'JZ005725'  │ '涂韦龙' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2022-03-25'  │
+│ 101     │ 'resigned'  │ 'JZ005726'  │ '蓝月棉' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '质检专员'                   │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2023-04-12'  │
+│ 102     │ 'resigned'  │ 'JZ005727'  │ '陈琳'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2023-02-28'  │
+│ 103     │ 'resigned'  │ 'JZ005728'  │ '潘雪愉' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '流程管理'                   │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2023-06-13'  │
+│ 104     │ 'resigned'  │ 'JZ005729'  │ '覃朝东' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2022-01-10'  │
+│ 105     │ 'resigned'  │ 'JZ005730'  │ '陈子程' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2021-11-16'  │
+│ 106     │ 'resigned'  │ 'JZ005731'  │ '庞显铭' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2022-07-29'  │
+│ 107     │ 'resigned'  │ 'JZ005732'  │ '梁文生' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2022-02-28'  │
+│ 108     │ 'resigned'  │ 'JZ005733'  │ '郭熙隆' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2021-10-20'  │
+│ 109     │ 'resigned'  │ 'JZ005734'  │ '覃大倍' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2021-10-18' │ ''            │ '2022-07-29'  │
+│ 110     │ 'resigned'  │ 'JZ005785'  │ '赵子雄' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '项目专员'                   │ 'GX01-广西基地'   │ '2021-10-21' │ ''            │ '2022-03-08'  │
+│ 111     │ 'resigned'  │ 'JZ005786'  │ '莫可珍' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '项目专员'                   │ 'GX01-广西基地'   │ '2021-10-22' │ ''            │ '2023-02-21'  │
+│ 112     │ 'resigned'  │ 'JZ006009'  │ '黄平'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-26' │ ''            │ '2021-11-01'  │
+│ 113     │ 'resigned'  │ 'JZ006010'  │ '韦宸'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2021-10-28'  │
+│ 114     │ 'resigned'  │ 'JZ006011'  │ '蓝星皓' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '数据专员'                   │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2023-06-13'  │
+│ 115     │ 'resigned'  │ 'JZ006012'  │ '文艳'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2022-05-31'  │
+│ 116     │ 'resigned'  │ 'JZ006013'  │ '胡陆亮' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2022-05-31'  │
+│ 117     │ 'resigned'  │ 'JZ006014'  │ '吕嘉俊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运维实施配置工程师-R&amp;amp;D' │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2023-06-30'  │
+│ 118     │ 'resigned'  │ 'JZ006015'  │ '王秀丽' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2023-06-13'  │
+│ 119     │ 'resigned'  │ 'JZ006016'  │ '莫柳'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2023-06-13'  │
+│ 120     │ 'resigned'  │ 'JZ006017'  │ '杨振华' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2022-05-31'  │
+│ 121     │ 'resigned'  │ 'JZ006018'  │ '唐国峰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2023-06-13'  │
+│ 122     │ 'resigned'  │ 'JZ006019'  │ '徐闻婕' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2022-05-31'  │
+│ 123     │ 'resigned'  │ 'JZ006020'  │ '龙光淇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2021-10-28'  │
+│ 124     │ 'resigned'  │ 'JZ006021'  │ '陈正国' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-26' │ ''            │ '2022-04-15'  │
+│ 125     │ 'resigned'  │ 'JZ006022'  │ '黄绍镇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-26' │ ''            │ '2021-11-12'  │
+│ 126     │ 'resigned'  │ 'JZ006023'  │ '张海峰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-27' │ ''            │ '2022-05-06'  │
+│ 127     │ 'resigned'  │ 'JZ006024'  │ '陈韵波' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-27' │ ''            │ '2022-05-06'  │
+│ 128     │ 'resigned'  │ 'JZ006025'  │ '韦景超' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '数据专员'                   │ 'GX01-广西基地'   │ '2021-10-28' │ ''            │ '2023-03-31'  │
+│ 129     │ 'resigned'  │ 'JZ006026'  │ '韦焯悦' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-28' │ ''            │ '2022-05-31'  │
+│ 130     │ 'resigned'  │ 'JZ006027'  │ '蓝于波' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-28' │ ''            │ '2022-03-14'  │
+│ 131     │ 'resigned'  │ 'JZ006028'  │ '王思良' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '质检专员（初级远程）'       │ 'GX01-广西基地'   │ '2021-10-28' │ ''            │ '2021-11-23'  │
+│ 132     │ 'resigned'  │ 'JZ006029'  │ '谢洋洋' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '培训专员'                   │ 'GX01-广西基地'   │ '2021-10-28' │ ''            │ '2023-06-13'  │
+│ 133     │ 'resigned'  │ 'JZ006030'  │ '蒋启萌' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-10-29' │ ''            │ '2022-01-14'  │
+│ 134     │ 'resigned'  │ 'JZ006031'  │ '韦允鹏' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2022-02-22'  │
+│ 135     │ 'resigned'  │ 'JZ006032'  │ '韦骄阳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2022-08-03'  │
+│ 136     │ 'resigned'  │ 'JZ006033'  │ '廖树冠' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2022-08-03'  │
+│ 137     │ 'resigned'  │ 'JZ006034'  │ '李殿深' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2023-04-12'  │
+│ 138     │ 'resigned'  │ 'JZ006035'  │ '傅政朝' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2023-06-13'  │
+│ 139     │ 'resigned'  │ 'JZ006036'  │ '邹世凯' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2023-06-13'  │
+│ 140     │ 'resigned'  │ 'JZ006037'  │ '李柏护' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2022-09-09'  │
+│ 141     │ 'resigned'  │ 'JZ006038'  │ '陆耀明' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2022-02-28'  │
+│ 142     │ 'resigned'  │ 'JZ006057'  │ '周凯'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2021-10-25' │ ''            │ '2022-09-09'  │
+│ 143     │ 'resigned'  │ 'JZ006058'  │ '陈力'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-02' │ ''            │ '2021-11-11'  │
+│ 144     │ 'resigned'  │ 'JZ006059'  │ '杨江'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-05' │ ''            │ '2021-12-17'  │
+│ 145     │ 'resigned'  │ 'JZ006060'  │ '陈励强' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级运维服务工程师'         │ 'GX01-广西基地'   │ '2021-11-02' │ ''            │ '2022-10-14'  │
+│ 146     │ 'resigned'  │ 'JZ006219'  │ '唐美俊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-03' │ ''            │ '2021-11-10'  │
+│ 147     │ 'resigned'  │ 'JZ006220'  │ '韦家毅' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-03' │ ''            │ '2023-04-12'  │
+│ 148     │ 'resigned'  │ 'JZ006221'  │ '梁森'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-04' │ ''            │ '2022-05-31'  │
+│ 149     │ 'resigned'  │ 'JZ006222'  │ '马创桥' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-04' │ ''            │ '2022-03-15'  │
+│ 150     │ 'resigned'  │ 'JZ006223'  │ '黄墩榕' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-04' │ ''            │ '2022-02-11'  │
+│ 151     │ 'resigned'  │ 'JZ006224'  │ '陆杰成' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-05' │ ''            │ '2022-08-31'  │
+│ 152     │ 'resigned'  │ 'JZ006225'  │ '曾文嶙' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-08' │ ''            │ '2022-07-04'  │
+│ 153     │ 'resigned'  │ 'JZ006226'  │ '莫运宏' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-11-08' │ ''            │ '2022-03-31'  │
+│ 154     │ 'resigned'  │ 'JZ006610'  │ '黎雄辉' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2021-11-01' │ ''            │ '2023-06-13'  │
+│ 155     │ 'resigned'  │ 'JZ006997'  │ '韩杰'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-12-10' │ ''            │ '2022-02-28'  │
+│ 156     │ 'resigned'  │ 'JZ006998'  │ '杨亿志' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-12-10' │ ''            │ '2022-05-13'  │
+│ 157     │ 'resigned'  │ 'JZ006999'  │ '王梓江' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-12-10' │ ''            │ '2022-04-29'  │
+│ 158     │ 'resigned'  │ 'JZ007000'  │ '冯道欢' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-12-10' │ ''            │ '2023-06-13'  │
+│ 159     │ 'resigned'  │ 'JZ007001'  │ '卢俊蒸' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-12-10' │ ''            │ '2022-05-31'  │
+│ 160     │ 'resigned'  │ 'JZ007002'  │ '朱晓源' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2021-12-10' │ ''            │ '2022-02-28'  │
+│ 161     │ 'resigned'  │ 'JZ007003'  │ '罗维'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '质检组长'                   │ 'GX01-广西基地'   │ '2021-12-13' │ ''            │ '2023-03-10'  │
+│ 162     │ 'resigned'  │ 'JZ007356'  │ '蓝雨豪' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-01-10' │ ''            │ '2023-06-13'  │
+│ 163     │ 'resigned'  │ 'JZ007768'  │ '粟秋兰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '线上远程服务工程师'         │ 'GX01-广西基地'   │ '2022-02-17' │ ''            │ '2022-02-21'  │
+│ 164     │ 'resigned'  │ 'JZ007769'  │ '张小勇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '线上远程服务工程师'         │ 'GX01-广西基地'   │ '2022-02-17' │ ''            │ '2022-02-23'  │
+│ 165     │ 'resigned'  │ 'JZ007770'  │ '黄丽金' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '线上远程服务工程师'         │ 'GX01-广西基地'   │ '2022-02-18' │ ''            │ '2023-03-17'  │
+│ 166     │ 'resigned'  │ 'JZ007773'  │ '陈梓康' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2022-02-21' │ ''            │ '2022-07-29'  │
+│ 167     │ 'resigned'  │ 'JZ007774'  │ '莫忠环' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2022-02-21' │ ''            │ '2022-03-31'  │
+│ 168     │ 'resigned'  │ 'JZ007775'  │ '李帅'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级运维工程师'             │ 'GX01-广西基地'   │ '2022-02-21' │ ''            │ '2022-04-29'  │
+│ 169     │ 'resigned'  │ 'JZ007776'  │ '张大强' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2022-02-21' │ ''            │ '2023-06-13'  │
+│ 170     │ 'resigned'  │ 'JZ007777'  │ '陈广运' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2022-02-21' │ ''            │ '2022-04-29'  │
+│ 171     │ 'resigned'  │ 'JZ008271'  │ '覃祥雷' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-01' │ ''            │ '2023-04-12'  │
+│ 172     │ 'resigned'  │ 'JZ008445'  │ '何万恒' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2022-03-07' │ ''            │ '2022-04-29'  │
+│ 173     │ 'resigned'  │ 'JZ008446'  │ '潘俊丞' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-11' │ ''            │ '2022-03-22'  │
+│ 174     │ 'resigned'  │ 'JZ008449'  │ '褚彬雁' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-14' │ ''            │ '2023-06-13'  │
+│ 175     │ 'resigned'  │ 'JZ008454'  │ '冯德升' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-14' │ ''            │ '2023-06-13'  │
+│ 176     │ 'resigned'  │ 'JZ008455'  │ '谢莹'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-17' │ ''            │ '2023-06-13'  │
+│ 177     │ 'resigned'  │ 'JZ008553'  │ '原锦安' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2022-06-30'  │
+│ 178     │ 'resigned'  │ 'JZ008554'  │ '郭鼎鼎' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级运维工程师'             │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2022-06-30'  │
+│ 179     │ 'resigned'  │ 'JZ008555'  │ '罗仕恒' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2022-05-13'  │
+│ 180     │ 'resigned'  │ 'JZ008556'  │ '莫丹'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2023-02-28'  │
+│ 181     │ 'resigned'  │ 'JZ008557'  │ '李业沛' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级远程服务工程师'         │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2023-06-13'  │
+│ 182     │ 'resigned'  │ 'JZ008558'  │ '吴佳宝' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2023-03-31'  │
+│ 183     │ 'resigned'  │ 'JZ008559'  │ '劳廷会' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-03-21' │ ''            │ '2023-06-13'  │
+│ 184     │ 'resigned'  │ 'JZ008719'  │ '刘才新' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2023-03-31'  │
+│ 185     │ 'resigned'  │ 'JZ008720'  │ '滕承永' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2023-06-13'  │
+│ 186     │ 'resigned'  │ 'JZ008721'  │ '韦艳芸' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2023-06-13'  │
+│ 187     │ 'resigned'  │ 'JZ008722'  │ '陈宇毅' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2022-06-30'  │
+│ 188     │ 'resigned'  │ 'JZ008723'  │ '邓露秀' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2022-04-29'  │
+│ 189     │ 'resigned'  │ 'JZ008725'  │ '青浩文' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2022-06-30'  │
+│ 190     │ 'resigned'  │ 'JZ008726'  │ '梁志兴' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2022-04-18'  │
+│ 191     │ 'resigned'  │ 'JZ008783'  │ '张露露' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2023-06-13'  │
+│ 192     │ 'resigned'  │ 'JZ008784'  │ '黄秦'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '运营班长'                   │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2023-02-28'  │
+│ 193     │ 'resigned'  │ 'JZ008785'  │ '刘小婷' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-04-01' │ ''            │ '2022-04-18'  │
+│ 194     │ 'resigned'  │ 'JZ009240'  │ '黄文弟' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-09' │ ''            │ '2023-06-13'  │
+│ 195     │ 'resigned'  │ 'JZ009241'  │ '黄婷婷' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-09' │ ''            │ '2022-06-21'  │
+│ 196     │ 'resigned'  │ 'JZ009242'  │ '周小怡' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-09' │ ''            │ '2023-01-05'  │
+│ 197     │ 'resigned'  │ 'JZ009243'  │ '韦肖婷' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-09' │ ''            │ '2023-06-13'  │
+│ 198     │ 'resigned'  │ 'JZ009244'  │ '李重豪' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-09' │ ''            │ '2023-06-13'  │
+│ 199     │ 'resigned'  │ 'JZ009249'  │ '玉丽宁' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-18' │ ''            │ '2023-05-19'  │
+│ 200     │ 'resigned'  │ 'JZ009250'  │ '梁永瑜' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-18' │ ''            │ '2023-04-30'  │
+│ 201     │ 'resigned'  │ 'JZ009251'  │ '李雪民' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-05-18' │ ''            │ '2023-06-13'  │
+│ 202     │ 'resigned'  │ 'JZ009633'  │ '莫冯涛' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-06-01' │ ''            │ '2022-06-07'  │
+│ 203     │ 'resigned'  │ 'JZ009634'  │ '郭泳峰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-06-01' │ ''            │ '2022-07-22'  │
+│ 204     │ 'resigned'  │ 'JZ009635'  │ '黄宏涛' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-06-01' │ ''            │ '2023-04-12'  │
+│ 205     │ 'resigned'  │ 'JZ009636'  │ '蓝偲伦' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-06-01' │ ''            │ '2023-06-13'  │
+│ 206     │ 'resigned'  │ 'JZ010025'  │ '谭国华' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级运维工程师'             │ 'GX01-广西基地'   │ '2022-07-01' │ ''            │ '2022-08-31'  │
+│ 207     │ 'resigned'  │ 'JZ010367'  │ '陈万俊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-01' │ ''            │ '2023-06-13'  │
+│ 208     │ 'resigned'  │ 'JZ010368'  │ '覃梓钊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级运维服务工程师'         │ 'GX01-广西基地'   │ '2022-08-01' │ ''            │ '2023-06-13'  │
+│ 209     │ 'resigned'  │ 'JZ010369'  │ '符磊'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '中级运维服务工程师'         │ 'GX01-广西基地'   │ '2022-08-01' │ ''            │ '2022-08-03'  │
+│ 210     │ 'resigned'  │ 'JZ010370'  │ '张金香' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2023-06-13'  │
+│ 211     │ 'resigned'  │ 'JZ010371'  │ '郭旭'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-06-01' │ ''            │ '2023-06-13'  │
+│ 212     │ 'resigned'  │ 'JZ010372'  │ '覃世远' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2023-04-12'  │
+│ 213     │ 'resigned'  │ 'JZ010373'  │ '龚鸿'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2022-09-02'  │
+│ 214     │ 'resigned'  │ 'JZ010374'  │ '刘桂文' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-06-01' │ ''            │ '2023-06-13'  │
+│ 215     │ 'resigned'  │ 'JZ010375'  │ '曾令杰' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2022-09-07'  │
+│ 216     │ 'resigned'  │ 'JZ010376'  │ '卢海量' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-06-01' │ ''            │ '2023-06-13'  │
+│ 217     │ 'resigned'  │ 'JZ010377'  │ '冯文新' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2022-09-09'  │
+│ 218     │ 'resigned'  │ 'JZ010378'  │ '罗甘露' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2022-09-02'  │
+│ 219     │ 'resigned'  │ 'JZ010379'  │ '袁诗艺' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-10' │ ''            │ '2023-06-13'  │
+│ 220     │ 'resigned'  │ 'JZ010380'  │ '陈秀凤' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-01' │ ''            │ '2022-08-01'  │
+│ 221     │ 'resigned'  │ 'JZ010384'  │ '卢叶'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-15' │ ''            │ '2022-08-15'  │
+│ 222     │ 'resigned'  │ 'JZ010385'  │ '欧宝宇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-08-15' │ ''            │ '2022-09-14'  │
+│ 223     │ 'resigned'  │ 'JZ010742'  │ '方玟淇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-09-01' │ ''            │ '2023-06-13'  │
+│ 224     │ 'resigned'  │ 'JZ010743'  │ '杨禄上' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-09-01' │ ''            │ '2023-06-13'  │
+│ 225     │ 'resigned'  │ 'JZ010744'  │ '黎爽'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-09-01' │ ''            │ '2023-06-13'  │
+│ 226     │ 'resigned'  │ 'JZ011470'  │ '罗金富' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-10-08' │ ''            │ '2023-06-13'  │
+│ 227     │ 'resigned'  │ 'JZ011471'  │ '韦巧玲' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-10-08' │ ''            │ '2022-11-16'  │
+│ 228     │ 'resigned'  │ 'JZ011472'  │ '凌荫港' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-10-08' │ ''            │ '2023-06-13'  │
+│ 229     │ 'resigned'  │ 'JZ011473'  │ '班嘉鑫' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2022-10-08' │ ''            │ '2023-01-06'  │
+│ 230     │ 'resigned'  │ 'JZ011474'  │ '梁媛媛' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级组长'                   │ 'GX01-广西基地'   │ '2022-10-08' │ ''            │ '2023-01-06'  │
+│ 231     │ 'resigned'  │ 'JZ011475'  │ '蒙荣笙' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级组长'                   │ 'GX01-广西基地'   │ '2022-10-08' │ ''            │ '2023-06-13'  │
+│ 232     │ 'resigned'  │ 'JZ050171'  │ '黄曾丽' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-09-15' │ ''            │ '2023-06-13'  │
+│ 233     │ 'resigned'  │ 'JZ050172'  │ '刘昌万' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-09-15' │ ''            │ '2023-06-13'  │
+│ 234     │ 'resigned'  │ 'JZ050732'  │ '曾莉芳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-10-17' │ ''            │ '2023-06-13'  │
+│ 235     │ 'resigned'  │ 'JZ050733'  │ '黄大政' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-10-17' │ ''            │ '2022-11-22'  │
+│ 236     │ 'resigned'  │ 'JZ050734'  │ '陈巨灿' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '数据专员'                   │ 'GX01-广西基地'   │ '2022-10-18' │ ''            │ '2023-06-13'  │
+│ 237     │ 'resigned'  │ 'JZ050782'  │ '莫丽秋' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ 'HRBP'                       │ 'GX01-广西基地'   │ '2022-10-21' │ ''            │ '2023-01-28'  │
+│ 238     │ 'resigned'  │ 'JZ052515'  │ '黄斌'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2023-02-10' │ ''            │ '2023-06-13'  │
+│ 239     │ 'resigned'  │ 'JZ052516'  │ '覃干强' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2023-02-13' │ ''            │ '2023-06-13'  │
+│ 240     │ 'resigned'  │ 'JZ052517'  │ '林秀洁' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2023-02-13' │ ''            │ '2023-05-09'  │
+│ 241     │ 'resigned'  │ 'JZ052518'  │ '陆盅奇' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2023-02-13' │ ''            │ '2023-03-31'  │
+│ 242     │ 'resigned'  │ 'JZ052739'  │ '何后林' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2023-02-13' │ ''            │ '2023-02-14'  │
+│ 243     │ 'resigned'  │ 'JZ052740'  │ '李易钊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '渠道服务专员'               │ 'GX01-广西基地'   │ '2023-03-02' │ ''            │ '2023-06-13'  │
+│ 244     │ 'resigned'  │ 'JZ053218'  │ '林子明' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '远程服务工程师'             │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-03-31'  │
+│ 245     │ 'resigned'  │ 'JZ053219'  │ '李世海' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '远程服务工程师'             │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-06-12'  │
+│ 246     │ 'resigned'  │ 'JZ053220'  │ '黄敏萍' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ 'HRBP'                       │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-05-31'  │
+│ 247     │ 'resigned'  │ 'JZ053221'  │ '石忠虹' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '渠道服务专员'               │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-06-13'  │
+│ 248     │ 'resigned'  │ 'JZ053222'  │ '刘晨伊' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '远程服务工程师'             │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-04-17'  │
+│ 249     │ 'resigned'  │ 'JZ053223'  │ '关祖琳' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '远程服务工程师'             │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-04-04'  │
+│ 250     │ 'resigned'  │ 'JZ053224'  │ '樊东樑' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '远程服务工程师'             │ 'GX01-广西基地'   │ '2023-03-13' │ ''            │ '2023-03-31'  │
+│ 251     │ 'resigned'  │ 'JZ100165'  │ '李斌'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-07-18' │ ''            │ '2022-10-17'  │
+│ 252     │ 'resigned'  │ 'JZ100166'  │ '陈冬明' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程师-ITO'     │ 'GX01-广西基地'   │ '2022-07-11' │ ''            │ '2023-06-13'  │
+│ 253     │ 'resigned'  │ 'JZ100261'  │ '何窈'   │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-02-02' │ ''            │ '2023-02-02'  │
+│ 254     │ 'resigned'  │ 'JZ100262'  │ '李丽萍' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-02-02' │ ''            │ '2023-02-02'  │
+│ 255     │ 'resigned'  │ 'JZ100263'  │ '张媚安' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-02-01' │ ''            │ '2023-03-31'  │
+│ 256     │ 'resigned'  │ 'JZ100264'  │ '陈嘉雯' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-02-01' │ ''            │ '2023-03-31'  │
+│ 257     │ 'resigned'  │ 'JZ100265'  │ '周文贤' │ '离职'          │ 'GX01-广西基地'                                                               │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ '初级远程服务工程'           │ 'GX01-广西基地'   │ '2023-02-01' │ ''            │ '2023-03-31'  │
+│ 258     │ 'resigned'  │ 'JZ056149'  │ '张军妹' │ '离职'          │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                    │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '运维工程师'                 │ ''                │ '2023-08-02' │ ''            │ '2023-08-07'  │
+│ 259     │ 'resigned'  │ 'JZ056354'  │ '孙丽'   │ '离职'          │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                    │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '运维工程师'                 │ ''                │ '2023-08-14' │ ''            │ '2023-08-15'  │
+│ 260     │ 'resigned'  │ 'JZ056771'  │ '武琪'   │ '离职'          │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                    │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目'                         │ '运维工程师'                 │ ''                │ '2023-08-25' │ ''            │ '2023-08-29'  │
+│ 261     │ 'resigned'  │ 'JZ003371'  │ '张盛明' │ '离职'          │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广州基地'                      │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广州基地'                           │ '运维工程师'                 │ ''                │ '2021-06-15' │ ''            │ '2021-09-03'  │
+│ 262     │ 'resigned'  │ 'JZ050050'  │ '黄润润' │ '离职'          │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                      │ '伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地'                           │ 'HRBP'                       │ ''                │ '2022-08-22' │ ''            │ '2022-08-22'  │
+│ 263     │ 'resigned'  │ 'JZ062644'  │ '辛文叶' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班'      │ '培训期学员'                 │ ''                │ '2024-06-13' │ '2024-06-13'  │ '2024-06-13'  │
+│ 264     │ 'resigned'  │ 'JZ063406'  │ '黄元帅' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班'      │ '培训期学员'                 │ ''                │ '2024-07-18' │ '2024-07-18'  │ '2024-08-26'  │
+│ 265     │ 'resigned'  │ 'JZ063412'  │ '李念钰' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班'      │ '培训期学员'                 │ ''                │ '2024-07-18' │ '2024-07-18'  │ '2024-07-18'  │
+│ 266     │ 'resigned'  │ 'JZ063417'  │ '刘宇航' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班'      │ '培训期学员'                 │ ''                │ '2024-07-18' │ '2024-07-18'  │ '2024-07-18'  │
+│ 267     │ 'resigned'  │ 'JZ052166'  │ '孙霞'   │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2023-02-10' │ '2023-02-10'  │ '2023-02-28'  │
+│ 268     │ 'resigned'  │ 'JZ051567'  │ '徐兆晨' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2022-12-15' │ '2022-12-15'  │ '2022-12-30'  │
+│ 269     │ 'resigned'  │ 'JZ051572'  │ '陈杰'   │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2022-12-15' │ '2022-12-15'  │ '2022-12-30'  │
+│ 270     │ 'resigned'  │ 'JZ051555'  │ '卢雪丽' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2022-12-14' │ '2022-12-16'  │ '2022-12-26'  │
+│ 271     │ 'resigned'  │ 'JZ051557'  │ '王秀娟' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2022-12-14' │ '2022-12-16'  │ '2022-12-31'  │
+│ 272     │ 'resigned'  │ 'JZ051561'  │ '李瑞'   │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2022-12-14' │ '2022-12-16'  │ '2022-12-30'  │
+│ 273     │ 'resigned'  │ 'JZ051563'  │ '赵铭钰' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'   │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续'        │ '客服专员'                   │ ''                │ '2022-12-14' │ '2022-12-16'  │ '2023-01-09'  │
+│ 274     │ 'resigned'  │ 'JZ062916'  │ '苗东亮' │ '离职'          │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班' │ '伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班'      │ '培训期学员'                 │ ''                │ '2024-06-27' │ '2024-06-27'  │ '2024-07-01'  │
+└─────────┴─────────────┴─────────────┴──────────┴─────────────────┴───────────────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────┴──────────────────────────────┴───────────────────┴──────────────┴───────────────┴───────────────┘
+
+blank base count
+┌─────────┬───────┐
+│ (index) │ total │
+├─────────┼───────┤
+│ 0       │ 0     │
+└─────────┴───────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+查询结果比较长，我先读取汇总和明细前段，确认总量和具体名单。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/projects/Users-guo1-Desktop-recruit-data/agent-tools/9fd008fc-58e6-47a7-8505-dab4c51c6a81.txt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/projects/Users-guo1-Desktop-recruit-data/agent-tools/9fd008fc-58e6-47a7-8505-dab4c51c6a81.txt</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+整理出来了。当前 `base` 不在标准基地名里的共有 `275` 条，空基地 `0` 条。
+
+主要分两类：
+
+1. 非标准编码基地：
+- `GX01-广西基地`：`228` 条
+- `BJ05-北京中电科`：`30` 条
+
+2. 原始部门路径没有归一：
+- `伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 中电科项目`：`3` 条
+- `伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广州基地`：`1` 条
+- `伽睿集团 - NEO-OPS - ITO运营中心 - 项目基地 - 广西基地`：`1` 条
+- `伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 山东交付部 - 培训期 - 山东58班`：`1` 条
+- `伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 河南59班`：`3` 条
+- `伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 河南交付部 - 培训期 - 试接续`：`1` 条
+- `伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 试接续`：`6` 条
+- `伽睿集团 - NEO-OPS - 济南基地 - 运营交付部 - 辽宁交付部 - 培训期 - 辽宁46班`：`1` 条
+
+其中和一线员工列表最相关的是济南培训期这些 `12` 条左右；`GX01-广西基地`、`BJ05-北京中电科`、ITO 相关大多是 ITO/运维/远程服务岗位，可能应该归到 `ITO项目`，也可能业务上应继续忽略，需要确认口径。
+
+---
+
+_**User**_
+
+如果是非当年的数据，历史遗留问题的 可以忽略
+
+---
+
+_**Agent (gpt-5.5)**_
+
+明白，历史年份的遗留基地先忽略。我按 `2026` 年重新过滤一遍，只看入职/入培/离职日期任一落在当年的非标准基地记录。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const year = '2026';
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const yearCondition = `(entry_date LIKE '${year}-%' OR training_date LIKE '${year}-%' OR resigned_date LIKE '${year}-%')`;
+const baseCondition = `COALESCE(base, '') <> '' AND base NOT IN (${placeholders})`;
+console.log('current-year non-standard base summary');
+console.table(db.prepare(`
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseCondition}
+    AND ${yearCondition}
+  GROUP BY base
+  ORDER BY total DESC, base
+`).all(...standardBases));
+console.log('\ncurrent-year non-standard base details');
+console.table(db.prepare(`
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE ${baseCondition}
+    AND ${yearCondition}
+  ORDER BY base, employee_no
+`).all(...standardBases));
+console.log('\nall non-standard historical vs current-year');
+console.table(db.prepare(`
+  SELECT
+    CASE WHEN ${yearCondition} THEN '2026当年' ELSE '历史遗留' END scope,
+    COUNT(*) total
+  FROM employees
+  WHERE ${baseCondition}
+  GROUP BY scope
+  ORDER BY scope
+`).all(...standardBases));
+db.close();
+NODE</summary>
+
+```bash
+/Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const year = '2026';
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+const yearCondition = `(entry_date LIKE '${year}-%' OR training_date LIKE '${year}-%' OR resigned_date LIKE '${year}-%')`;
+const baseCondition = `COALESCE(base, '') <> '' AND base NOT IN (${placeholders})`;
+console.log('current-year non-standard base summary');
+console.table(db.prepare(`
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseCondition}
+    AND ${yearCondition}
+  GROUP BY base
+  ORDER BY total DESC, base
+`).all(...standardBases));
+console.log('\ncurrent-year non-standard base details');
+console.table(db.prepare(`
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE ${baseCondition}
+    AND ${yearCondition}
+  ORDER BY base, employee_no
+`).all(...standardBases));
+console.log('\nall non-standard historical vs current-year');
+console.table(db.prepare(`
+  SELECT
+    CASE WHEN ${yearCondition} THEN '2026当年' ELSE '历史遗留' END scope,
+    COUNT(*) total
+  FROM employees
+  WHERE ${baseCondition}
+  GROUP BY scope
+  ORDER BY scope
+`).all(...standardBases));
+db.close();
+NODE
+```
+
+```
+current-year non-standard base summary
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+current-year non-standard base details
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+all non-standard historical vs current-year
+┌─────────┬────────────┬───────┐
+│ (index) │ scope      │ total │
+├─────────┼────────────┼───────┤
+│ 0       │ '历史遗留' │ 275   │
+└─────────┴────────────┴───────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Clarifying data queries**
+
+I need to consider a query for the current year in a non-standard way. The user is looking for data checks, and it looks like I might need to run a command to filter for 2026. Maybe the query should focus on entry, training, or resigned records for that year. If it’s about historical data, I can ignore non-current records, but for active entries, even older ones might need attention. I guess I’ll run the Node v24 query to adjust findings properly.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+明白，我按“今年 2026 年相关数据”重新筛一遍：优先看 `入培日期` 在 2026 年的未归类记录，同时也检查当前在职表里是否还有非标准基地。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+function table(title, sql, params = []) {
+  console.log(`\n${title}`);
+  console.table(db.prepare(sql).all(...params));
+}
+const baseWhere = `COALESCE(base, '') <> '' AND base NOT IN (${placeholders})`;
+table('2026 training_date non-standard base summary', `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseWhere}
+    AND training_date >= '2026-01-01'
+    AND training_date < '2027-01-01'
+  GROUP BY base
+  ORDER BY total DESC, base
+`, standardBases);
+table('2026 entry_date non-standard base summary', `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseWhere}
+    AND entry_date >= '2026-01-01'
+    AND entry_date < '2027-01-01'
+  GROUP BY base
+  ORDER BY total DESC, base
+`, standardBases);
+table('active source non-standard base summary', `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseWhere}
+    AND source_type = 'active'
+  GROUP BY base
+  ORDER BY total DESC, base
+`, standardBases);
+table('2026 relevant details', `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE ${baseWhere}
+    AND (
+      (training_date >= '2026-01-01' AND training_date < '2027-01-01')
+      OR (entry_date >= '2026-01-01' AND entry_date < '2027-01-01')
+      OR source_type = 'active'
+    )
+  ORDER BY base, employee_no
+`, standardBases);
+db.close();
+NODE</summary>
+
+```bash
+/Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = [
+  '联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目',
+  '江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花',
+  '成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'
+];
+const placeholders = standardBases.map(() => '?').join(',');
+function table(title, sql, params = []) {
+  console.log(`\n${title}`);
+  console.table(db.prepare(sql).all(...params));
+}
+const baseWhere = `COALESCE(base, '') <> '' AND base NOT IN (${placeholders})`;
+table('2026 training_date non-standard base summary', `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseWhere}
+    AND training_date >= '2026-01-01'
+    AND training_date < '2027-01-01'
+  GROUP BY base
+  ORDER BY total DESC, base
+`, standardBases);
+table('2026 entry_date non-standard base summary', `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseWhere}
+    AND entry_date >= '2026-01-01'
+    AND entry_date < '2027-01-01'
+  GROUP BY base
+  ORDER BY total DESC, base
+`, standardBases);
+table('active source non-standard base summary', `
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE ${baseWhere}
+    AND source_type = 'active'
+  GROUP BY base
+  ORDER BY total DESC, base
+`, standardBases);
+table('2026 relevant details', `
+  SELECT source_type, employee_no, name, employee_status, base, department, position, office_location, entry_date, training_date, resigned_date
+  FROM employees
+  WHERE ${baseWhere}
+    AND (
+      (training_date >= '2026-01-01' AND training_date < '2027-01-01')
+      OR (entry_date >= '2026-01-01' AND entry_date < '2027-01-01')
+      OR source_type = 'active'
+    )
+  ORDER BY base, employee_no
+`, standardBases);
+db.close();
+NODE
+```
+
+```
+
+2026 training_date non-standard base summary
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+2026 entry_date non-standard base summary
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+active source non-standard base summary
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+2026 relevant details
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+按这个口径过滤后，没有需要处理的当年数据。
+
+我重新查了三类：
+- `入培日期` 在 `2026` 年的非标准基地：`0`
+- `入职日期` 在 `2026` 年的非标准基地：`0`
+- 当前在职表里的非标准基地：`0`
+
+所以前面那 `275` 条都可以按历史遗留忽略，不影响今年数据和当前在职数据。
+
+---
+
+_**User**_
+
+如有当年的数据就归类在ITO项目中
+
+---
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/brainstorming/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/test-driven-development/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/.cursor/plugins/cache/cursor-public/superpowers/b7a8f76985f1e93e75dd2f2a3b424dc731bd9d37/skills/verification-before-completion/SKILL.md</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Considering development tasks**
+
+I’m pondering an approach to minimize documentation and commits, especially since the system advises against commits unless directly requested by the user. It’s a bit conflicting because while the skill suggests writing documentation and committing, the system's guidance complicates matters. Maybe I should consider creating a todo list instead, though that might not be necessary. I think it's crucial to implement with TDD if edits are needed. First, I’ll review the context and add tests before anything else.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+收到，我会把口径落到导入归一规则里：历史年份继续不动；如果当年数据出现非标准 ITO/项目基地类基地，就统一归到 `ITO项目`。我先看现有归一函数和测试写法，然后先补一条失败测试再改实现。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/service/employees/normalize.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "caseInsensitive": false,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js",
+  "pattern": "frontline base maps|talent development department|normalize"
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "outputMode": "content",
+  "path": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js",
+  "pattern": "frontline base maps|talent development department|normalize",
+  "topFiles": [
+    {
+      "matchCount": 16,
+      "uri": "test/recruitment-admin.test.js"
+    }
+  ],
+  "totalFiles": 1,
+  "totalMatches": 16
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search"><details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Planning design and testing**
+
+I need to add the test first, but it seems I should maybe get the design approved before moving forward with implementation. I’ve already shifted "will," so that's a step in the right direction. Given the user's directive, I think I can proceed, but I need to read through the test lines, particularly from 228 to 320, to ensure I understand everything. Let's make sure I cover all necessary bases!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js</summary>
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2"><details>
+<summary>Tool use: **read_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Clarifying date requirements**
+
+I'm trying to figure out if inferBase needs a date. Right now, there isn’t one. I think it should incorporate a condition for nonstandard current years. But inferBase doesn’t know the date yet. Maybe adding a year parameter would help normalizeEmployeeRow manage training dates effectively. The design revolves around stable mappings and classifications, but if the current year data needs to go through, historical data might not need so much updating. Using the actual current year rather than hardcoding might keep things flexible, but tests might need to adjust as years change.
+**Mapping non-standard ITO bases**
+
+I'm considering if I should map normalized dates that start with the current year to ITO, especially non-standard bases. For current-year data, I need to classify "非标准 ITO/项目基地类基地" as ITO. There are also some JiNan training paths that might not seem like ITO but could be relevant. The user mentioned classifying non-standard bases for the current year as ITO projects, which is a bit risky. So, I think I need a fallback for those records. Implementing a function for standard bases might help keep everything organized, while historical data can remain unchanged.
+**Updating test requirements**
+
+I need to set up a test that expects current year data, while making sure that historical rows with previous years stay in their raw format. I’ll probably need to update the test first, and then run it to see which one should fail. Since inferBase in production isn't aware of dates, it seems like normalizeActiveEmployee will return the raw format for entries like "GX01...". I have to ensure that I’m testing this properly!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+实现设计很小：保留现有标准基地映射；导入员工时先按原逻辑推断基地，如果结果不在标准基地集合内，并且入培/入职/离职日期任一属于当前年份，就把 `base` 改为 `ITO项目`；历史年份仍保留原值不影响历史遗留数据。先补测试覆盖“当年归 ITO、历史不强改”。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+测试已经加好，我现在先跑这一条，确认它在现有实现下会失败，避免测试只是“跟着现状走”。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /Users/guo1/.nvm/versions/node/v24.17.0/bin/node --test --test-name-pattern "current year non-standard employee bases fall back to ITO project" test/recruitment-admin.test.js</summary>
+
+```bash
+/Users/guo1/.nvm/versions/node/v24.17.0/bin/node --test --test-name-pattern "current year non-standard employee bases fall back to ITO project" test/recruitment-admin.test.js
+```
+
+```
+✖ current year non-standard employee bases fall back to ITO project (8.318988ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 890.051264
+
+✖ failing tests:
+
+test at test/recruitment-admin.test.js:322:1
+✖ current year non-standard employee bases fall back to ITO project (8.318988ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'GX01-广西基地'
+  - 'ITO项目'
+  
+      at TestContext.&lt;anonymous&gt; (/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js:345:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.start (node:internal/test_runner/test:1177:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GX01-广西基地',
+    expected: 'ITO项目',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+失败原因符合预期：当前当年 `GX01-广西基地` 仍保留原值。接下来我只改员工归一逻辑，让当年非标准基地回落到 `ITO项目`。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/guo1/Desktop/recruit-data/service/employees/normalize.js</summary>
+
+</details>
+
+</tool-use>
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2"><details>
+<summary>Tool use: **edit_file_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+规则已经改完，我先跑刚才失败的单测确认变绿，再跑完整测试和重新抽查数据库。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /Users/guo1/.nvm/versions/node/v24.17.0/bin/node --test --test-name-pattern "current year non-standard employee bases fall back to ITO project" test/recruitment-admin.test.js</summary>
+
+```bash
+/Users/guo1/.nvm/versions/node/v24.17.0/bin/node --test --test-name-pattern "current year non-standard employee bases fall back to ITO project" test/recruitment-admin.test.js
+```
+
+```
+✔ current year non-standard employee bases fall back to ITO project (4.211177ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 623.659263
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/guo1/Desktop/recruit-data/service/employees/normalize.js",
+    "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/service/employees/normalize.js"
+    },
+    {
+      "relativeWorkspacePath": "/Users/guo1/Desktop/recruit-data/test/recruitment-admin.test.js"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints"><details>
+<summary>Tool use: **read_lints**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Running Tests and Imports**
+
+I need to run full tests, and I should note that the current imported database won’t change until I reimport active or resigned data because normalization only happens at import time. The user might expect future data updates. It would be good to mention the need to reimport if they want the database re-normalized. I should also run `npm test` with v24, as the default node v18 is failing. I’ll need to ensure the correct PATH is set for this. It’s also worth confirming the current year's data remains at zero, and I may need to restart the server for code updates.
+**Restarting the Production Server**
+
+I need to consider that since the production server started before the code change, it's running the old code due to Node's caching. For future imports, the new rules won’t take effect until I restart the server, which seems necessary since the user is likely using the website. I should check the running processes next. The existing background npm start process is still active, and I can safely kill it and restart. However, I should run tests first before proceeding with any changes.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+单测已通过，lint 没报错。为了让网页后续导入也使用新规则，我还需要跑完整测试，并重启我之前启动的本地服务加载新代码。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: PATH="/Users/guo1/.nvm/versions/node/v24.17.0/bin:$PATH" npm test</summary>
+
+```bash
+PATH="/Users/guo1/.nvm/versions/node/v24.17.0/bin:$PATH" npm test
+```
+
+```
+
+&gt; recruit-data-platform@0.1.0 test
+&gt; node --test
+
+✔ shared formatting masks phone numbers and parses pagination defaults (6.560633ms)
+✔ excel helper keeps duplicate headers addressable like spreadsheet tools (0.402267ms)
+✔ employee import templates match required sheet names and column headers (4.455086ms)
+✔ target and interview import templates match required sheets and columns (16.587516ms)
+✔ target import is rendered on its own page (845.461501ms)
+✔ self sourcing page omits personal risk diagnosis column (494.538057ms)
+✔ base risk funnel prototype renders as an isolated prototype page (60.853919ms)
+✔ csv export escapes values and includes utf8 bom (0.604464ms)
+✔ interview repository inserts every normalized interview field (1.726634ms)
+✔ employee normalization maps active and resigned source columns to one model (0.92344ms)
+✔ talent development department base uses third-level department (0.192428ms)
+✔ frontline base maps special office locations to business target names (0.318132ms)
+✔ current year non-standard employee bases fall back to ITO project (1.329519ms)
+✔ employee filters support single-select enums and fuzzy channel names (1.64048ms)
+✔ employee base filter options hide ignored and raw department paths (0.590958ms)
+✔ recruiter role requires talent development department and recruitment position (0.831165ms)
+✔ target progress sums cutoff targets and actuals through cutoff date (0.99765ms)
+✔ target progress default cutoff uses today for current month and month end for past month (0.383499ms)
+✔ target plan summary calculates channel shares (0.713911ms)
+✔ target plan summary uses month breakdown when month is all (0.7711ms)
+✔ target filter options use bases from selected month only (0.334808ms)
+✔ target progress summary exposes self sourcing actual share (0.851826ms)
+✔ target progress includes actual-only base channel combinations (0.495159ms)
+✔ target progress summary follows base filter (0.494423ms)
+✔ dashboard training details follow base filter (0.340042ms)
+✔ dashboard matrix exposes base channel status cells (0.984323ms)
+✔ dashboard batch drilldown groups funnel by batch feedback window (1.525032ms)
+✔ dashboard batch drilldown diagnoses gap by funnel stage (0.639774ms)
+✔ dashboard batch matrix uses base channel rows and batch columns (2.15253ms)
+✔ dashboard funnel diagnosis excludes return and campus channels (5.762119ms)
+✔ dashboard position channel board summarizes one base across channels and batches (2.496928ms)
+✔ dashboard position channel board exposes funnel rows and channel action plans (1.422944ms)
+✔ dashboard position channel board action plans follow selected channel scope (0.819269ms)
+✔ dashboard position channel board shows healthy diagnosis when base is achieved (0.865638ms)
+✔ dashboard position channel board marks achieved batch as healthy even when one channel is short (1.064058ms)
+✔ dashboard position channel board treats actual-only channels as healthy (0.740293ms)
+✔ dashboard position board keeps batch overview embedded and vertical (4.53019ms)
+✔ dashboard position channel board switches to base achievement overview when base is all (2.00981ms)
+✔ dashboard overview insights expose executive cards, channel shares and vendor top three (2.045452ms)
+✔ dashboard overview base achievements sort by achievement rate and keep actual-only bases last (0.643014ms)
+✔ dashboard overview tab normalizes unknown tab to overview (0.161256ms)
+✔ self sourcing efficiency uses monthly active recruiter scale by stage (0.698083ms)
+✔ self sourcing efficiency follows recruiter filter (0.349365ms)
+✔ self sourcing details expose recruiter options and support recruiter filter (0.31904ms)
+✔ self sourcing recruiter rows summarize months through selected month (1.681525ms)
+✔ self sourcing recruiter rows include current month funnel diagnosis (0.741675ms)
+✔ self sourcing recruiter diagnosis follows risk flags (1.053396ms)
+✔ self sourcing risk status follows seven day achievement rate (0.695358ms)
+✔ self sourcing achieved recruiter with high attrition is normal by seven day rate (1.20276ms)
+✔ interview normalization resolves feedback dates for daily overwrite (0.385207ms)
+✔ interview position name infers base (0.140261ms)
+✔ interview filters use cleaned funnel dimensions (0.165268ms)
+✔ interview funnel rows use cleaned dimensions (0.517837ms)
+✔ monthly interview funnel uses monthly employee training totals by base (0.582005ms)
+ℹ tests 54
+ℹ suites 0
+ℹ pass 54
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2538.125542
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Finding node process**
+
+I need to restart the server, but first, I have to locate the node process. I think I can use the "ps" command to help me with that. It’s important to make sure I find the right process before restarting to avoid any issues. I want to get this right to ensure everything runs smoothly afterward. So, I’ll start with that approach and see what comes up!</details></think>
+
+_**Agent (gpt-5.5)**_
+
+完整测试通过。现在我重启本地服务，让网站后续导入走新代码。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ps -eo pid=,ppid=,command= | rg 'node server\.js|npm start|recruit-data'</summary>
+
+```bash
+ps -eo pid=,ppid=,command= | rg 'node server\.js|npm start|recruit-data'
+```
+
+```
+(eval):1: command not found: rg
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Troubleshooting shell issues**
+
+I'm dealing with a situation where my Shell PATH is messed up, causing an issue with `rg` not being available. The tool actually suggests avoiding `grep` and `rg`, but since `rg` isn't accessible due to the PATH issue, I wonder if using `/usr/local/bin/rg` would work? Maybe I could try using `ps` without a pipe, but the output might be too large. It seems like restoring the PATH would help resolve this.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+刚才 shell 的 `PATH` 里找不到 `rg`，我修正环境变量后继续定位服务进程。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: export PATH="/Users/guo1/.nvm/versions/node/v24.17.0/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"; ps -eo pid=,ppid=,command= | rg 'node server\.js|npm start|recruit-data'</summary>
+
+```bash
+export PATH="/Users/guo1/.nvm/versions/node/v24.17.0/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"; ps -eo pid=,ppid=,command= | rg 'node server\.js|npm start|recruit-data'
+```
+
+```
+(eval):1: command not found: rg
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Evaluating command options**
+
+I'm thinking that maybe `rg` isn't installed in the shell. If I can use `ps` with `awk`, that might work, although the instructions say to avoid `grep`. However, `awk` is okay to use. Since `rg` isn't available, I wonder if `pgrep` could be a suitable alternative? I think something like `pgrep -fl "node server.js"` could work since it’s process-related, even though it's a bit `grep`-ish.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+`rg` 在这个终端环境不可用，我改用进程工具查服务。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: pgrep -fl "node server.js|npm start"</summary>
+
+```bash
+pgrep -fl "node server.js|npm start"
+```
+
+```
+91309 /bin/zsh -c snap=$(command cat &lt;&amp;3); builtin unsetopt aliases 2&gt;/dev/null; builtin unalias -m '*' 2&gt;/dev/null || true; builtin eval "$snap" &amp;&amp; { builtin unsetopt nounset 2&gt;/dev/null || true; builtin eval "${__CURSOR_SANDBOX_ENV_RESTORE:-}" 2&gt;/dev/null; builtin export PWD="$(builtin pwd)"; builtin setopt aliases 2&gt;/dev/null; builtin eval "$1"; }; COMMAND_EXIT_CODE=$?; dump_zsh_state &gt;&amp;4; builtin exit $COMMAND_EXIT_CODE -- npm start
+91366 npm start COMMAND_MODE=unix2003 CURSOR_EXTENSION_HOST_ROLE=agent-exec
+91418 node server.js
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Addressing process management**
+
+I need to end our current process and I'm considering using the command to kill the specific ones, like "kill 91309". It feels like that could be a safe way to proceed. I'm also thinking about whether I need to manage the others as well, like "91366" and "91418". Once I've successfully done that, I think I'll start it back up in the background and check to see how things are running afterward.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+找到了之前由我启动的本地服务进程，我会停止它再用 Node 24 重新启动。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: kill 91309 91366 91418 || true</summary>
+
+```bash
+kill 91309 91366 91418 || true
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+旧服务已停，我现在启动新的本地服务并检查页面能否访问。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: PATH="/Users/guo1/.nvm/versions/node/v24.17.0/bin:$PATH" npm start</summary>
+
+```bash
+PATH="/Users/guo1/.nvm/versions/node/v24.17.0/bin:$PATH" npm start
+```
+
+```
+]633;C
+&gt; recruit-data-platform@0.1.0 start
+&gt; node server.js
+
+人力招聘数据分析后台 已启动：http://localhost:3000
+SQLite 模式：file，路径：/Users/guo1/Desktop/recruit-data/data/recruitment.db
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+新服务已启动，我再做一次页面与当年非标准基地抽查，确认服务可用、当前数据仍没有待处理项。
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="await">
+<details>
+<summary>Tool use: **await**</summary>
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+<tool-use data-tool-type="unknown" data-tool-name="await"><details>
+<summary>Tool use: **await**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /usr/bin/curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 http://localhost:3000/employees/frontline</summary>
+
+```bash
+/usr/bin/curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 http://localhost:3000/employees/frontline
+```
+
+```
+200
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: /Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = ['联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目','江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花','成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'];
+const placeholders = standardBases.map(() => '?').join(',');
+const rows = db.prepare(`
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+    AND (training_date LIKE '2026-%' OR entry_date LIKE '2026-%' OR resigned_date LIKE '2026-%')
+  GROUP BY base
+  ORDER BY total DESC
+`).all(...standardBases);
+console.table(rows);
+db.close();
+NODE</summary>
+
+```bash
+/Users/guo1/.nvm/versions/node/v24.17.0/bin/node - <<'NODE'
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('data/recruitment.db', { readOnly: true });
+const standardBases = ['联通河北','联通天津','联通北京','10015升投','南二在线客服项目','长春热线项目','吉林外呼项目','江苏基地-南京','江苏基地-淮安','济南基地-济阳','济南基地-夏都','湖南基地-空港','湖南基地-荷花','成都基地','宜宾基地','合肥基地','新业务运营中心','ITO项目','人才开发部','忽略'];
+const placeholders = standardBases.map(() => '?').join(',');
+const rows = db.prepare(`
+  SELECT base, COUNT(*) total
+  FROM employees
+  WHERE COALESCE(base, '') <> ''
+    AND base NOT IN (${placeholders})
+    AND (training_date LIKE '2026-%' OR entry_date LIKE '2026-%' OR resigned_date LIKE '2026-%')
+  GROUP BY base
+  ORDER BY total DESC
+`).all(...standardBases);
+console.table(rows);
+db.close();
+NODE
+```
+
+```
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
+
+```
+</details>
+</tool-use>
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"><details>
+<summary>Tool use: **run_terminal_command_v2**</summary>
+
+</details></tool-use>
+
+_**Agent (gpt-5.5)**_
+
+<think><details><summary>Thought Process</summary>
+**Summarizing changes**
+
+I’m thinking about providing a concise summary of the git diff. I should mention which files changed and the tests involved. I also need to clarify that current database records won’t change until a reimport; however, there shouldn't be any changes for this year. If there's a future import, the rule will apply then. Lastly, I should verify there are no lints, which we did. I could reference page 200 for extra context.</details></think>
+
+_**Agent (gpt-5.5)**_
+
+已按这个口径落到导入规则里了：
+
+当员工归一后的 `base` 不在标准基地名里，并且 `入培日期 / 入职日期 / 离职日期` 任一属于当前年份，就自动归到 `ITO项目`；历史年份仍保留原值，不强行改。
+
+已验证：
+- 新增测试先失败、改完后通过
+- 完整测试通过：`54/54`
+- 本地服务已重启，`/employees/frontline` 返回 `200`
+- 当前库里 `2026` 当年非标准基地仍为 `0`，所以现有数据不需要额外处理，只影响后续重新导入/新增当年数据。
+
+---
+
+_**User**_
+
+<timestamp>Friday, Jul 3, 2026, 1:57 PM (UTC+8)</timestamp>
+<system_notification>
+The following task has finished. If you were already aware, ignore this notification and do not restate prior responses.
+
+<task>
+kind: shell
+status: aborted
+task_id: 729730
+title: Start app to observe server lifecycle
+output_path: /Users/guo1/.cursor/projects/Users-guo1-Desktop-recruit-data/terminals/729730.txt
+</task>
+</system_notification>
+<user_query>Briefly inform the user about the task result and perform any follow-up actions (if needed).</user_query>
+
+---
+
+_**Agent (gpt-5.5)**_
+
+之前那个旧的启动任务已经被停止了，这是预期内的。我已经重新用最新代码启动了服务，当前网站可访问：
+
+`http://localhost:3000`

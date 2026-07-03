@@ -1673,7 +1673,7 @@ body {
 
 .self-sourcing-recruiter-table {
   table-layout: fixed;
-  min-width: 1720px;
+  min-width: 1440px;
   font-size: 13px;
 }
 
@@ -1698,8 +1698,8 @@ body {
 .self-sourcing-recruiter-table .col-trend {
   width: 110px;
 }
-.self-sourcing-recruiter-table .col-diagnosis {
-  width: 160px;
+.self-sourcing-recruiter-table .col-efficiency-chart {
+  width: 230px;
 }
 
 .self-sourcing-recruiter-table th {
@@ -1725,10 +1725,30 @@ body {
 }
 
 .self-person-cell strong {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-main);
   font-size: 13px;
   line-height: 1.2;
+}
+
+.self-status-chip {
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.self-status-chip.is-active {
+  color: #168a5a;
+  background: #e8f7ef;
+}
+
+.self-status-chip.is-resigned {
+  color: #b77900;
+  background: #fff4df;
 }
 
 .self-person-cell em {
@@ -1813,6 +1833,64 @@ body {
   display: block;
 }
 
+.monthly-efficiency-chart {
+  width: 210px;
+  margin: 0 auto;
+  padding: 4px 6px 2px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.monthly-efficiency-chart svg {
+  display: block;
+  width: 100%;
+  height: 84px;
+  overflow: visible;
+}
+
+.monthly-efficiency-chart .chart-axis {
+  stroke: #d9e2ef;
+  stroke-width: 1;
+}
+
+.monthly-efficiency-chart .chart-axis-title {
+  fill: #98a2b3;
+  font-size: 9px;
+  text-anchor: start;
+}
+
+.monthly-efficiency-chart .chart-line {
+  fill: none;
+  stroke: #2f80ed;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.monthly-efficiency-chart .chart-point {
+  fill: #2f80ed;
+  stroke: #fff;
+  stroke-width: 2;
+  cursor: pointer;
+}
+
+.monthly-efficiency-chart .chart-point:hover {
+  fill: #d92d20;
+}
+
+.monthly-efficiency-chart .chart-value {
+  fill: #344054;
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.monthly-efficiency-chart .chart-month {
+  fill: #667085;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
 .detail-number {
   border: 0;
   padding: 0;
@@ -1877,6 +1955,40 @@ body {
 .modal-body {
   overflow: auto;
   padding: 14px 18px 18px;
+}
+
+.detail-modal-table {
+  min-width: 820px;
+  table-layout: fixed;
+}
+
+.detail-modal-table th,
+.detail-modal-table td {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.detail-modal-table th:nth-child(1),
+.detail-modal-table td:nth-child(1) {
+  width: 120px;
+}
+
+.detail-modal-table th:nth-child(2),
+.detail-modal-table td:nth-child(2) {
+  width: 150px;
+}
+
+.detail-modal-table th:nth-child(3),
+.detail-modal-table td:nth-child(3) {
+  width: 32%;
+}
+
+.detail-modal-table th:nth-child(4),
+.detail-modal-table td:nth-child(4) {
+  width: 42%;
 }
 
 .position-metric-grid {

@@ -265,7 +265,10 @@ function calculateSelfSourcingAttritionRate(details = [], asOfDate) {
 function hasThreeMonthLowSevenDayEfficiency(monthRows = []) {
   const latestThreeMonths = monthRows.slice(-3);
   return latestThreeMonths.length === 3
-    && latestThreeMonths.every((month) => month.sevenDayRetainedCount < month.sevenDayTarget);
+    && latestThreeMonths.every((month) => (
+      month.actualAchievement > 0
+      && month.sevenDayRetainedCount < month.sevenDayTarget
+    ));
 }
 
 function buildRecruiterDiagnosis({ monthlyGap, sevenDayRetainedCount, sevenDayCutoffTarget, monthRows, selectedMonthDetails, currentDate }) {
@@ -288,9 +291,11 @@ function buildRecruiterDiagnosis({ monthlyGap, sevenDayRetainedCount, sevenDayCu
     reasons.push(`流失偏高${Math.round(attritionRate * 100)}%`);
   }
 
-  const riskStatus = sevenDayRate >= 0.8
-    ? '正常达标'
-    : (sevenDayRate >= 0.6 ? '需关注' : '高风险');
+  const riskStatus = sevenDayRate < 0.6
+    ? '高风险'
+    : (sevenDayRate >= 0.8
+      ? '正常达标'
+      : '需关注');
 
   return {
     riskStatus,
@@ -306,7 +311,18 @@ function buildRecruiterDiagnosis({ monthlyGap, sevenDayRetainedCount, sevenDayCu
   };
 }
 
-function buildRecruiterFunnelDiagnosis({ recruiterName, yearMonth, interviews = [], selectedMonthDetails = [], selectedSevenDayCount = 0, sevenDayCutoffTarget = 0 }) {
+function buildRecruiterFunnelDiagnosis({
+  recruiterName,
+  yearMonth,
+  interviews = [],
+  selectedMonthDetails = [],
+  selectedSevenDayCount = 0,
+  monthlyCutoffTarget = 0,
+  monthlyGap = 0,
+  sevenDayCutoffTarget = 0,
+  sevenDayGap = 0,
+  diagnosis = {}
+}) {
   const recruiterInterviews = interviews.filter((interview) => (
     (!yearMonth || toText(interview.feedbackDate).startsWith(yearMonth))
     && toText(interview.channelType) === '自主社招'
@@ -318,6 +334,53 @@ function buildRecruiterFunnelDiagnosis({ recruiterName, yearMonth, interviews = 
   const passRate = interviewCount > 0 ? passedCount / interviewCount : 0;
   const trainingRate = passedCount > 0 ? trainingCount / passedCount : 0;
   const sevenDayRate = sevenDayCutoffTarget > 0 ? selectedSevenDayCount / sevenDayCutoffTarget : 0;
+  const monthlyRate = monthlyCutoffTarget > 0 ? trainingCount / monthlyCutoffTarget : 0;
+  const diagnosisPath = [];
+
+  if (monthlyGap < 0) {
+    diagnosisPath.push({
+      stage: '参培达成',
+      current: `${trainingCount} 人 / 目标 ${monthlyCutoffTarget} 人 / ${formatPercent(monthlyRate)}`,
+      diagnosis: `参培未达标，当前 GAP ${monthlyGap}`,
+      suggestion: '提升参培率：复盘面通后未参培原因，强化 offer 后跟进、入培提醒和候选人备份，优先补足高意向候选人。'
+    });
+  }
+
+  if (sevenDayGap < 0) {
+    diagnosisPath.push({
+      stage: '7天留存',
+      current: `${selectedSevenDayCount} 人 / 目标 ${sevenDayCutoffTarget} 人 / ${formatPercent(sevenDayRate)}`,
+      diagnosis: `7天人效未达标，当前 GAP ${sevenDayGap}`,
+      suggestion: '提升留存率：跟踪 7 天内离职原因，前置岗位预期管理，优化候选人画像、入培前筛选和入职首周关怀。'
+    });
+  }
+
+  if (diagnosis.hasThreeMonthLowSevenDayEfficiency) {
+    diagnosisPath.push({
+      stage: '连续人效',
+      current: '最近3个月均低于7天目标',
+      diagnosis: '连续3个月7天人效低于目标，说明短期波动已变成持续风险',
+      suggestion: '按月复盘来源渠道、候选人质量和入职首周流失原因，建立连续追踪清单，优先修复影响留存的共性问题。'
+    });
+  }
+
+  if (diagnosis.hasHighAttrition) {
+    diagnosisPath.push({
+      stage: '流失风险',
+      current: diagnosis.attritionRateText || '0.00%',
+      diagnosis: `当月流失偏高，流失率 ${diagnosis.attritionRateText || '0.00%'}`,
+      suggestion: '拆解离职原因，区分岗位预期、薪酬认知、管理承接和候选人稳定性问题，回写到邀约与筛选标准。'
+    });
+  }
+
+  if (diagnosisPath.length === 0) {
+    diagnosisPath.push({
+      stage: '达成健康',
+      current: `参培 ${trainingCount} 人 / 7天 ${selectedSevenDayCount} 人`,
+      diagnosis: '当前参培和7天留存均无明显异常',
+      suggestion: '保持现有招聘节奏，继续沉淀有效渠道、候选人画像和入培承接动作。'
+    });
+  }
 
   return {
     interviewCount,
@@ -326,32 +389,7 @@ function buildRecruiterFunnelDiagnosis({ recruiterName, yearMonth, interviews = 
     passRateText: formatPercent(passRate),
     trainingRateText: formatPercent(trainingRate),
     sevenDayRateText: formatPercent(sevenDayRate),
-    diagnosisPath: [
-      {
-        stage: '到面',
-        current: `${interviewCount} 人`,
-        diagnosis: interviewCount > 0 ? '当月已有到面候选人' : '当月到面不足，漏斗入口偏弱',
-        suggestion: interviewCount > 0 ? '保持候选人邀约节奏，继续扩大有效面试量' : '优先补充邀约名单，提升渠道触达和到面转化'
-      },
-      {
-        stage: '面通',
-        current: `${passedCount} 人 / ${formatPercent(passRate)}`,
-        diagnosis: passRate >= 0.6 ? '面通率处于可接受区间' : '面通率偏低，候选人质量或岗位匹配度不足',
-        suggestion: passRate >= 0.6 ? '保持筛选标准，复盘高质量候选人来源' : '复盘候选人画像、邀约话术和岗位匹配标准'
-      },
-      {
-        stage: '参培',
-        current: `${trainingCount} 人 / ${formatPercent(trainingRate)}`,
-        diagnosis: trainingRate >= 0.8 ? '面通后参培承接较稳定' : '面通后参培转化不足',
-        suggestion: trainingRate >= 0.8 ? '继续跟进入培确认，减少临门流失' : '加强 offer 后跟进、入培提醒和候选人备份'
-      },
-      {
-        stage: '7天留存',
-        current: `${selectedSevenDayCount} 人 / ${formatPercent(sevenDayRate)}`,
-        diagnosis: sevenDayRate >= 0.8 ? '7天留存达成率达标' : '7天留存低于预警线',
-        suggestion: sevenDayRate >= 0.8 ? '沉淀当前招聘渠道和候选人画像' : '跟踪离职原因，优化候选人预期管理和入培前筛选'
-      }
-    ]
+    diagnosisPath
   };
 }
 
@@ -364,11 +402,8 @@ function buildSelfSourcingEfficiency({ yearMonth, asOfDate, employees = [], filt
   const normalizedYearMonth = toText(yearMonth);
   const recruiterFilter = toText(filters.recruiter);
   const currentDate = normalizeDate(asOfDate) || (normalizedYearMonth ? buildDate(normalizedYearMonth, getMonthLastDay(normalizedYearMonth)) : formatDate(new Date()));
-  const recruiters = employees.filter((employee) => (
-    isTalentRecruiter(employee)
-    && (!normalizedYearMonth || isRecruiterActiveInMonth(employee, normalizedYearMonth))
-    && (!recruiterFilter || employee.name === recruiterFilter)
-  ));
+  const recruiters = getSelfSourcingRecruitersForMonth(employees, normalizedYearMonth)
+    .filter((recruiter) => !recruiterFilter || recruiter.name === recruiterFilter);
   const recruiterByName = new Map(recruiters.map((recruiter) => [recruiter.name, recruiter]));
   const selfSourcingEmployees = employees.filter((employee) => (
     employee.channelType === '自主社招'
@@ -423,14 +458,19 @@ function getSelfSourcingRecruitersForYear(employees = [], yearMonth = '') {
     .filter((employee) => !year || isRecruiterInYear(employee, year));
 }
 
+function getSelfSourcingRecruitersForMonth(employees = [], yearMonth = '') {
+  const normalizedYearMonth = toText(yearMonth);
+  return getSelfSourcingRecruitersForYear(employees, normalizedYearMonth)
+    .filter((recruiter) => !normalizedYearMonth || isRecruiterActiveInMonth(recruiter, normalizedYearMonth));
+}
+
 function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], interviews = [], filters = {} }) {
   const normalizedYearMonth = toText(yearMonth);
   const recruiterFilter = toText(filters.recruiter);
   const currentDate = normalizeDate(asOfDate) || (normalizedYearMonth ? buildDate(normalizedYearMonth, getMonthLastDay(normalizedYearMonth)) : formatDate(new Date()));
   const months = buildYearMonthsThrough(normalizedYearMonth);
   const selectedMonth = months[months.length - 1]?.yearMonth || normalizedYearMonth;
-  const recruiters = getSelfSourcingRecruitersForYear(employees, normalizedYearMonth)
-    .filter((recruiter) => !selectedMonth || isRecruiterActiveInMonth(recruiter, selectedMonth))
+  const recruiters = getSelfSourcingRecruitersForMonth(employees, selectedMonth)
     .filter((recruiter) => !recruiterFilter || recruiter.name === recruiterFilter);
   const selfSourcingEmployees = employees.filter((employee) => (
     employee.channelType === '自主社招'
@@ -493,13 +533,20 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
         sevenDayRetainedDetails: sevenDayRetainedDetails.map((employee) => toSelfSourcingCandidateDetail(employee, monthAsOfDate))
       };
     });
+    const recruiterEntryYearMonth = (normalizeDate(recruiter.entryDate) || normalizeDate(recruiter.trainingDate) || '').slice(0, 7);
+    const selectedYear = selectedMonth.slice(0, 4);
+    const chartStartYearMonth = recruiterEntryYearMonth.startsWith(`${selectedYear}-`)
+      ? recruiterEntryYearMonth
+      : months[0]?.yearMonth;
+    const efficiencyChartMonths = monthRows.filter((month) => !chartStartYearMonth || month.yearMonth >= chartStartYearMonth);
+    const cumulativeSevenDayDetails = efficiencyChartMonths.flatMap((month) => month.sevenDayRetainedDetails);
     const selectedMonthDetails = details.filter((employee) => (
       employee.trainingDate.startsWith(selectedMonth)
       && normalizeDate(employee.trainingDate) <= currentDate
     ));
     const selectedSevenDayDetails = selectedMonthDetails.filter((employee) => isSevenDayRetained(employee, currentDate));
     const selectedSevenDayCount = selectedSevenDayDetails.length;
-    const cumulativeSevenDayCount = monthRows.reduce((sum, month) => sum + month.sevenDayRetainedCount, 0);
+    const cumulativeSevenDayCount = efficiencyChartMonths.reduce((sum, month) => sum + month.sevenDayRetainedCount, 0);
     const monthlyCutoffTarget = calculateMonthlyCutoffTarget(targets.monthlyTrainingTarget, selectedMonth, currentDate);
     const sevenDayCutoffTarget = calculateMonthlyCutoffTarget(targets.sevenDayTrainingTarget, selectedMonth, currentDate);
     const monthlyGap = selectedMonthDetails.length - monthlyCutoffTarget;
@@ -508,7 +555,7 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
       monthlyGap,
       sevenDayRetainedCount: selectedSevenDayCount,
       sevenDayCutoffTarget,
-      monthRows,
+      monthRows: efficiencyChartMonths,
       selectedMonthDetails,
       currentDate
     });
@@ -518,7 +565,11 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
       interviews,
       selectedMonthDetails,
       selectedSevenDayCount,
-      sevenDayCutoffTarget
+      monthlyCutoffTarget,
+      monthlyGap,
+      sevenDayCutoffTarget,
+      sevenDayGap,
+      diagnosis: diagnosis.diagnosis
     });
 
     return {
@@ -539,10 +590,12 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
       sevenDayGap,
       sevenDayAchievementRateText: calculateRateText(selectedSevenDayCount, sevenDayCutoffTarget),
       sevenDayRetainedDetails: selectedSevenDayDetails.map((employee) => toSelfSourcingCandidateDetail(employee, currentDate)),
-      cutoffMonthlyAverageSevenDayEfficiency: (cumulativeSevenDayCount / (months.length || 1)).toFixed(1),
+      cutoffMonthlyAverageSevenDayEfficiency: (cumulativeSevenDayCount / (efficiencyChartMonths.length || 1)).toFixed(1),
       cumulativeSevenDayEfficiency: cumulativeSevenDayCount.toFixed(1),
+      cumulativeSevenDayDetails,
       ...diagnosis,
       recruitmentFunnel,
+      efficiencyChartMonths,
       months: monthRows
     };
   });
@@ -1374,7 +1427,7 @@ function countBaseSelfRecruiters(employees = [], interviews = [], base = '', win
     }
   });
 
-  const fallbackCount = getSelfSourcingRecruitersForYear(employees, yearMonth).length;
+  const fallbackCount = getSelfSourcingRecruitersForMonth(employees, yearMonth).length;
   return Math.max(1, recruiterNames.size || fallbackCount);
 }
 
@@ -2092,8 +2145,7 @@ function getDashboardOverview(query = {}) {
     })
     : [];
   const selfSourcingRecruiterOptions = overviewTab === 'self'
-    ? getSelfSourcingRecruitersForYear(employees, yearMonth)
-      .filter((recruiter) => !yearMonth || isRecruiterActiveInMonth(recruiter, yearMonth))
+    ? getSelfSourcingRecruitersForMonth(employees, yearMonth)
       .sort((left, right) => {
         const leftStatus = getRecruiterDisplayStatus(left, asOfDate);
         const rightStatus = getRecruiterDisplayStatus(right, asOfDate);
