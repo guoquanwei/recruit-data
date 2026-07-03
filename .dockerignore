@@ -20,7 +20,7 @@ pnpm-debug.log*
 # Local environment and secrets
 .env
 .env.*
-!.env.example
+.env.example
 
 # Runtime data
 data/*.db
@@ -59,9 +59,7 @@ build
 *.doc
 *.docx
 *.pdf
-docs/**/*.xlsx
-docs/**/*.xls
-docs/**/*.csv
+docs
 
 # Project planning/history artifacts not required at runtime
 openspec
