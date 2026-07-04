@@ -1,7 +1,6 @@
 <%- include('../../partials/header') %>
 
 <%
-  const detailPayload = {};
   const detailColumns = ['状态', '工号', '姓名', '招聘渠道', '渠道名称', '入培日期', '是否在职', '离职日期', '在职天数'];
   const diagnosisColumns = ['诊断路径', '当前表现', '诊断说明', '提升方案'];
   const toDetailRows = (rows = []) => rows.map((row) => ({
@@ -15,52 +14,18 @@
     '离职日期': row.resignedDate,
     '在职天数': row.workDays
   }));
-  const addDetailPayload = (key, title, rows) => {
-    detailPayload[key] = {
-      title,
-      columns: detailColumns,
-      rows: toDetailRows(rows)
-    };
-  };
-  const addDiagnosisPayload = (key, title, rows) => {
-    detailPayload[key] = {
-      title,
-      columns: diagnosisColumns,
-      rows: (rows || []).map((row) => ({
-        '诊断路径': row.stage,
-        '当前表现': row.current,
-        '诊断说明': row.diagnosis,
-        '提升方案': row.suggestion
-      }))
-    };
-  };
-  const detailButton = (key, value) => (
-    `<button type="button" class="detail-number" data-detail-key="${key}">${value}</button>`
-  );
-  const efficiencyRows = dashboard.selfSourcingEfficiency || [];
-  const overallEfficiency = efficiencyRows.find((item) => item.stage === '整体') || {};
-  const probationEfficiency = efficiencyRows.find((item) => item.stage === '试用期') || {};
-  const formalEfficiency = efficiencyRows.find((item) => item.stage === '正式期') || {};
-  const achievedRecruiterRows = (dashboard.selfSourcingRecruiterRows || [])
-    .filter((item) => Number(item.sevenDayRetainedCount || 0) > 8);
-  const probationSevenDayAchievedCount = achievedRecruiterRows
-    .filter((item) => item.sevenDayTrainingTarget === 8)
-    .length;
-  const formalSevenDayAchievedCount = achievedRecruiterRows
-    .filter((item) => item.sevenDayTrainingTarget === 12)
-    .length;
   const riskClass = (status) => status === '高风险' ? 'bad' : (status === '需关注' ? 'warn' : 'good');
 %>
 
 <section class="filter-card">
-  <form method="get" class="row g-3 align-items-end">
+  <form id="selfSourcingForm" method="get" class="row g-3 align-items-end">
     <div class="col-md-3">
       <label class="form-label">月份</label>
       <input class="form-control" type="month" name="yearMonth" value="<%= dashboard.yearMonth %>">
     </div>
     <div class="col-md-3">
       <label class="form-label">招聘专员</label>
-      <select class="form-select" name="recruiter">
+      <select class="form-select" name="recruiter" id="recruiterSelect">
         <option value="">全部招聘专员</option>
         <% dashboard.selfSourcingRecruiterOptions.forEach((recruiter) => { %>
           <option value="<%= recruiter %>" <%= dashboard.filters.recruiter === recruiter ? 'selected' : '' %>><%= recruiter %></option>
@@ -68,8 +33,8 @@
       </select>
     </div>
     <div class="col-md-3">
-      <button class="btn btn-primary" type="submit">查询</button>
-      <a class="btn btn-outline-secondary" href="/dashboard/self-sourcing">重置</a>
+      <button class="btn btn-primary" type="submit" id="queryBtn">查询</button>
+      <a class="btn btn-outline-secondary" href="/dashboard/self-sourcing" id="resetBtn">重置</a>
     </div>
   </form>
 </section>
@@ -82,41 +47,16 @@
   </p>
 </section>
 
-<section class="table-card mb-3">
+<section class="table-card mb-3" id="coreMetricsSection">
   <h2 class="h5">核心指标</h2>
-  <div class="self-core-metric-grid">
-    <article class="self-core-metric-card">
-      <span>整体人效</span>
-      <strong><%= overallEfficiency.sevenDayEfficiency || '0.0' %></strong>
-      <em>参培 <%= overallEfficiency.efficiency || '0.0' %></em>
-    </article>
-    <article class="self-core-metric-card">
-      <span>试用期人效</span>
-      <strong><%= probationEfficiency.sevenDayEfficiency || '0.0' %></strong>
-      <em>参培 <%= probationEfficiency.efficiency || '0.0' %></em>
-    </article>
-    <article class="self-core-metric-card">
-      <span>正式期人效</span>
-      <strong><%= formalEfficiency.sevenDayEfficiency || '0.0' %></strong>
-      <em>参培 <%= formalEfficiency.efficiency || '0.0' %></em>
-    </article>
-    <article class="self-core-metric-card success">
-      <span>7天人效达标人数</span>
-      <strong><%= achievedRecruiterRows.length %></strong>
-      <em>试用期 <%= probationSevenDayAchievedCount %> 人 / 正式期 <%= formalSevenDayAchievedCount %> 人</em>
-    </article>
-    <article class="self-core-metric-card">
-      <span>招聘团队规模</span>
-      <strong><%= overallEfficiency.recruiterCount || 0 %></strong>
-      <em>试用期 <%= probationEfficiency.recruiterCount || 0 %> 人 / 正式期 <%= formalEfficiency.recruiterCount || 0 %> 人</em>
-    </article>
+  <div class="self-core-metric-grid" id="coreMetricsGrid">
   </div>
 </section>
 
-<section class="table-card">
+<section class="table-card" id="recruiterTableSection">
   <h2 class="h5">自主社招招聘专员达成</h2>
   <div class="table-responsive">
-    <table class="table table-hover align-middle self-sourcing-recruiter-table">
+    <table class="table table-hover align-middle self-sourcing-recruiter-table" id="recruiterTable">
       <colgroup>
         <col class="col-person">
         <col class="col-target">
@@ -147,69 +87,7 @@
           <th>月度7天人效</th>
         </tr>
       </thead>
-      <tbody>
-        <% if (dashboard.selfSourcingRecruiterRows.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="12">暂无符合筛选条件的招聘专员达成数据。</td></tr>
-        <% } %>
-        <% dashboard.selfSourcingRecruiterRows.forEach((item) => { %>
-          <% const chartMonths = item.efficiencyChartMonths || item.months || []; %>
-          <% const values = chartMonths.map((month) => month.sevenDayRetainedCount); %>
-          <% const maxValue = Math.max(...values, 1); %>
-          <% const chartPoints = chartMonths.map((month, index) => ({
-            ...month,
-            x: chartMonths.length === 1 ? 90 : Number((18 + index / (chartMonths.length - 1) * 144).toFixed(1)),
-            y: Number((54 - month.sevenDayRetainedCount / maxValue * 38).toFixed(1))
-          })); %>
-          <% const points = chartPoints.map((point) => `${point.x},${point.y}`).join(' '); %>
-          <% addDetailPayload(`actual-${item.name}`, `${item.name} - 实际达成明细`, item.actualDetails); %>
-          <% addDetailPayload(`seven-${item.name}`, `${item.name} - 7天留存明细`, item.sevenDayRetainedDetails); %>
-          <% addDetailPayload(`cumulative-${item.name}`, `${item.name} - 累计人效明细`, item.cumulativeSevenDayDetails); %>
-          <% addDiagnosisPayload(`diagnosis-${item.name}`, `${item.name} - 诊断路径与提升方案`, item.recruitmentFunnel && item.recruitmentFunnel.diagnosisPath); %>
-          <tr class="self-diagnosis-row" data-detail-key="diagnosis-<%= item.name %>">
-            <td>
-              <div class="self-person-cell">
-                <span class="self-risk-dot <%= riskClass(item.riskStatus) %>" title="<%= item.riskReason %>"></span>
-                <div>
-                  <strong>
-                    <%= item.name %>
-                    <span class="self-status-chip <%= item.employeeStatus === '离职' ? 'is-resigned' : 'is-active' %>"><%= item.employeeStatus || '未知' %></span>
-                  </strong>
-                  <em><%= item.employeeNo || '--' %> · <%= item.entryDate || '--' %></em>
-                </div>
-              </div>
-            </td>
-            <td><%= item.monthlyTrainingTarget %></td>
-            <td><%= item.monthlyCutoffTarget %></td>
-            <td><%- detailButton(`actual-${item.name}`, item.actualAchievement) %></td>
-            <td><%= item.monthlyAchievementRateText %></td>
-            <td><%= item.sevenDayTrainingTarget %></td>
-            <td><%= item.sevenDayCutoffTarget %></td>
-            <td><%- detailButton(`seven-${item.name}`, item.sevenDayRetainedCount) %></td>
-            <td><%= item.sevenDayAchievementRateText %></td>
-            <td><%= item.cutoffMonthlyAverageSevenDayEfficiency %></td>
-            <td><%- detailButton(`cumulative-${item.name}`, item.cumulativeSevenDayEfficiency) %></td>
-            <td>
-              <div class="monthly-efficiency-chart" aria-label="<%= item.name %> 月度7天人效">
-                <svg viewBox="0 0 180 72" role="img" aria-label="月度7天人效趋势">
-                  <text class="chart-axis-title" x="16" y="9">7天人效</text>
-                  <line class="chart-axis" x1="14" y1="56" x2="168" y2="56"></line>
-                  <line class="chart-axis" x1="14" y1="10" x2="14" y2="56"></line>
-                  <% if (chartPoints.length > 1) { %>
-                    <polyline class="chart-line" points="<%= points %>"></polyline>
-                  <% } %>
-                  <% chartPoints.forEach((month) => { %>
-                    <% addDetailPayload(`month-${item.name}-${month.yearMonth}`, `${item.name} - ${month.label} 7天留存明细`, month.sevenDayRetainedDetails); %>
-                    <text class="chart-value" x="<%= month.x %>" y="<%= Math.max(10, month.y - 7) %>"><%= month.sevenDayRetainedCount %></text>
-                    <circle class="chart-point" cx="<%= month.x %>" cy="<%= month.y %>" r="4.5" data-detail-key="month-<%= item.name %>-<%= month.yearMonth %>">
-                      <title><%= `${month.label}：${month.sevenDayRetainedCount}人，点击查看明细` %></title>
-                    </circle>
-                    <text class="chart-month" x="<%= month.x %>" y="68"><%= month.label %></text>
-                  <% }) %>
-                </svg>
-              </div>
-            </td>
-          </tr>
-        <% }) %>
+      <tbody id="recruiterTableBody">
       </tbody>
     </table>
   </div>
@@ -225,13 +103,15 @@
   </div>
 </div>
 
-<script id="detailPayload" type="application/json"><%- JSON.stringify(detailPayload).replace(/</g, '\\u003c') %></script>
 <script>
   (() => {
-    const payload = JSON.parse(document.getElementById('detailPayload').textContent);
+    let detailPayload = {};
     const modal = document.querySelector('[data-detail-modal]');
     const title = document.getElementById('detailModalTitle');
     const body = document.getElementById('detailModalBody');
+    const coreMetricsGrid = document.getElementById('coreMetricsGrid');
+    const recruiterTableBody = document.getElementById('recruiterTableBody');
+
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -239,8 +119,177 @@
       '"': '&quot;',
       "'": '&#39;'
     }[char]));
+
+    const riskClass = (status) => status === '高风险' ? 'bad' : (status === '需关注' ? 'warn' : 'good');
+
+    const detailButton = (key, value) => (
+      `<button type="button" class="detail-number" data-detail-key="${key}">${value}</button>`
+    );
+
+    const toDetailRows = (rows = []) => rows.map((row) => ({
+      '状态': row.status,
+      '工号': row.employeeNo,
+      '姓名': row.name,
+      '招聘渠道': row.channelType,
+      '渠道名称': row.channelName,
+      '入培日期': row.trainingDate,
+      '是否在职': row.employeeStatus,
+      '离职日期': row.resignedDate,
+      '在职天数': row.workDays
+    }));
+
+    const addDetailPayload = (key, title, rows, columns) => {
+      detailPayload[key] = { title, columns, rows: toDetailRows(rows) };
+    };
+
+    const renderCoreMetrics = (dashboard) => {
+      const efficiencyRows = dashboard.selfSourcingEfficiency || [];
+      const overallEfficiency = efficiencyRows.find((item) => item.stage === '整体') || {};
+      const probationEfficiency = efficiencyRows.find((item) => item.stage === '试用期') || {};
+      const formalEfficiency = efficiencyRows.find((item) => item.stage === '正式期') || {};
+
+      const achievedRecruiterRows = (dashboard.selfSourcingRecruiterRows || [])
+        .filter((item) => Number(item.sevenDayRetainedCount || 0) > 8);
+      const probationSevenDayAchievedCount = achievedRecruiterRows
+        .filter((item) => item.sevenDayTrainingTarget === 8)
+        .length;
+      const formalSevenDayAchievedCount = achievedRecruiterRows
+        .filter((item) => item.sevenDayTrainingTarget === 12)
+        .length;
+
+      coreMetricsGrid.innerHTML = `
+        <article class="self-core-metric-card">
+          <span>整体人效</span>
+          <strong>${overallEfficiency.sevenDayEfficiency || '0.0'}</strong>
+          <em>参培 ${overallEfficiency.efficiency || '0.0'}</em>
+        </article>
+        <article class="self-core-metric-card">
+          <span>试用期人效</span>
+          <strong>${probationEfficiency.sevenDayEfficiency || '0.0'}</strong>
+          <em>参培 ${probationEfficiency.efficiency || '0.0'}</em>
+        </article>
+        <article class="self-core-metric-card">
+          <span>正式期人效</span>
+          <strong>${formalEfficiency.sevenDayEfficiency || '0.0'}</strong>
+          <em>参培 ${formalEfficiency.efficiency || '0.0'}</em>
+        </article>
+        <article class="self-core-metric-card success">
+          <span>7天人效达标人数</span>
+          <strong>${achievedRecruiterRows.length}</strong>
+          <em>试用期 ${probationSevenDayAchievedCount} 人 / 正式期 ${formalSevenDayAchievedCount} 人</em>
+        </article>
+        <article class="self-core-metric-card">
+          <span>招聘团队规模</span>
+          <strong>${overallEfficiency.recruiterCount || 0}</strong>
+          <em>试用期 ${probationEfficiency.recruiterCount || 0} 人 / 正式期 ${formalEfficiency.recruiterCount || 0} 人</em>
+        </article>
+      `;
+    };
+
+    const renderChart = (chartMonths, itemName) => {
+      const values = chartMonths.map((month) => month.sevenDayRetainedCount);
+      const maxValue = Math.max(...values, 1);
+      const chartPoints = chartMonths.map((month, index) => ({
+        ...month,
+        x: chartMonths.length === 1 ? 90 : Number((18 + index / (chartMonths.length - 1) * 144).toFixed(1)),
+        y: Number((54 - month.sevenDayRetainedCount / maxValue * 38).toFixed(1))
+      }));
+      const points = chartPoints.map((point) => `${point.x},${point.y}`).join(' ');
+
+      let svgContent = `
+        <text class="chart-axis-title" x="16" y="9">7天人效</text>
+        <line class="chart-axis" x1="14" y1="56" x2="168" y2="56"></line>
+        <line class="chart-axis" x1="14" y1="10" x2="14" y2="56"></line>
+      `;
+
+      if (chartPoints.length > 1) {
+        svgContent += `<polyline class="chart-line" points="${points}"></polyline>`;
+      }
+
+      chartPoints.forEach((month) => {
+        addDetailPayload(`month-${itemName}-${month.yearMonth}`, `${itemName} - ${month.label} 7天留存明细`, month.sevenDayRetainedDetails);
+        svgContent += `
+          <text class="chart-value" x="${month.x}" y="${Math.max(10, month.y - 7)}">${month.sevenDayRetainedCount}</text>
+          <circle class="chart-point" cx="${month.x}" cy="${month.y}" r="4.5" data-detail-key="month-${itemName}-${month.yearMonth}">
+            <title>${month.label}：${month.sevenDayRetainedCount}人，点击查看明细</title>
+          </circle>
+          <text class="chart-month" x="${month.x}" y="68">${month.label}</text>
+        `;
+      });
+
+      return svgContent;
+    };
+
+    const renderRecruiterTable = (dashboard) => {
+      const rows = dashboard.selfSourcingRecruiterRows || [];
+
+      if (rows.length === 0) {
+        recruiterTableBody.innerHTML = '<tr><td class="text-center text-muted" colspan="12">暂无符合筛选条件的招聘专员达成数据。</td></tr>';
+        return;
+      }
+
+      detailPayload = {};
+
+      recruiterTableBody.innerHTML = rows.map((item) => {
+        const chartMonths = item.efficiencyChartMonths || item.months || [];
+
+        addDetailPayload(`actual-${item.name}`, `${item.name} - 实际达成明细`, item.actualDetails);
+        addDetailPayload(`seven-${item.name}`, `${item.name} - 7天留存明细`, item.sevenDayRetainedDetails);
+        addDetailPayload(`cumulative-${item.name}`, `${item.name} - 累计人效明细`, item.cumulativeSevenDayDetails);
+
+        if (item.recruitmentFunnel && item.recruitmentFunnel.diagnosisPath) {
+          detailPayload[`diagnosis-${item.name}`] = {
+            title: `${item.name} - 诊断路径与提升方案`,
+            columns: ['诊断路径', '当前表现', '诊断说明', '提升方案'],
+            rows: (item.recruitmentFunnel.diagnosisPath || []).map((row) => ({
+              '诊断路径': row.stage,
+              '当前表现': row.current,
+              '诊断说明': row.diagnosis,
+              '提升方案': row.suggestion
+            }))
+          };
+        }
+
+        const svgContent = renderChart(chartMonths, item.name);
+
+        return `
+          <tr class="self-diagnosis-row" data-detail-key="diagnosis-${escapeHtml(item.name)}">
+            <td>
+              <div class="self-person-cell">
+                <span class="self-risk-dot ${riskClass(item.riskStatus)}" title="${escapeHtml(item.riskReason)}"></span>
+                <div>
+                  <strong>
+                    ${escapeHtml(item.name)}
+                    <span class="self-status-chip ${item.employeeStatus === '离职' ? 'is-resigned' : 'is-active'}">${escapeHtml(item.employeeStatus || '未知')}</span>
+                  </strong>
+                  <em>${escapeHtml(item.employeeNo || '--')} · ${escapeHtml(item.entryDate || '--')}</em>
+                </div>
+              </div>
+            </td>
+            <td>${item.monthlyTrainingTarget}</td>
+            <td>${item.monthlyCutoffTarget}</td>
+            <td>${detailButton(`actual-${item.name}`, item.actualAchievement)}</td>
+            <td>${item.monthlyAchievementRateText}</td>
+            <td>${item.sevenDayTrainingTarget}</td>
+            <td>${item.sevenDayCutoffTarget}</td>
+            <td>${detailButton(`seven-${item.name}`, item.sevenDayRetainedCount)}</td>
+            <td>${item.sevenDayAchievementRateText}</td>
+            <td>${item.cutoffMonthlyAverageSevenDayEfficiency}</td>
+            <td>${detailButton(`cumulative-${item.name}`, item.cumulativeSevenDayEfficiency)}</td>
+            <td>
+              <div class="monthly-efficiency-chart" aria-label="${escapeHtml(item.name)} 月度7天人效">
+                <svg viewBox="0 0 180 72" role="img" aria-label="月度7天人效趋势">
+                  ${svgContent}
+                </svg>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
+
     const openDetail = (key) => {
-      const item = payload[key];
+      const item = detailPayload[key];
       if (!item) return;
       title.textContent = item.title;
       if (!item.rows.length) {
@@ -255,7 +304,42 @@
       }
       modal.classList.add('open');
     };
+
     const closeDetail = () => modal.classList.remove('open');
+
+    const loadData = async () => {
+      const form = document.getElementById('selfSourcingForm');
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+
+      try {
+        coreMetricsGrid.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">加载中...</p></div>';
+        recruiterTableBody.innerHTML = '<tr><td class="text-center text-muted" colspan="12"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>加载中...</td></tr>';
+
+        const response = await fetch(`/dashboard/self-sourcing?ajax=1&${params.toString()}`);
+        const data = await response.json();
+
+        renderCoreMetrics(data);
+        renderRecruiterTable(data);
+      } catch (error) {
+        console.error('加载数据失败:', error);
+        coreMetricsGrid.innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
+        recruiterTableBody.innerHTML = '<tr><td class="text-center text-danger" colspan="12">加载数据失败，请重试</td></tr>';
+      }
+    };
+
+    const form = document.getElementById('selfSourcingForm');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadData();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      form.reset();
+      loadData();
+    });
+
     document.addEventListener('click', (event) => {
       const button = event.target.closest('[data-detail-key]');
       if (button) {
@@ -266,9 +350,14 @@
         closeDetail();
       }
     });
+
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeDetail();
     });
+
+    const initialData = <%- JSON.stringify(dashboard).replace(/</g, '\\u003c') %>;
+    renderCoreMetrics(initialData);
+    renderRecruiterTable(initialData);
   })();
 </script>
 
