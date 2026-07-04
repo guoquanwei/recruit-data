@@ -3,6 +3,7 @@ const { toText } = require('../shared/format');
 
 const FRONTLINE_POSITIONS = new Set([
   '客服专员',
+  '客服班长',
   '培训期学员'
 ]);
 

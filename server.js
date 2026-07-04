@@ -30,6 +30,14 @@ function createApp() {
 
   app.use('/', pageRoutes);
 
+  app.get('/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      database: getDatabaseHostPort(runtime.databaseUrl),
+      timestamp: new Date().toISOString()
+    });
+  });
+
   app.use((req, res) => {
     res.status(404).render('pages/404', {
       pageTitle: '页面不存在',
@@ -49,13 +57,26 @@ function createApp() {
   return app;
 }
 
+function getDatabaseHostPort(databaseUrl) {
+  if (!databaseUrl) {
+    return '未配置';
+  }
+  try {
+    const url = new URL(databaseUrl);
+    return `${url.hostname}:${url.port || '5432'}`;
+  } catch {
+    return '解析失败';
+  }
+}
+
 async function startServer() {
   await connectDatabase();
 
   const app = createApp();
+
   const server = app.listen(runtime.port, () => {
     console.log(`${runtime.platformName} 已启动：http://localhost:${runtime.port}`);
-    console.log('PostgreSQL 数据库已连接');
+    console.log(`PostgreSQL 数据库已连接：${getDatabaseHostPort(runtime.databaseUrl)}`);
   });
 
   const shutdown = () => {

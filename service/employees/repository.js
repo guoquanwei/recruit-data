@@ -1,6 +1,6 @@
 const { queryAll, queryOne } = require('../../dao/db');
 const { bulkInsert } = require('../../dao/bulkInsert');
-const { isFrontlineEmployee } = require('./normalize');
+const { isFrontlineEmployee, FRONTLINE_POSITIONS } = require('./normalize');
 
 const EMPLOYEE_COLUMNS = [
   'source_type',
@@ -221,6 +221,230 @@ function isFrontlineRecord(row) {
   return isFrontlineEmployee(fromDatabaseRow(row));
 }
 
+const FRONTLINE_POSITIONS_ARRAY = Array.from(FRONTLINE_POSITIONS);
+const RECRUITER_POSITIONS = ['招聘专员', '初级招聘主管'];
+
+function fromOrgTableRow(row) {
+  if (!row) {
+    return undefined;
+  }
+
+  const workStatus = row.work_status;
+  const employeeStatus = workStatus === 1 ? '在职' : (workStatus === 0 ? '离职' : '未知');
+
+  return {
+    id: row.id,
+    sourceType: 'org_table',
+    employeeNo: row.emp_code,
+    name: row.emp_name,
+    employeeStatus: employeeStatus,
+    base: row.org_level2,
+    department: row.org_name,
+    position: row.position_name,
+    channelType: row.hr_channel_type,
+    channelName: row.hr_channel_name,
+    officeLocation: row.work_location,
+    trainingDate: row.train_start_date,
+    entryDate: row.join_date,
+    resignedDate: row.terminate_date,
+    phone: row.phone_no,
+    idCard: row.id_card,
+    handoverDate: row.join_queue_date,
+    gender: row.gender,
+    email: row.email,
+    orgPath: row.org_path,
+    leaderName: row.leader_name,
+    educationLevel: row.education_level
+  };
+}
+
+async function buildOrgTableFilters(filters = {}) {
+  const where = [];
+  const params = [];
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  where.push(`position_name = ANY($${params.length + 1})`);
+  params.push(FRONTLINE_POSITIONS_ARRAY);
+
+  if (filters.keyword) {
+    const keyword = addParam(`%${filters.keyword}%`);
+    where.push(`(emp_code LIKE ${keyword} OR emp_name LIKE ${keyword} OR phone_no LIKE ${keyword})`);
+  }
+  if (filters.base) {
+    where.push(`org_level2 = ${addParam(filters.base)}`);
+  }
+  if (filters.position) {
+    where.push(`position_name = ${addParam(filters.position)}`);
+  }
+  if (filters.status) {
+    const statusValue = filters.status === '在职' ? 1 : (filters.status === '离职' ? 0 : filters.status);
+    where.push(`work_status = ${addParam(statusValue)}`);
+  }
+  if (filters.channelName) {
+    where.push(`hr_channel_name LIKE ${addParam(`%${filters.channelName}%`)}`);
+  }
+  if (filters.channelType) {
+    where.push(`hr_channel_type = ${addParam(filters.channelType)}`);
+  }
+  if (filters.startDate) {
+    where.push(`train_start_date >= ${addParam(filters.startDate)}`);
+  }
+  if (filters.endDate) {
+    where.push(`train_start_date <= ${addParam(filters.endDate)}`);
+  }
+
+  where.push(`(work_status = 1 OR terminate_date > ${addParam('2025-12-31')})`);
+
+  return {
+    whereSql: `WHERE ${where.join(' AND ')}`,
+    params
+  };
+}
+
+async function countOrgTableFrontlineEmployees(filters = {}) {
+  const { whereSql, params } = await buildOrgTableFilters(filters);
+  const row = await queryOne(`SELECT COUNT(*)::int AS total FROM common_emp_org_real_day ${whereSql}`, params);
+  return row.total;
+}
+
+async function listOrgTableFrontlineEmployees({ filters = {}, page }) {
+  const { whereSql, params } = await buildOrgTableFilters(filters);
+  const count = await queryOne(`SELECT COUNT(*)::int AS total FROM common_emp_org_real_day ${whereSql}`, params);
+  const rows = await queryAll(`
+    SELECT *
+    FROM common_emp_org_real_day
+    ${whereSql}
+    ORDER BY work_status DESC, train_start_date DESC NULLS LAST, id DESC
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `, [...params, page.limit, page.offset]);
+
+  return {
+    total: count.total,
+    rows: rows.map(fromOrgTableRow)
+  };
+}
+
+async function listAllOrgTableFrontlineEmployees() {
+  const rows = await queryAll(`
+    SELECT * FROM common_emp_org_real_day
+    WHERE position_name = ANY($1)
+    AND (work_status = 1 OR terminate_date > '2025-12-31')
+    ORDER BY work_status DESC, train_start_date DESC NULLS LAST, id DESC
+  `, [FRONTLINE_POSITIONS_ARRAY]);
+
+  return rows.map(fromOrgTableRow);
+}
+
+async function getOrgTableDistinctFilterOptions(filters = {}) {
+  const { whereSql, params } = await buildOrgTableFilters(filters);
+
+  async function pluck(sql, field) {
+    return (await queryAll(sql, params)).map((row) => row[field]).filter(Boolean);
+  }
+
+  return {
+    bases: formatBaseOptions(await pluck(`SELECT DISTINCT org_level2 FROM common_emp_org_real_day ${whereSql} ORDER BY org_level2`, 'org_level2')),
+    channelTypes: await pluck(`SELECT DISTINCT hr_channel_type FROM common_emp_org_real_day ${whereSql} ORDER BY hr_channel_type`, 'hr_channel_type'),
+    positions: FRONTLINE_POSITIONS_ARRAY
+  };
+}
+
+async function buildRecruiterFilters(filters = {}) {
+  const where = [];
+  const params = [];
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  where.push(`position_name = ANY($${params.length + 1})`);
+  params.push(RECRUITER_POSITIONS);
+
+  where.push(`org_level2 = ${addParam('人才开发部')}`);
+
+  if (filters.keyword) {
+    const keyword = addParam(`%${filters.keyword}%`);
+    where.push(`(emp_code LIKE ${keyword} OR emp_name LIKE ${keyword} OR phone_no LIKE ${keyword})`);
+  }
+  if (filters.base) {
+    where.push(`org_level2 = ${addParam(filters.base)}`);
+  }
+  if (filters.status) {
+    const statusValue = filters.status === '在职' ? 1 : (filters.status === '离职' ? 0 : filters.status);
+    where.push(`work_status = ${addParam(statusValue)}`);
+  }
+  if (filters.channelName) {
+    where.push(`hr_channel_name LIKE ${addParam(`%${filters.channelName}%`)}`);
+  }
+  if (filters.channelType) {
+    where.push(`hr_channel_type = ${addParam(filters.channelType)}`);
+  }
+  if (filters.startDate) {
+    where.push(`train_start_date >= ${addParam(filters.startDate)}`);
+  }
+  if (filters.endDate) {
+    where.push(`train_start_date <= ${addParam(filters.endDate)}`);
+  }
+
+  where.push(`(work_status = 1 OR terminate_date > ${addParam('2025-12-31')})`);
+
+  return {
+    whereSql: `WHERE ${where.join(' AND ')}`,
+    params
+  };
+}
+
+async function countOrgTableRecruiters(filters = {}) {
+  const { whereSql, params } = await buildRecruiterFilters(filters);
+  const row = await queryOne(`SELECT COUNT(*)::int AS total FROM common_emp_org_real_day ${whereSql}`, params);
+  return row.total;
+}
+
+async function listOrgTableRecruiters({ filters = {}, page }) {
+  const { whereSql, params } = await buildRecruiterFilters(filters);
+  const count = await queryOne(`SELECT COUNT(*)::int AS total FROM common_emp_org_real_day ${whereSql}`, params);
+  const rows = await queryAll(`
+    SELECT *
+    FROM common_emp_org_real_day
+    ${whereSql}
+    ORDER BY work_status DESC, train_start_date DESC NULLS LAST, id DESC
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+  `, [...params, page.limit, page.offset]);
+
+  return {
+    total: count.total,
+    rows: rows.map(fromOrgTableRow)
+  };
+}
+
+async function listAllOrgTableRecruiters() {
+  const rows = await queryAll(`
+    SELECT * FROM common_emp_org_real_day
+    WHERE position_name = ANY($1)
+    AND org_level2 = '人才开发部'
+    AND (work_status = 1 OR terminate_date > '2025-12-31')
+    ORDER BY work_status DESC, train_start_date DESC NULLS LAST, id DESC
+  `, [RECRUITER_POSITIONS]);
+
+  return rows.map(fromOrgTableRow);
+}
+
+async function getOrgTableRecruiterFilterOptions(filters = {}) {
+  const { whereSql, params } = await buildRecruiterFilters(filters);
+
+  async function pluck(sql, field) {
+    return (await queryAll(sql, params)).map((row) => row[field]).filter(Boolean);
+  }
+
+  return {
+    bases: formatBaseOptions(await pluck(`SELECT DISTINCT org_level2 FROM common_emp_org_real_day ${whereSql} ORDER BY org_level2`, 'org_level2')),
+    channelTypes: await pluck(`SELECT DISTINCT hr_channel_type FROM common_emp_org_real_day ${whereSql} ORDER BY hr_channel_type`, 'hr_channel_type')
+  };
+}
+
 module.exports = {
   replaceEmployeesBySource,
   buildEmployeeFilters,
@@ -231,5 +455,16 @@ module.exports = {
   listAllEmployees,
   getDistinctEmployeeFilterOptions,
   fromDatabaseRow,
-  isFrontlineRecord
+  isFrontlineRecord,
+  fromOrgTableRow,
+  buildOrgTableFilters,
+  countOrgTableFrontlineEmployees,
+  listOrgTableFrontlineEmployees,
+  listAllOrgTableFrontlineEmployees,
+  getOrgTableDistinctFilterOptions,
+  buildRecruiterFilters,
+  countOrgTableRecruiters,
+  listOrgTableRecruiters,
+  listAllOrgTableRecruiters,
+  getOrgTableRecruiterFilterOptions
 };

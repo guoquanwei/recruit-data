@@ -17,7 +17,7 @@
     return `${basePath}?${params.toString()}`;
   };
   const filterEntries = Object.entries(filters || {});
-  const sizeOptions = pageSizeOptions || [10, 20, 50, 100];
+  const sizeOptions = typeof pageSizeOptions === 'undefined' ? [10, 20, 50, 100] : pageSizeOptions;
   const pages = [];
   const addPage = (value) => {
     if (!pages.includes(value)) pages.push(value);

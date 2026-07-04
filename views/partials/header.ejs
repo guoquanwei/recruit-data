@@ -47,7 +47,6 @@
           </section>
           <section class="nav-group <%= moduleActive === 'employees' ? 'open' : '' %>">
             <div class="nav-group-title">员工数据管理</div>
-            <a class="<%= active === 'employees-import' ? 'active' : '' %>" href="/employees/import" title="全量数据导入"><%- navIcon('upload') %><span class="nav-label">全量数据导入</span></a>
             <a class="<%= active === 'employees-recruiters' ? 'active' : '' %>" href="/employees/recruiters" title="招聘专员列表"><%- navIcon('user') %><span class="nav-label">招聘专员列表</span></a>
             <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><%- navIcon('users') %><span class="nav-label">一线员工列表</span></a>
           </section>

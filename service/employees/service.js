@@ -1,10 +1,25 @@
 const { maskPhone, parsePage, toText } = require('../shared/format');
-const { countEmployees, getDistinctEmployeeFilterOptions, listEmployees } = require('./repository');
+const { normalizeDate } = require('../shared/date');
+const {
+  countEmployees,
+  getDistinctEmployeeFilterOptions,
+  listEmployees,
+  countOrgTableFrontlineEmployees,
+  listOrgTableFrontlineEmployees,
+  getOrgTableDistinctFilterOptions,
+  countOrgTableRecruiters,
+  listOrgTableRecruiters,
+  getOrgTableRecruiterFilterOptions
+} = require('./repository');
 
 function toEmployeeViewModel(employee) {
   return {
     ...employee,
-    maskedPhone: maskPhone(employee.phone)
+    maskedPhone: maskPhone(employee.phone),
+    trainingDate: normalizeDate(employee.trainingDate),
+    entryDate: normalizeDate(employee.entryDate),
+    resignedDate: normalizeDate(employee.resignedDate),
+    handoverDate: normalizeDate(employee.handoverDate)
   };
 }
 
@@ -38,16 +53,32 @@ function hasEmployeeFilter(filters) {
 async function getEmployeeList(query = {}, role) {
   const page = parsePage(query);
   const filters = buildEmployeeFilters(query, role);
-  const result = await listEmployees({ filters, page });
-  const roleOnlyFilters = { role };
-  const roleTotal = await countEmployees(roleOnlyFilters);
+
+  let result;
+  let roleTotal;
+  let options;
+
+  if (role === 'frontline') {
+    result = await listOrgTableFrontlineEmployees({ filters, page });
+    roleTotal = await countOrgTableFrontlineEmployees({});
+    options = await getOrgTableDistinctFilterOptions({});
+  } else if (role === 'recruiter') {
+    result = await listOrgTableRecruiters({ filters, page });
+    roleTotal = await countOrgTableRecruiters({});
+    options = await getOrgTableRecruiterFilterOptions({});
+  } else {
+    result = await listEmployees({ filters, page });
+    const roleOnlyFilters = { role };
+    roleTotal = await countEmployees(roleOnlyFilters);
+    options = await getDistinctEmployeeFilterOptions(roleOnlyFilters);
+  }
 
   return {
     ...result,
     rows: result.rows.map(toEmployeeViewModel),
     page,
     filters,
-    options: await getDistinctEmployeeFilterOptions(roleOnlyFilters),
+    options,
     hasFilters: hasEmployeeFilter(filters),
     emptyMessage: roleTotal === 0
       ? '暂无数据，请先导入员工表。'
@@ -57,13 +88,33 @@ async function getEmployeeList(query = {}, role) {
 
 async function getEmployeeExportRows(query = {}, role) {
   const filters = buildEmployeeFilters(query, role);
-  const result = await listEmployees({
-    filters,
-    page: {
-      limit: 1_000_000,
-      offset: 0
-    }
-  });
+  let result;
+
+  if (role === 'frontline') {
+    result = await listOrgTableFrontlineEmployees({
+      filters,
+      page: {
+        limit: 1_000_000,
+        offset: 0
+      }
+    });
+  } else if (role === 'recruiter') {
+    result = await listOrgTableRecruiters({
+      filters,
+      page: {
+        limit: 1_000_000,
+        offset: 0
+      }
+    });
+  } else {
+    result = await listEmployees({
+      filters,
+      page: {
+        limit: 1_000_000,
+        offset: 0
+      }
+    });
+  }
 
   return result.rows.map(toEmployeeViewModel);
 }

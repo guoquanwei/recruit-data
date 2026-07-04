@@ -1,4 +1,4 @@
-const { listAllEmployees } = require('../employees/repository');
+const { listAllEmployees, listAllOrgTableFrontlineEmployees, listAllOrgTableRecruiters } = require('../employees/repository');
 const { formatDate, getMonthLastDay, normalizeDate } = require('../shared/date');
 const { formatPercent, parsePage, toText } = require('../shared/format');
 const { buildActualTrainingIndex, calculateTargetProgress, CHANNEL_ORDER } = require('./progress');
@@ -46,7 +46,11 @@ async function getTargetList(query = {}) {
     offset: (requestedPage.page - 1) * 3
   };
   const filters = buildTargetFilters(query);
-  const employees = await listAllEmployees();
+  const [frontlineEmployees, recruiters] = await Promise.all([
+    listAllOrgTableFrontlineEmployees(),
+    listAllOrgTableRecruiters()
+  ]);
+  const employees = [...frontlineEmployees, ...recruiters];
   const hasYearMonthQuery = Object.prototype.hasOwnProperty.call(query, 'yearMonth');
   const displayMonth = hasYearMonthQuery ? filters.yearMonth : await getDefaultMonth(query);
   filters.yearMonth = displayMonth;
@@ -75,7 +79,11 @@ async function getTargetExportRows(query = {}) {
   const filters = buildTargetFilters(query);
   const hasYearMonthQuery = Object.prototype.hasOwnProperty.call(query, 'yearMonth');
   filters.yearMonth = hasYearMonthQuery ? filters.yearMonth : await getDefaultMonth(query);
-  const employees = await listAllEmployees();
+  const [frontlineEmployees, recruiters] = await Promise.all([
+    listAllOrgTableFrontlineEmployees(),
+    listAllOrgTableRecruiters()
+  ]);
+  const employees = [...frontlineEmployees, ...recruiters];
   const actualTrainingIndex = buildActualTrainingIndex(employees);
   const cutoffDate = getCutoffDate(filters.yearMonth, query);
   const result = await listTargets({
@@ -629,8 +637,18 @@ async function getTargetProgress(query = {}, preloadedEmployees) {
   const yearMonth = await getDefaultMonth(query);
   const cutoffDate = getCutoffDate(yearMonth, query);
   const targets = yearMonth ? await listTargetsByMonth(yearMonth) : [];
-  const employees = preloadedEmployees || await listAllEmployees();
   const filters = buildTargetFilters({ ...query, yearMonth });
+  let employees;
+
+  if (preloadedEmployees) {
+    employees = preloadedEmployees;
+  } else {
+    const [frontlineEmployees, recruiters] = await Promise.all([
+      listAllOrgTableFrontlineEmployees(),
+      listAllOrgTableRecruiters()
+    ]);
+    employees = [...frontlineEmployees, ...recruiters];
+  }
 
   return {
     yearMonth,

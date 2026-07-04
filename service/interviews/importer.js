@@ -4,7 +4,7 @@ const { readValidatedRecords } = require('../imports/excel');
 const { runImportTransaction } = require('../imports/transactions');
 const { REQUIRED_COLUMNS } = require('./importTemplate');
 const { normalizeInterviewRecord, resolveInterviewOverwriteDates } = require('./normalize');
-const { replaceAllInterviewRecords, replaceInterviewRecordsByDates } = require('./repository');
+const { clearInterviewCache, replaceAllInterviewRecords, replaceInterviewRecordsByDates } = require('./repository');
 
 async function readInterviewRecords(filePath) {
   return readValidatedRecords({
@@ -29,9 +29,11 @@ async function importInterviewRecords(filePath, mode = 'daily_overwrite') {
       importMode: mode,
       scope: 'all',
       fileName
-    }, async (database) => ({
-      successCount: await replaceAllInterviewRecords(database, records)
-    }));
+    }, async (database) => {
+      const result = { successCount: await replaceAllInterviewRecords(database, records) };
+      clearInterviewCache();
+      return result;
+    });
   }
 
   if (mode === 'daily_overwrite') {
@@ -41,9 +43,11 @@ async function importInterviewRecords(filePath, mode = 'daily_overwrite') {
       importMode: mode,
       scope: dates.join(','),
       fileName
-    }, async (database) => ({
-      successCount: await replaceInterviewRecordsByDates(database, dates, records)
-    }));
+    }, async (database) => {
+      const result = { successCount: await replaceInterviewRecordsByDates(database, dates, records) };
+      clearInterviewCache();
+      return result;
+    });
   }
 
   const dates = resolveInterviewOverwriteDates(records);
@@ -52,9 +56,11 @@ async function importInterviewRecords(filePath, mode = 'daily_overwrite') {
     importMode: 'daily_overwrite',
     scope: dates.join(','),
     fileName
-  }, async (database) => ({
-    successCount: await replaceInterviewRecordsByDates(database, dates, records)
-  }));
+  }, async (database) => {
+    const result = { successCount: await replaceInterviewRecordsByDates(database, dates, records) };
+    clearInterviewCache();
+    return result;
+  });
 }
 
 module.exports = {

@@ -852,6 +852,10 @@ router.get('/dashboard/base-risk', async (req, res) => {
 });
 
 router.get('/dashboard/self-sourcing', async (req, res) => {
+  if (req.headers.accept === 'application/json' || req.query.ajax) {
+    const data = await getDashboardOverview({ ...req.query, tab: 'self' });
+    return res.json(data);
+  }
   renderPage(res, 'pages/dashboard/self-sourcing', {
     active: 'dashboard-self-sourcing',
     moduleActive: 'dashboard',
