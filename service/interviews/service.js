@@ -1,5 +1,6 @@
 const { listAllEmployees } = require('../employees/repository');
 const { maskPhone, parsePage, toText, formatPercent } = require('../shared/format');
+const { getAvailableMonths } = require('../targets/repository');
 const { getDistinctInterviewFilterOptions, listAllInterviewRecords, listInterviewRecords } = require('./repository');
 
 function buildInterviewFilters(query = {}) {
@@ -24,17 +25,33 @@ function toInterviewViewModel(record) {
   };
 }
 
+async function getDefaultTargetMonth() {
+  return (await getAvailableMonths())[0] || '';
+}
+
+function addMonthOption(options, yearMonth) {
+  if (!yearMonth || options.months.includes(yearMonth)) {
+    return options;
+  }
+  return {
+    ...options,
+    months: [yearMonth, ...options.months].sort((left, right) => right.localeCompare(left))
+  };
+}
+
 async function getInterviewList(query = {}) {
   const page = parsePage(query);
   const filters = buildInterviewFilters(query);
+  filters.yearMonth = filters.yearMonth || await getDefaultTargetMonth();
   const result = await listInterviewRecords({ filters, page });
+  const options = addMonthOption(await getDistinctInterviewFilterOptions(), filters.yearMonth);
 
   return {
     ...result,
     rows: result.rows.map(toInterviewViewModel),
     page,
     filters,
-    options: await getDistinctInterviewFilterOptions(),
+    options,
     emptyMessage: result.total === 0
       ? '没有符合筛选条件的面试记录，请调整筛选项后重试。'
       : ''
@@ -43,6 +60,7 @@ async function getInterviewList(query = {}) {
 
 async function getInterviewExportRows(query = {}) {
   const filters = buildInterviewFilters(query);
+  filters.yearMonth = filters.yearMonth || await getDefaultTargetMonth();
   const result = await listInterviewRecords({
     filters,
     page: {
@@ -58,7 +76,7 @@ async function getInterviewExportRows(query = {}) {
 async function getInterviewFunnel(query = {}) {
   const options = await getDistinctInterviewFilterOptions();
   const filters = buildInterviewFilters(query);
-  filters.yearMonth = filters.yearMonth || options.months[0] || '';
+  filters.yearMonth = filters.yearMonth || await getDefaultTargetMonth();
   const records = await listAllInterviewRecords(filters);
   const employees = await listAllEmployees();
   const employeePhones = new Set(employees.map((employee) => toText(employee.phone)).filter(Boolean));
@@ -71,7 +89,7 @@ async function getInterviewFunnel(query = {}) {
 
   return {
     filters,
-    options,
+    options: addMonthOption(options, filters.yearMonth),
     overview: {
       interviewCount: records.length,
       baseMatchedCount: records.filter((record) => record.base).length,

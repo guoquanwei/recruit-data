@@ -13,6 +13,7 @@ const INVITE_ARRIVE_RATE = 0.8;
 const CHANNEL_DISPLAY_ORDER = ['回流', '内推', '渠道社招', '渠道校招', '自主社招'];
 const EXCLUDED_FUNNEL_DIAGNOSIS_CHANNELS = new Set(['回流', '渠道校招']);
 const OVERVIEW_TABS = new Set(['overview', 'base', 'channel', 'self']);
+const SEVEN_DAY_RETENTION_OFFSET_DAYS = 6;
 const SELF_SOURCING_STAGE_TARGETS = {
   formal: {
     monthlyTrainingTarget: 20,
@@ -59,9 +60,9 @@ function getTrainingDetails(query = {}, preloadedEmployees) {
       maskedPhone: maskPhone(employee.phone),
       channelType: employee.channelType,
       channelName: employee.channelName,
-      trainingDate: employee.trainingDate,
+      trainingDate: normalizeDate(employee.trainingDate),
       employeeStatus: employee.employeeStatus,
-      resignedDate: employee.resignedDate,
+      resignedDate: normalizeDate(employee.resignedDate),
       workDaysInMonth: calculateWorkDaysInMonth(employee, yearMonth)
     }));
 }
@@ -176,7 +177,12 @@ function isSevenDayMatured(employee, asOfDate) {
     return false;
   }
 
-  return addDays(trainingDate, 7) <= currentDate;
+  return addDays(trainingDate, SEVEN_DAY_RETENTION_OFFSET_DAYS) <= currentDate;
+}
+
+function getSevenDayDate(employee) {
+  const trainingDate = parseDateValue(employee.trainingDate);
+  return trainingDate ? formatDate(addDays(trainingDate, SEVEN_DAY_RETENTION_OFFSET_DAYS)) : '';
 }
 
 function isSevenDayRetained(employee, asOfDate) {
@@ -185,7 +191,7 @@ function isSevenDayRetained(employee, asOfDate) {
   if (!trainingDate) {
     return false;
   }
-  const sevenDayDate = addDays(trainingDate, 7);
+  const sevenDayDate = addDays(trainingDate, SEVEN_DAY_RETENTION_OFFSET_DAYS);
   const resignedDate = parseDateValue(employee.resignedDate);
 
   return sevenDayDate <= currentDate && (!resignedDate || resignedDate > sevenDayDate);
@@ -207,9 +213,9 @@ function toSelfSourcingCandidateDetail(employee, asOfDate) {
     name: employee.name || '',
     channelType: employee.channelType || '',
     channelName: employee.channelName || '',
-    trainingDate: employee.trainingDate || '',
+    trainingDate: normalizeDate(employee.trainingDate),
     employeeStatus: employee.employeeStatus || '',
-    resignedDate: employee.resignedDate || '',
+    resignedDate: normalizeDate(employee.resignedDate),
     workDays: getWorkDays(employee, asOfDate)
   };
 }
@@ -532,7 +538,12 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
         return trainingDateStr.startsWith(month.yearMonth)
           && trainingDateStr <= monthAsOfDate;
       });
-      const sevenDayRetainedDetails = monthlyDetails.filter((employee) => isSevenDayRetained(employee, monthAsOfDate));
+      const sevenDayRetainedDetails = details.filter((employee) => {
+        const sevenDayDate = getSevenDayDate(employee);
+        return sevenDayDate.startsWith(month.yearMonth)
+          && sevenDayDate <= monthAsOfDate
+          && isSevenDayRetained(employee, monthAsOfDate);
+      });
       return {
         ...month,
         monthlyTarget: monthTargets.monthlyTrainingTarget,
@@ -550,15 +561,28 @@ function buildSelfSourcingRecruiterRows({ yearMonth, asOfDate, employees = [], i
       ? recruiterEntryYearMonth
       : months[0]?.yearMonth;
     const efficiencyChartMonths = monthRows.filter((month) => !chartStartYearMonth || month.yearMonth >= chartStartYearMonth);
-    const cumulativeSevenDayDetails = efficiencyChartMonths.flatMap((month) => month.sevenDayRetainedDetails);
+    const cumulativeDetails = details.filter((employee) => {
+      const sevenDayDate = getSevenDayDate(employee);
+      return sevenDayDate
+        && (!chartStartYearMonth || sevenDayDate.slice(0, 7) >= chartStartYearMonth)
+        && sevenDayDate <= currentDate;
+    });
+    const cumulativeSevenDayDetails = cumulativeDetails
+      .filter((employee) => isSevenDayRetained(employee, currentDate))
+      .map((employee) => toSelfSourcingCandidateDetail(employee, currentDate));
     const selectedMonthDetails = details.filter((employee) => {
       const trainingDateStr = normalizeDate(employee.trainingDate) || '';
       return trainingDateStr.startsWith(selectedMonth)
         && trainingDateStr <= currentDate;
     });
-    const selectedSevenDayDetails = selectedMonthDetails.filter((employee) => isSevenDayRetained(employee, currentDate));
+    const selectedSevenDayDetails = details.filter((employee) => {
+      const sevenDayDate = getSevenDayDate(employee);
+      return sevenDayDate.startsWith(selectedMonth)
+        && sevenDayDate <= currentDate
+        && isSevenDayRetained(employee, currentDate);
+    });
     const selectedSevenDayCount = selectedSevenDayDetails.length;
-    const cumulativeSevenDayCount = efficiencyChartMonths.reduce((sum, month) => sum + month.sevenDayRetainedCount, 0);
+    const cumulativeSevenDayCount = cumulativeSevenDayDetails.length;
     const monthlyCutoffTarget = calculateMonthlyCutoffTarget(targets.monthlyTrainingTarget, selectedMonth, currentDate);
     const sevenDayCutoffTarget = calculateMonthlyCutoffTarget(targets.sevenDayTrainingTarget, selectedMonth, currentDate);
     const monthlyGap = selectedMonthDetails.length - monthlyCutoffTarget;

@@ -2184,12 +2184,15 @@ body {
 
 .self-sourcing-recruiter-table {
   table-layout: fixed;
-  min-width: 1440px;
+  min-width: 1520px;
   font-size: 13px;
 }
 
 .self-sourcing-recruiter-table .col-person {
   width: 220px;
+}
+.self-sourcing-recruiter-table .col-stage {
+  width: 86px;
 }
 .self-sourcing-recruiter-table .col-target {
   width: 104px;

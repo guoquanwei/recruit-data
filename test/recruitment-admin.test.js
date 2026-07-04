@@ -204,8 +204,12 @@ test('self sourcing page omits personal risk diagnosis column', async () => {
   const page = await requestApp('/dashboard/self-sourcing?yearMonth=2026-05');
   assert.equal(page.response.status, 200);
   assert.match(page.text, /月度7天人效/);
+  assert.match(page.text, /员工状态/);
   assert.match(page.text, /detail-modal-table/);
   assert.doesNotMatch(page.text, /个人风险诊断/);
+  assert.doesNotMatch(page.text, /点击查看明细/);
+  assert.doesNotMatch(page.text, /data-detail-key="month-/);
+  assert.doesNotMatch(page.text, /aria-label="月度7天人效趋势"/);
 });
 
 test('base risk funnel prototype renders as an isolated prototype page', async () => {
@@ -1726,7 +1730,7 @@ test('dashboard overview insights expose executive cards, channel shares and ven
   ]);
 });
 
-test('dashboard overview base achievements sort by achievement rate and keep actual-only bases last', () => {
+test('dashboard overview base achievements exclude actual-only bases without targets', () => {
   const progress = summarizeTargets([
     { yearMonth: '2026-06', base: '低达成基地', channel: '自主社招', dailyTargets: { 10: 10 } },
     { yearMonth: '2026-06', base: '高达成基地', channel: '内推', dailyTargets: { 10: 10 } }
@@ -1749,8 +1753,7 @@ test('dashboard overview base achievements sort by achievement rate and keep act
 
   assert.deepEqual(insights.baseAchievements.map((item) => [item.base, item.monthlyTarget, item.actualTraining, item.achievementRateText]), [
     ['低达成基地', 10, 1, '10.00%'],
-    ['高达成基地', 10, 8, '80.00%'],
-    ['无目标达成基地', 0, 1, '0.00%']
+    ['高达成基地', 10, 8, '80.00%']
   ]);
 });
 
@@ -2004,6 +2007,7 @@ test('self sourcing recruiter rows summarize months through selected month', () 
       { employeeNo: 'D', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-05-03', resignedDate: '2026-05-05' },
       { employeeNo: 'E', channelType: '自主社招', channelName: '李四+R002', trainingDate: '2026-05-12', resignedDate: '' },
       { employeeNo: 'G', channelType: '自主社招', channelName: '当月离职+R005', trainingDate: '2026-05-08', resignedDate: '' },
+      { employeeNo: 'H', channelType: '自主社招', channelName: '张三+R001', trainingDate: '2026-02-25', resignedDate: '' },
       { employeeNo: 'F', channelType: '自主社招', channelName: '未匹配招聘+R999', trainingDate: '2026-05-12', resignedDate: '' }
     ]
   });
@@ -2020,27 +2024,32 @@ test('self sourcing recruiter rows summarize months through selected month', () 
   assert.equal(zhang.monthlyCutoffTarget, 20);
   assert.equal(zhang.sevenDayTrainingTarget, 12);
   assert.equal(zhang.sevenDayCutoffTarget, 12);
-  assert.equal(zhang.sevenDayRetainedCount, 1);
+  assert.equal(zhang.sevenDayRetainedCount, 2);
   assert.deepEqual(zhang.actualDetails.map((item) => [item.employeeNo, item.name, item.employeeStatus]), [
     ['B', '', ''],
     ['C', '', ''],
     ['D', '', '']
   ]);
-  assert.deepEqual(zhang.sevenDayRetainedDetails.map((item) => item.employeeNo), ['B']);
+  assert.deepEqual(zhang.actualDetails.map((item) => [item.employeeNo, item.trainingDate, item.resignedDate]), [
+    ['B', '2026-05-01', ''],
+    ['C', '2026-05-25', ''],
+    ['D', '2026-05-03', '2026-05-05']
+  ]);
+  assert.deepEqual(zhang.sevenDayRetainedDetails.map((item) => item.employeeNo), ['B', 'C']);
   const lisi = rows.find((row) => row.name === '李四');
   assert.equal(lisi.monthlyTrainingTarget, 12);
   assert.equal(lisi.monthlyCutoffTarget, 12);
   assert.equal(lisi.sevenDayTrainingTarget, 8);
   assert.equal(lisi.sevenDayCutoffTarget, 8);
-  assert.deepEqual(zhang.months.map((month) => month.sevenDayRetainedCount), [1, 0, 0, 0, 1]);
+  assert.deepEqual(zhang.months.map((month) => month.sevenDayRetainedCount), [1, 0, 1, 0, 2]);
   assert.deepEqual(zhang.efficiencyChartMonths.map((month) => month.label), ['1月', '2月', '3月', '4月', '5月']);
-  assert.deepEqual(zhang.cumulativeSevenDayDetails.map((item) => item.employeeNo), ['A', 'B']);
+  assert.deepEqual(zhang.cumulativeSevenDayDetails.map((item) => item.employeeNo), ['A', 'B', 'C', 'H']);
   assert.deepEqual(lisi.efficiencyChartMonths.map((month) => month.label), ['5月']);
   assert.deepEqual(lisi.cumulativeSevenDayDetails.map((item) => item.employeeNo), ['E']);
   assert.equal(lisi.cutoffMonthlyAverageSevenDayEfficiency, '1.0');
   assert.equal(lisi.cumulativeSevenDayEfficiency, '1.0');
-  assert.equal(zhang.cutoffMonthlyAverageSevenDayEfficiency, '0.4');
-  assert.equal(zhang.cumulativeSevenDayEfficiency, '2.0');
+  assert.equal(zhang.cutoffMonthlyAverageSevenDayEfficiency, '0.8');
+  assert.equal(zhang.cumulativeSevenDayEfficiency, '4.0');
   assert.equal(zhang.riskStatus, '高风险');
   assert.doesNotMatch(zhang.riskReason, /连续3个月7天人效低于目标/);
   assert.match(zhang.riskReason, /流失偏高33%/);

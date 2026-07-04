@@ -59,6 +59,7 @@
     <table class="table table-hover align-middle self-sourcing-recruiter-table" id="recruiterTable">
       <colgroup>
         <col class="col-person">
+        <col class="col-stage">
         <col class="col-target">
         <col class="col-target">
         <col class="col-count">
@@ -74,6 +75,7 @@
       <thead>
         <tr>
           <th>姓名 / 工号 / 入职日期</th>
+          <th>员工状态</th>
           <th>参培目标</th>
           <th>截止目标</th>
           <th>参培达成</th>
@@ -138,7 +140,8 @@
       '在职天数': row.workDays
     }));
 
-    const addDetailPayload = (key, title, rows, columns) => {
+    const detailColumns = ['状态', '工号', '姓名', '招聘渠道', '渠道名称', '入培日期', '是否在职', '离职日期', '在职天数'];
+    const addDetailPayload = (key, title, rows, columns = detailColumns) => {
       detailPayload[key] = { title, columns, rows: toDetailRows(rows) };
     };
 
@@ -207,12 +210,9 @@
       }
 
       chartPoints.forEach((month) => {
-        addDetailPayload(`month-${itemName}-${month.yearMonth}`, `${itemName} - ${month.label} 7天留存明细`, month.sevenDayRetainedDetails);
         svgContent += `
           <text class="chart-value" x="${month.x}" y="${Math.max(10, month.y - 7)}">${month.sevenDayRetainedCount}</text>
-          <circle class="chart-point" cx="${month.x}" cy="${month.y}" r="4.5" data-detail-key="month-${itemName}-${month.yearMonth}">
-            <title>${month.label}：${month.sevenDayRetainedCount}人，点击查看明细</title>
-          </circle>
+          <circle class="chart-point" cx="${month.x}" cy="${month.y}" r="4.5"></circle>
           <text class="chart-month" x="${month.x}" y="68">${month.label}</text>
         `;
       });
@@ -224,7 +224,7 @@
       const rows = dashboard.selfSourcingRecruiterRows || [];
 
       if (rows.length === 0) {
-        recruiterTableBody.innerHTML = '<tr><td class="text-center text-muted" colspan="12">暂无符合筛选条件的招聘专员达成数据。</td></tr>';
+        recruiterTableBody.innerHTML = '<tr><td class="text-center text-muted" colspan="13">暂无符合筛选条件的招聘专员达成数据。</td></tr>';
         return;
       }
 
@@ -266,6 +266,7 @@
                 </div>
               </div>
             </td>
+            <td>${item.stage === 'probation' ? '试用期' : '正式期'}</td>
             <td>${item.monthlyTrainingTarget}</td>
             <td>${item.monthlyCutoffTarget}</td>
             <td>${detailButton(`actual-${item.name}`, item.actualAchievement)}</td>
@@ -277,8 +278,8 @@
             <td>${item.cutoffMonthlyAverageSevenDayEfficiency}</td>
             <td>${detailButton(`cumulative-${item.name}`, item.cumulativeSevenDayEfficiency)}</td>
             <td>
-              <div class="monthly-efficiency-chart" aria-label="${escapeHtml(item.name)} 月度7天人效">
-                <svg viewBox="0 0 180 72" role="img" aria-label="月度7天人效趋势">
+              <div class="monthly-efficiency-chart">
+                <svg viewBox="0 0 180 72" aria-hidden="true">
                   ${svgContent}
                 </svg>
               </div>
@@ -314,7 +315,7 @@
 
       try {
         coreMetricsGrid.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">加载中...</p></div>';
-        recruiterTableBody.innerHTML = '<tr><td class="text-center text-muted" colspan="12"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>加载中...</td></tr>';
+        recruiterTableBody.innerHTML = '<tr><td class="text-center text-muted" colspan="13"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>加载中...</td></tr>';
 
         const response = await fetch(`/dashboard/self-sourcing?ajax=1&${params.toString()}`);
         const data = await response.json();
@@ -324,7 +325,7 @@
       } catch (error) {
         console.error('加载数据失败:', error);
         coreMetricsGrid.innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
-        recruiterTableBody.innerHTML = '<tr><td class="text-center text-danger" colspan="12">加载数据失败，请重试</td></tr>';
+        recruiterTableBody.innerHTML = '<tr><td class="text-center text-danger" colspan="13">加载数据失败，请重试</td></tr>';
       }
     };
 
