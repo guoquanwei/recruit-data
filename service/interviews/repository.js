@@ -1,27 +1,29 @@
 const { queryAll, queryOne } = require('../../dao/db');
+const { bulkInsert } = require('../../dao/bulkInsert');
+
+const INTERVIEW_COLUMNS = [
+  'base',
+  'position_name',
+  'candidate_name',
+  'gender',
+  'phone',
+  'feedback_date',
+  'feedback_result',
+  'interviewer',
+  'channel_type',
+  'channel_name',
+  'channel_tag',
+  'contract_name',
+  'referrer',
+  'evaluation'
+];
 
 async function insertInterviewRecords(database, records) {
-  const sql = `
-    INSERT INTO interview_records (
-      base,
-      position_name,
-      candidate_name,
-      gender,
-      phone,
-      feedback_date,
-      feedback_result,
-      interviewer,
-      channel_type,
-      channel_name,
-      channel_tag,
-      contract_name,
-      referrer,
-      evaluation
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-  `;
-
-  for (const record of records) {
-    await database.query(sql, [
+  return bulkInsert(database, {
+    tableName: 'interview_records',
+    columns: INTERVIEW_COLUMNS,
+    rows: records,
+    mapRow: (record) => [
       record.base,
       record.positionName,
       record.candidateName,
@@ -36,10 +38,8 @@ async function insertInterviewRecords(database, records) {
       record.contractName,
       record.referrer,
       record.evaluation
-    ]);
-  }
-
-  return records.length;
+    ]
+  });
 }
 
 async function replaceAllInterviewRecords(database, records) {
@@ -48,8 +48,8 @@ async function replaceAllInterviewRecords(database, records) {
 }
 
 async function replaceInterviewRecordsByDates(database, dates, records) {
-  for (const date of dates) {
-    await database.query('DELETE FROM interview_records WHERE feedback_date = $1', [date]);
+  if (dates.length > 0) {
+    await database.query('DELETE FROM interview_records WHERE feedback_date = ANY($1)', [dates]);
   }
 
   return insertInterviewRecords(database, records);

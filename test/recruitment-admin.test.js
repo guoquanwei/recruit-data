@@ -11,9 +11,9 @@ const { getEmployeeImportTemplateConfig, buildEmployeeImportTemplateWorkbook } =
 const { getTargetImportTemplateConfig, buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
 const { getInterviewImportTemplateConfig, buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
 const { importInterviewRecords } = require('../service/interviews/importer');
-const { buildEmployeeFilters, formatBaseOptions } = require('../service/employees/repository');
+const { buildEmployeeFilters, formatBaseOptions, replaceEmployeesBySource } = require('../service/employees/repository');
 const { buildInterviewFilters, insertInterviewRecords } = require('../service/interviews/repository');
-const { formatDistinctTargetFilterOptions } = require('../service/targets/repository');
+const { formatDistinctTargetFilterOptions, replaceTargetsByMonth } = require('../service/targets/repository');
 const { maskPhone, parsePage, formatPercent } = require('../service/shared/format');
 const { inferBase, isRecruiterEmployee, normalizeActiveEmployee, normalizeResignedEmployee } = require('../service/employees/normalize');
 const { calculateTargetProgress } = require('../service/targets/progress');
@@ -190,7 +190,14 @@ test('target import is rendered on its own page', async () => {
 
   const listPage = await requestApp('/targets');
   assert.doesNotMatch(listPage.text, /导入月度招聘目标 Excel/);
-  assert.match(listPage.text, /href="\/targets\/import"/);
+  assert.doesNotMatch(listPage.text, /btn[^"]*"[^>]*href="\/targets\/import"[^>]*>导入招聘目标/);
+  assert.match(listPage.text, /需求总数/);
+  assert.match(listPage.text, /自主社招目标/);
+  assert.match(listPage.text, /内部推荐目标/);
+  assert.match(listPage.text, /渠道社招目标/);
+  assert.match(listPage.text, /渠道校招目标/);
+  assert.match(listPage.text, /基地开班批次汇总/);
+  assert.doesNotMatch(listPage.text, /<th>截止目标<\/th>/);
 });
 
 test('self sourcing page omits personal risk diagnosis column', async () => {
@@ -285,6 +292,116 @@ test('interview repository inserts every normalized interview field', async () =
   assert.match(calls[0].sql, /evaluation/);
   assert.equal(calls[0].params[9], '李四+JZ001');
   assert.equal(calls[0].params[13], '沟通表达良好');
+});
+
+test('repositories batch insert import rows to reduce database round trips', async () => {
+  const calls = [];
+  const database = {
+    async query(sql, params = []) {
+      calls.push({ sql, params });
+      return { rows: [], rowCount: 1 };
+    }
+  };
+  const employees = [
+    normalizeActiveEmployee({
+      工号: 'JZ101',
+      姓名: '员工一',
+      入培时间: '2026/06/01',
+      入职日期: '2026/06/02',
+      手机号码: '13900000101',
+      招聘渠道: '自主社招',
+      渠道名称: '张三+JZ101',
+      办公地点: 'HB01-石家庄广安大厦',
+      部门: '伽睿集团 / NEO-OPS / 河北基地 / 联通河北',
+      职位: '客服专员',
+      员工状态: '在职'
+    }),
+    normalizeActiveEmployee({
+      工号: 'JZ102',
+      姓名: '员工二',
+      入培时间: '2026/06/03',
+      入职日期: '2026/06/04',
+      手机号码: '13900000102',
+      招聘渠道: '内推',
+      渠道名称: '李四',
+      办公地点: 'TJ-天津基地',
+      部门: '伽睿集团 / NEO-OPS / 天津基地 / 联通天津',
+      职位: '客服专员',
+      员工状态: '在职'
+    })
+  ];
+
+  assert.equal(await replaceEmployeesBySource(database, 'active', employees), 2);
+  assert.equal(calls.length, 2);
+  assert.match(calls[1].sql, /VALUES\s*\(\$1, \$2/);
+  assert.match(calls[1].sql, /\$17, \$18/);
+  assert.equal(calls[1].params.length, 32);
+
+  calls.length = 0;
+  assert.equal(await replaceTargetsByMonth(database, '2026-06', [
+    {
+      yearMonth: '2026-06',
+      base: '联通河北',
+      channel: '自主社招',
+      orderType: '客服专员',
+      retention7Rate: 0.7,
+      retention15Rate: 0.6,
+      retention30Rate: 0.5,
+      monthlyTarget: 10,
+      dailyTargets: { '1': 1 }
+    },
+    {
+      yearMonth: '2026-06',
+      base: '联通天津',
+      channel: '内推',
+      orderType: '客服专员',
+      retention7Rate: 0.7,
+      retention15Rate: 0.6,
+      retention30Rate: 0.5,
+      monthlyTarget: 5,
+      dailyTargets: { '1': 1 }
+    }
+  ]), 2);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].params.length, 18);
+
+  calls.length = 0;
+  assert.equal(await insertInterviewRecords(database, [
+    {
+      base: '联通河北',
+      positionName: '客服专员',
+      candidateName: '候选人一',
+      gender: '男',
+      phone: '13900000201',
+      feedbackDate: '2026-06-01',
+      feedbackResult: '推荐',
+      interviewer: '面试官',
+      channelType: '自主社招',
+      channelName: '张三+JZ201',
+      channelTag: '自主社招',
+      contractName: '张三+JZ201',
+      referrer: '',
+      evaluation: ''
+    },
+    {
+      base: '联通河北',
+      positionName: '客服专员',
+      candidateName: '候选人二',
+      gender: '女',
+      phone: '13900000202',
+      feedbackDate: '2026-06-01',
+      feedbackResult: '不推荐',
+      interviewer: '面试官',
+      channelType: '内推',
+      channelName: '李四',
+      channelTag: '内推',
+      contractName: '李四',
+      referrer: '',
+      evaluation: ''
+    }
+  ]), 2);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].params.length, 28);
 });
 
 test('employee normalization maps active and resigned source columns to one model', () => {
@@ -537,6 +654,28 @@ test('target plan summary calculates channel shares', () => {
     ['内推', 10, '20.00%'],
     ['自主社招', 40, '80.00%']
   ]);
+  assert.deepEqual(summary.cards.map((item) => [item.label, item.target, item.shareText]), [
+    ['需求总数', 50, '100.00%'],
+    ['自主社招目标', 40, '80.00%'],
+    ['内部推荐目标', 10, '20.00%'],
+    ['渠道社招目标', 0, '0.00%'],
+    ['渠道校招目标', 0, '0.00%']
+  ]);
+  assert.deepEqual(summary.batchColumns.map((item) => item.label), ['6月6日', '6月14日', '6月21日']);
+  assert.deepEqual(summary.batchRows.map((item) => [
+    item.base,
+    item.channelLabel,
+    item.monthlyTarget,
+    item.showBase,
+    item.baseRowSpan,
+    item.batchTargets.map((target) => target || '')
+  ]), [
+    ['联通河北', '基地汇总', 40, true, 3, [15, 25, '']],
+    ['联通河北', '内推', 10, false, 0, ['', 10, '']],
+    ['联通河北', '自主社招', 30, false, 0, [15, 15, '']],
+    ['江苏基地-南京', '基地汇总', 10, true, 2, ['', '', 10]],
+    ['江苏基地-南京', '自主社招', 10, false, 0, ['', '', 10]]
+  ]);
   assert.deepEqual(summary.bases.map((item) => [
     item.base,
     item.totalTarget,
@@ -562,6 +701,25 @@ test('target plan summary uses month breakdown when month is all', () => {
     ['2月', 100],
     ['3月', 100]
   ]);
+});
+
+test('target plan summary paginates bases by three per page', () => {
+  const summary = summarizeTargetPlan([
+    { base: '基地A', channel: '自主社招', monthlyTarget: 40, dailyTargets: { 1: 40 } },
+    { base: '基地B', channel: '自主社招', monthlyTarget: 30, dailyTargets: { 2: 30 } },
+    { base: '基地C', channel: '自主社招', monthlyTarget: 20, dailyTargets: { 3: 20 } },
+    { base: '基地D', channel: '自主社招', monthlyTarget: 10, dailyTargets: { 4: 10 } },
+    { base: '无目标基地', channel: '自主社招', monthlyTarget: 0, dailyTargets: {} }
+  ], '2026-06', { page: 2 });
+
+  assert.equal(summary.totalBases, 4);
+  assert.deepEqual(summary.batchColumns.map((column) => column.label), ['6月4日']);
+  assert.deepEqual(summary.bases.map((base) => base.base), ['基地D']);
+  assert.deepEqual(summary.batchRows.map((row) => [row.base, row.showBase, row.baseRowSpan]), [
+    ['基地D', true, 2],
+    ['基地D', false, 0]
+  ]);
+  assert.deepEqual(summary.page, { page: 2, pageSize: 3, limit: 3, offset: 3 });
 });
 
 test('target filter options use bases from selected month only', () => {
@@ -593,9 +751,26 @@ test('target progress summary exposes self sourcing actual share', () => {
     ['自主社招', 1, 1, '50.00%', '50.00%'],
     ['合计', 2, 2, '100.00%', '100.00%']
   ]);
+  assert.deepEqual(summary.bases[0].batchDetails.map((row) => [
+    row.batchLabel,
+    row.channel,
+    row.batchTarget,
+    row.actualTraining,
+    row.gap,
+    row.achievementRateText,
+    row.showBatch,
+    row.batchRowSpan,
+    row.isBatchSummary
+  ]), [
+    ['6月1日', '内推', 1, 1, 0, '100.00%', true, 3, false],
+    ['6月1日', '自主社招', 1, 1, 0, '100.00%', false, 0, false],
+    ['6月1日', '批次汇总', 2, 2, 0, '100.00%', false, 0, true]
+  ]);
+  assert.equal(summary.bases[0].riskStatus, 'green');
+  assert.equal(summary.bases[0].riskText, '绿灯');
 });
 
-test('target progress includes actual-only base channel combinations', () => {
+test('target progress includes actual-only channels only for targeted bases', () => {
   const targets = [
     { yearMonth: '2026-05', base: '湖南基地-空港', channel: '自主社招', dailyTargets: { 1: 1 } }
   ];
@@ -608,6 +783,10 @@ test('target progress includes actual-only base channel combinations', () => {
 
   assert.equal(completedTargets.length, 2);
   assert.equal(summary.overall.actualTraining, 2);
+  assert.deepEqual(summary.bases.map((base) => [base.base, base.monthlyTarget, base.actualTraining]), [
+    ['湖南基地-空港', 1, 2]
+  ]);
+  assert.equal(summary.bases[0].riskStatus, 'green');
   assert.deepEqual(summary.bases[0].channelRows.map((row) => [row.channel, row.monthlyTarget, row.actualTraining]), [
     ['渠道社招', 0, 1],
     ['自主社招', 1, 1],
@@ -634,6 +813,40 @@ test('target progress summary follows base filter', () => {
     ['渠道社招', 0, 1],
     ['自主社招', 10, 1]
   ]);
+});
+
+test('target progress sorts actual-only bases after targeted bases', () => {
+  const summary = summarizeTargets([
+    { yearMonth: '2026-06', base: '有目标低达成基地', channel: '自主社招', dailyTargets: { 1: 10 } }
+  ], [
+    { employeeNo: 'T1', base: '有目标低达成基地', channelType: '自主社招', trainingDate: '2026-06-01' },
+    { employeeNo: 'A1', base: '无目标有达成基地', channelType: '渠道社招', trainingDate: '2026-06-01' }
+  ], '2026-06-30');
+
+  assert.deepEqual(summary.bases.map((base) => base.base), ['有目标低达成基地']);
+});
+
+test('target progress page exposes base batch detail modal payload', async () => {
+  const page = await requestApp('/targets/progress?yearMonth=2026-05');
+
+  assert.equal(page.response.status, 200);
+  assert.match(page.text, /<div class="form-label">月份/);
+  assert.match(page.text, /<div class="form-label">基地/);
+  assert.doesNotMatch(page.text, /progress-filter-bar/);
+  assert.doesNotMatch(page.text, /<th>风险指标<\/th>/);
+  assert.match(page.text, /基地目标与达成对比/);
+  assert.match(page.text, /实际达成渠道占比/);
+  assert.match(page.text, /目标达成明细/);
+  assert.match(page.text, /progress-chart-card/);
+  assert.match(page.text, /progress-donut-card/);
+  assert.match(page.text, /risk-light-/);
+  assert.match(page.text, /achievement-progress/);
+  assert.match(page.text, /achievement-progress-green/);
+  assert.match(page.text, /frozen-table-wrapper/);
+  assert.match(page.text, /data-target-base-detail=/);
+  assert.match(page.text, /targetProgressDetailModal/);
+  assert.match(page.text, /targetProgressDetailPayload/);
+  assert.match(page.text, /基地批次渠道达成明细/);
 });
 
 test('dashboard training details follow base filter', () => {

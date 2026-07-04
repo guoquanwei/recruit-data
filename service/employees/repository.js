@@ -1,4 +1,5 @@
 const { queryAll, queryOne } = require('../../dao/db');
+const { bulkInsert } = require('../../dao/bulkInsert');
 const { isFrontlineEmployee } = require('./normalize');
 
 const EMPLOYEE_COLUMNS = [
@@ -145,18 +146,15 @@ async function replaceEmployeesBySource(database, sourceType, employees) {
   await database.query('DELETE FROM employees WHERE source_type = $1', [sourceType]);
   clearEmployeeCache();
 
-  const placeholders = EMPLOYEE_COLUMNS.map((_, index) => `$${index + 1}`).join(', ');
-  const sql = `
-    INSERT INTO employees (${EMPLOYEE_COLUMNS.join(', ')})
-    VALUES (${placeholders})
-  `;
-
-  for (const employee of employees) {
-    const row = toDatabaseRow(employee);
-    await database.query(sql, EMPLOYEE_COLUMNS.map((column) => row[column]));
-  }
-
-  return employees.length;
+  return bulkInsert(database, {
+    tableName: 'employees',
+    columns: EMPLOYEE_COLUMNS,
+    rows: employees,
+    mapRow: (employee) => {
+      const row = toDatabaseRow(employee);
+      return EMPLOYEE_COLUMNS.map((column) => row[column]);
+    }
+  });
 }
 
 async function countEmployees(filters = {}) {

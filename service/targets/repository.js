@@ -1,25 +1,27 @@
 const { queryAll, queryOne } = require('../../dao/db');
+const { bulkInsert } = require('../../dao/bulkInsert');
 const { toText } = require('../shared/format');
+
+const TARGET_COLUMNS = [
+  'year_month',
+  'base',
+  'channel',
+  'order_type',
+  'retention_7_rate',
+  'retention_15_rate',
+  'retention_30_rate',
+  'monthly_target',
+  'day_targets_json'
+];
 
 async function replaceTargetsByMonth(database, yearMonth, targets) {
   await database.query('DELETE FROM recruitment_targets WHERE year_month = $1', [yearMonth]);
 
-  const sql = `
-    INSERT INTO recruitment_targets (
-      year_month,
-      base,
-      channel,
-      order_type,
-      retention_7_rate,
-      retention_15_rate,
-      retention_30_rate,
-      monthly_target,
-      day_targets_json
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-  `;
-
-  for (const target of targets) {
-    await database.query(sql, [
+  return bulkInsert(database, {
+    tableName: 'recruitment_targets',
+    columns: TARGET_COLUMNS,
+    rows: targets,
+    mapRow: (target) => [
       target.yearMonth,
       target.base,
       target.channel,
@@ -29,10 +31,8 @@ async function replaceTargetsByMonth(database, yearMonth, targets) {
       target.retention30Rate,
       target.monthlyTarget,
       JSON.stringify(target.dailyTargets)
-    ]);
-  }
-
-  return targets.length;
+    ]
+  });
 }
 
 function fromDatabaseRow(row) {

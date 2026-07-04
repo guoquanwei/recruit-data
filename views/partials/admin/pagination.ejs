@@ -17,6 +17,7 @@
     return `${basePath}?${params.toString()}`;
   };
   const filterEntries = Object.entries(filters || {});
+  const sizeOptions = pageSizeOptions || [10, 20, 50, 100];
   const pages = [];
   const addPage = (value) => {
     if (!pages.includes(value)) pages.push(value);
@@ -44,7 +45,7 @@
     <input type="hidden" name="page" value="1">
     <label class="page-size-label">
       <select class="form-select form-select-sm page-size-select" name="pageSize" data-page-size-select>
-        <% [10, 20, 50, 100].forEach((size) => { %>
+        <% sizeOptions.forEach((size) => { %>
           <option value="<%= size %>" <%= page.pageSize === size ? 'selected' : '' %>><%= size %>条/页</option>
         <% }) %>
       </select>

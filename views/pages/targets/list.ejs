@@ -20,115 +20,60 @@
 
 <section class="table-card target-summary-card">
   <div class="table-actions">
-    <h2 class="h5 mb-0">当月目标汇总</h2>
-    <span class="text-muted small"><%= result.summary.yearMonth || '全部' %></span>
+    <h2 class="h5 mb-0">目标列表</h2>
+    <span class="text-muted small"><%= result.summary.yearMonth || '全部月份' %></span>
   </div>
-  <div class="target-summary-grid">
-    <div class="target-summary-metric">
-      <span>需求总数</span>
-      <strong><%= result.summary.totalTarget %></strong>
-    </div>
-    <div class="target-summary-metric">
-      <span>基地数</span>
-      <strong><%= result.summary.baseCount %></strong>
-    </div>
-    <div class="target-summary-metric">
-      <span>有效渠道数</span>
-      <strong><%= result.summary.channelCount %></strong>
-    </div>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle target-summary-table">
-      <thead>
-        <tr><th>渠道</th><th>渠道目标</th><th>渠道目标占比</th></tr>
-      </thead>
-      <tbody>
-        <% if (result.summary.channels.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="3">暂无目标汇总数据。</td></tr>
+  <div class="target-summary-grid target-summary-grid-five">
+    <% result.summary.cards.forEach((card) => { %>
+      <div class="target-summary-metric target-summary-metric-<%= card.key %>">
+        <span><%= card.label %></span>
+        <strong><%= card.target %></strong>
+        <% if (card.key !== 'total') { %>
+          <small>渠道目标占比 <%= card.shareText %></small>
+        <% } else { %>
+          <small>当前筛选范围目标合计</small>
         <% } %>
-        <% result.summary.channels.forEach((channel) => { %>
-          <tr>
-            <td><%= channel.channel %></td>
-            <td><%= channel.target %></td>
-            <td><%= channel.shareText %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-  <div class="base-summary-list">
-    <% if (result.summary.bases.length === 0) { %>
-      <div class="base-summary-empty">暂无基地目标汇总。</div>
-    <% } %>
-    <% result.summary.bases.forEach((base) => { %>
-      <div class="base-summary-card">
-        <div class="base-summary-head">
-          <span><%= base.base %></span>
-          <strong><%= base.totalTarget %></strong>
-        </div>
-        <div class="base-summary-dates">
-          <% const targetBreakdowns = result.summary.yearMonth ? base.dateTargets : base.monthTargets; %>
-          <% if (targetBreakdowns.length === 0) { %>
-            <span class="base-summary-muted"><%= result.summary.yearMonth ? '暂无日期拆解' : '暂无月份拆解' %></span>
-          <% } %>
-          <% targetBreakdowns.forEach((item) => { %>
-            <span><%= item.label %> <strong><%= item.target %></strong></span>
-          <% }) %>
-        </div>
-        <div class="base-summary-channels">
-          <% base.channels.forEach((channel) => { %>
-            <span><%= channel.label %> <%= channel.target %></span>
-          <% }) %>
-        </div>
       </div>
     <% }) %>
   </div>
-</section>
-
-<section class="table-card">
-  <%
-    const targetExportParams = new URLSearchParams();
-    Object.entries(result.filters).forEach(([key, value]) => {
-      if (value) targetExportParams.set(key, value);
-    });
-  %>
-  <div class="table-actions">
-    <h2 class="h5 mb-0">目标列表</h2>
-    <div class="table-action-buttons">
-      <a class="btn btn-sm btn-outline-primary" href="/targets/import">导入招聘目标</a>
-      <a class="btn btn-sm btn-outline-secondary" href="<%= `/targets/export?${targetExportParams.toString()}` %>">导出</a>
-      <a class="btn btn-sm btn-outline-primary" href="/targets/progress">查看达成进度</a>
-    </div>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
+  <div class="target-batch-title">基地开班批次汇总</div>
+  <div class="target-batch-hint">目标列表仅展示有目标的基地和批次，基地汇总行为该基地所有渠道目标合计。</div>
+  <div class="table-responsive target-batch-table-wrap">
+    <table class="table align-middle target-batch-table">
       <thead>
         <tr>
-          <th>月份</th><th>基地</th><th>渠道</th><th>订单类型</th><th>月度目标</th>
-          <th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成率</th>
+          <th class="target-batch-base-col">基地</th>
+          <th class="target-batch-channel-col">渠道</th>
+          <th class="target-batch-target-col">渠道目标</th>
+          <% result.summary.batchColumns.forEach((column) => { %>
+            <th><%= column.label %></th>
+          <% }) %>
         </tr>
       </thead>
       <tbody>
-        <% if (result.rows.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="9"><%= result.emptyMessage || '暂无目标数据，请先导入目标表。' %></td></tr>
-        <% } %>
-        <% result.rows.forEach((target) => { %>
+        <% if (result.summary.batchRows.length === 0) { %>
           <tr>
-            <td><%= target.yearMonth %></td>
-            <td><%= target.base %></td>
-            <td><%= target.channel %></td>
-            <td><%= target.orderType %></td>
-            <td><%= target.progress.monthlyTarget %></td>
-            <td><%= target.progress.cutoffTarget %></td>
-            <td><%= target.progress.actualTraining %></td>
-            <td class="<%= target.progress.gap < 0 ? 'danger-text' : '' %>"><%= target.progress.gap %></td>
-            <td class="<%= target.progress.achievementRate < 1 ? 'danger-text' : '' %>"><%= target.progress.achievementRateText %></td>
+            <td class="text-center text-muted" colspan="<%= 3 + result.summary.batchColumns.length %>">暂无目标汇总数据。</td>
+          </tr>
+        <% } %>
+        <% result.summary.batchRows.forEach((row) => { %>
+          <tr class="<%= row.isBaseSummary ? 'target-batch-base-row' : '' %>">
+            <% if (row.showBase) { %>
+              <td rowspan="<%= row.baseRowSpan %>"><%= row.base %></td>
+            <% } %>
+            <td><%= row.channelLabel %></td>
+            <td><%= row.monthlyTarget || '' %></td>
+            <% row.batchTargets.forEach((target) => { %>
+              <td><%= target || '' %></td>
+            <% }) %>
           </tr>
         <% }) %>
       </tbody>
     </table>
   </div>
-  <%- include('../../partials/admin/pagination', { total: result.total, page: result.page, filters: result.filters, basePath: '/targets' }) %>
+  <% if (result.summary.page) { %>
+    <%- include('../../partials/admin/pagination', { total: result.summary.totalBases, page: result.summary.page, filters: result.filters, basePath: '/targets', pageSizeOptions: [3] }) %>
+  <% } %>
 </section>
 
 <%- include('../../partials/footer') %>

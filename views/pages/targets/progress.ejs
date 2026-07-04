@@ -1,77 +1,156 @@
 <%- include('../../partials/header') %>
 
+<%
+  const baseBatchDetails = {};
+  (progress.bases || []).forEach((base) => {
+    baseBatchDetails[base.base] = base.batchDetails || [];
+  });
+  const baseChartRows = (progress.bases || [])
+    .filter((base) => base.monthlyTarget > 0 || base.actualTraining > 0)
+    .slice()
+    .sort((left, right) => right.monthlyTarget - left.monthlyTarget);
+  const maxBaseTarget = Math.max(
+    1,
+    ...baseChartRows.map((base) => Math.max(base.monthlyTarget || 0, base.actualTraining || 0))
+  );
+  const channelPalette = {
+    渠道社招: '#e89113',
+    内推: '#5aa6e8',
+    自主社招: '#4ba33f',
+    回流: '#8fd26a',
+    渠道校招: '#9aa4b2'
+  };
+  const donutChannels = (progress.channels || [])
+    .filter((channel) => channel.actualTraining > 0);
+  const donutStops = [];
+  let donutCursor = 0;
+  donutChannels.forEach((channel) => {
+    const share = progress.overall.actualTraining > 0
+      ? channel.actualTraining / progress.overall.actualTraining * 100
+      : 0;
+    const nextCursor = donutCursor + share;
+    const color = channelPalette[channel.channel] || '#94a3b8';
+    donutStops.push(`${color} ${donutCursor}% ${nextCursor}%`);
+    donutCursor = nextCursor;
+  });
+  const donutStyle = donutStops.length > 0
+    ? `background: conic-gradient(${donutStops.join(', ')});`
+    : 'background: #edf2f7;';
+%>
+
 <section class="filter-card">
-  <form method="get" class="row g-3 align-items-end">
-    <div class="col-md-3">
-      <label class="form-label">月份</label>
-      <input class="form-control" type="month" name="yearMonth" value="<%= progress.yearMonth %>">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">截止日期</label>
-      <input class="form-control" type="date" name="cutoffDate" value="<%= progress.cutoffDate %>">
-    </div>
-    <div class="col-md-3">
-      <button class="btn btn-primary" type="submit">查询</button>
+  <form method="get">
+    <div class="filter-grid target-progress-filter-grid">
+      <%- include('../../partials/admin/search-select', { label: '月份', name: 'yearMonth', value: progress.filters.yearMonth, items: progress.months }) %>
+      <%- include('../../partials/admin/search-select', { label: '基地', name: 'base', value: progress.filters.base, items: progress.options.bases }) %>
+      <div class="filter-actions">
+        <button class="btn btn-primary" type="submit">查询</button>
+        <button class="btn btn-outline-secondary" type="button" data-reset-form>重置</button>
+      </div>
     </div>
   </form>
 </section>
 
-<div class="metric-grid">
-  <div class="metric-card"><span>整体目标</span><strong><%= progress.overall.monthlyTarget %></strong></div>
-  <div class="metric-card"><span>截止目标</span><strong><%= progress.overall.cutoffTarget %></strong></div>
-  <div class="metric-card"><span>实际入培</span><strong><%= progress.overall.actualTraining %></strong></div>
-  <div class="metric-card <%= progress.overall.gap < 0 ? 'danger' : '' %>"><span>GAP</span><strong><%= progress.overall.gap %></strong></div>
-  <div class="metric-card <%= progress.overall.achievementRate < 1 ? 'danger' : '' %>"><span>达成率</span><strong><%= progress.overall.achievementRateText %></strong></div>
-  <div class="metric-card"><span>自主社招占比</span><strong><%= progress.overall.selfSourcingShareText %></strong></div>
+<div class="progress-metric-grid">
+  <div class="progress-metric-card"><span>月度目标</span><strong><%= progress.overall.monthlyTarget %></strong><small>上月目标汇总目标</small></div>
+  <div class="progress-metric-card"><span>截止目标</span><strong><%= progress.overall.cutoffTarget %></strong><small>开班日期早于今天</small></div>
+  <div class="progress-metric-card"><span>实际入培人数</span><strong><%= progress.overall.actualTraining %></strong><small>员工实际参培落实量</small></div>
+  <div class="progress-metric-card"><span>达成率</span><strong><%= progress.overall.achievementRateText %></strong><small>实际入培 / 截止目标</small></div>
+  <div class="progress-metric-card"><span>自主社招占比</span><strong><%= progress.overall.selfSourcingShareText %></strong><small>自主社招实际 / 实际入培</small></div>
 </div>
 
-<section class="table-card mb-3">
-  <h2 class="h5">全局渠道占比</h2>
-  <div class="table-responsive frozen-table-wrapper">
-    <table class="table table-hover">
-      <thead><tr><th>渠道</th><th>目标</th><th>截止目标</th><th>实际</th><th>目标占比</th><th>达成占比</th><th>占比GAP</th></tr></thead>
-      <tbody>
-        <% progress.channels.forEach((channel) => { %>
-          <tr>
-            <td><%= channel.channel %></td>
-            <td><%= channel.monthlyTarget %></td>
-            <td><%= channel.cutoffTarget %></td>
-            <td><%= channel.actualTraining %></td>
-            <td><%= channel.targetShareText %></td>
-            <td><%= channel.actualShareText %></td>
-            <td><%= channel.shareGapText %></td>
-          </tr>
+<div class="progress-chart-grid">
+  <section class="table-card progress-chart-card">
+    <h2 class="h5">基地目标与达成对比</h2>
+    <div class="progress-bar-legend">
+      <span><i class="legend-actual"></i>实际达成</span>
+      <span><i class="legend-cutoff"></i>截止缺口</span>
+      <span><i class="legend-rest"></i>未到截止目标</span>
+    </div>
+    <div class="progress-bar-chart">
+      <% if (baseChartRows.length === 0) { %>
+        <div class="text-muted small">暂无基地目标与达成数据。</div>
+      <% } %>
+      <% baseChartRows.forEach((base) => {
+        const actualHeight = Math.max(0, Math.min(100, base.actualTraining / maxBaseTarget * 100));
+        const cutoffGap = Math.max(0, base.cutoffTarget - base.actualTraining);
+        const futureTarget = Math.max(0, base.monthlyTarget - base.cutoffTarget);
+        const cutoffHeight = Math.max(0, Math.min(100, cutoffGap / maxBaseTarget * 100));
+        const restHeight = Math.max(0, Math.min(100, futureTarget / maxBaseTarget * 100));
+      %>
+        <div class="progress-bar-item" title="<%= `${base.base}\n达成率：${base.achievementRateText}\n总目标：${base.monthlyTarget}\n截止目标：${base.cutoffTarget}\n实际达成：${base.actualTraining}` %>">
+          <div class="progress-bar-stack">
+            <span class="bar-rest" style="height:<%= restHeight %>%"></span>
+            <span class="bar-cutoff" style="height:<%= cutoffHeight %>%"></span>
+            <span class="bar-actual" style="height:<%= actualHeight %>%"></span>
+          </div>
+          <em><%= base.base %></em>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="table-card progress-donut-card">
+    <h2 class="h5">实际达成渠道占比</h2>
+    <div class="progress-donut-layout">
+      <div class="progress-donut" style="<%= donutStyle %>">
+        <span><%= progress.overall.actualTraining %></span>
+        <em>实际入培</em>
+      </div>
+      <div class="progress-donut-legend">
+        <% donutChannels.forEach((channel) => { %>
+          <div>
+            <i style="background:<%= channelPalette[channel.channel] || '#94a3b8' %>"></i>
+            <span><%= channel.channel %></span>
+            <strong><%= channel.actualShareText %></strong>
+          </div>
         <% }) %>
-      </tbody>
-    </table>
-  </div>
-</section>
+      </div>
+    </div>
+  </section>
+</div>
 
 <section class="table-card">
-  <h2 class="h5">各基地渠道达成明细</h2>
-  <p class="section-note">指标注释：GAP = 实际入培 - 月度目标；达成率 &lt; 80% 红色加粗；GAP 为负数红色；无目标且无达成的基地不展示。</p>
-  <div class="table-responsive">
+  <h2 class="h5">目标达成明细</h2>
+  <p class="section-note">指标注释：GAP = 实际入培 - 月度目标；基地达成率 ≥ 90% 为绿灯，70% 至 90% 为黄灯关注，低于 70% 为红灯风险；目标表中不存在的基地不展示，目标基地内无目标但有达成的渠道会展示；详情按开班批次汇总各渠道目标、实际入培和达成率。</p>
+  <div class="table-responsive frozen-table-wrapper">
     <table class="table table-hover target-progress-detail-table">
-      <thead><tr class="frozen-header-row"><th>基地</th><th>渠道</th><th>月度目标</th><th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成率</th><th>目标占比</th><th>达成占比</th><th>占比GAP</th></tr></thead>
+      <thead><tr class="frozen-header-row"><th>月份</th><th>基地</th><th>渠道</th><th>月度目标</th><th>截止目标</th><th>实际入培</th><th>GAP</th><th>达成进度</th><th>详情</th></tr></thead>
       <tbody>
         <% if (progress.detailGroups.length === 0) { %>
-          <tr><td class="text-center text-muted" colspan="10">暂无目标达成数据。</td></tr>
+          <tr><td class="text-center text-muted" colspan="9">暂无目标达成数据。</td></tr>
         <% } %>
         <% progress.detailGroups.forEach((base) => { %>
           <% base.channelRows.forEach((row, rowIndex) => { %>
             <tr class="<%= row.channel === '合计' ? 'summary-row' : '' %> <%= base.isOverall ? 'overall-row' : '' %> <%= rowIndex === base.channelRows.length - 1 ? 'group-last-row' : '' %>">
               <% if (rowIndex === 0) { %>
-                <td class="base-group-cell <%= base.isOverall ? 'overall-cell' : '' %>" rowspan="<%= base.channelRows.length %>"><%= base.base %></td>
+                <td class="base-group-cell <%= base.isOverall ? 'overall-cell' : '' %>" rowspan="<%= base.channelRows.length %>"><%= progress.yearMonth %></td>
+                <td class="base-group-cell <%= base.isOverall ? 'overall-cell' : '' %>" rowspan="<%= base.channelRows.length %>">
+                  <% if (!base.isOverall && base.riskStatus !== 'none') { %>
+                    <span class="base-name-with-risk"><span class="risk-light risk-light-<%= base.riskStatus %>" title="<%= base.riskText %>"></span><%= base.base %></span>
+                  <% } else { %>
+                    <%= base.base %>
+                  <% } %>
+                </td>
               <% } %>
               <td><%= row.channel %></td>
               <td><%= row.monthlyTarget %></td>
               <td><%= row.cutoffTarget %></td>
               <td><%= row.actualTraining %></td>
               <td class="<%= row.gap < 0 ? 'danger-text' : '' %>"><%= row.gap %></td>
-              <td class="<%= row.achievementRate < 0.8 ? 'danger-text strong-text' : '' %>"><%= row.achievementRateText %></td>
-              <td><%= row.targetShareText %></td>
-              <td><%= row.actualShareText %></td>
-              <td><%= row.shareGapText %></td>
+              <% if (rowIndex === 0) { %>
+                <td class="achievement-progress-cell" rowspan="<%= base.channelRows.length %>">
+                  <strong class="<%= base.achievementRate < 0.8 ? 'danger-text strong-text' : '' %>"><%= base.achievementRateText %></strong>
+                  <div class="achievement-progress achievement-progress-<%= base.riskStatus || 'none' %>">
+                    <span style="width:<%= Math.min(100, Math.max(0, base.achievementRate * 100)) %>%"></span>
+                  </div>
+                </td>
+                <td rowspan="<%= base.channelRows.length %>">
+                  <% if (!base.isOverall) { %>
+                    <button class="btn btn-sm btn-outline-secondary target-detail-button" type="button" data-target-base-detail="<%= base.base %>">查看</button>
+                  <% } %>
+                </td>
+              <% } %>
             </tr>
           <% }) %>
         <% }) %>
@@ -79,5 +158,87 @@
     </table>
   </div>
 </section>
+
+<div id="targetProgressDetailModal" class="modal-mask" data-target-progress-modal>
+  <div class="modal-panel target-progress-modal-panel" role="dialog" aria-modal="true" aria-labelledby="targetProgressDetailTitle">
+    <div class="modal-head">
+      <h2 id="targetProgressDetailTitle">基地批次渠道达成明细</h2>
+      <button type="button" class="modal-close" data-target-progress-close>关闭</button>
+    </div>
+    <div id="targetProgressDetailBody" class="modal-body"></div>
+  </div>
+</div>
+
+<script id="targetProgressDetailPayload" type="application/json"><%- JSON.stringify(baseBatchDetails) %></script>
+<script>
+  (() => {
+    const payloadElement = document.getElementById('targetProgressDetailPayload');
+    const modal = document.querySelector('[data-target-progress-modal]');
+    const body = document.getElementById('targetProgressDetailBody');
+    const title = document.getElementById('targetProgressDetailTitle');
+    if (!payloadElement || !modal || !body || !title) return;
+
+    let payload = {};
+    try {
+      payload = JSON.parse(payloadElement.textContent || '{}');
+    } catch (error) {
+      payload = {};
+    }
+
+    const escapeHtml = (value) => String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+    const openDetail = (baseName) => {
+      const rows = payload[baseName] || [];
+      title.textContent = `${baseName} 批次渠道达成明细`;
+      if (rows.length === 0) {
+        body.innerHTML = '<p class="text-muted mb-0">暂无批次达成数据。</p>';
+      } else {
+        body.innerHTML = `
+          <div class="table-responsive">
+            <table class="table table-hover detail-modal-table target-progress-batch-detail-table">
+              <thead>
+                <tr><th>开班批次</th><th>渠道</th><th>批次目标</th><th>实际入培</th><th>GAP</th><th>达成率</th></tr>
+              </thead>
+              <tbody>
+                ${rows.map((row) => `
+                  <tr class="${row.isBatchSummary ? 'summary-row' : ''}">
+                    ${row.showBatch ? `<td rowspan="${escapeHtml(row.batchRowSpan)}">${escapeHtml(row.batchLabel)}</td>` : ''}
+                    <td>${escapeHtml(row.channel)}</td>
+                    <td>${escapeHtml(row.batchTarget)}</td>
+                    <td>${escapeHtml(row.actualTraining)}</td>
+                    <td class="${Number(row.gap) < 0 ? 'danger-text' : ''}">${escapeHtml(row.gap)}</td>
+                    <td class="${Number(row.achievementRate) < 0.8 ? 'danger-text strong-text' : ''}">${escapeHtml(row.achievementRateText)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+      modal.classList.add('open');
+    };
+
+    const closeDetail = () => modal.classList.remove('open');
+
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-target-base-detail]');
+      if (button) {
+        openDetail(button.dataset.targetBaseDetail);
+        return;
+      }
+      if (event.target === modal || event.target.closest('[data-target-progress-close]')) {
+        closeDetail();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeDetail();
+    });
+  })();
+</script>
 
 <%- include('../../partials/footer') %>
