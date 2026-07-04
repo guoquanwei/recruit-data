@@ -11,7 +11,7 @@ const { getEmployeeImportTemplateConfig, buildEmployeeImportTemplateWorkbook } =
 const { getTargetImportTemplateConfig, buildTargetImportTemplateWorkbook } = require('../service/targets/importTemplate');
 const { getInterviewImportTemplateConfig, buildInterviewImportTemplateWorkbook } = require('../service/interviews/importTemplate');
 const { importInterviewRecords } = require('../service/interviews/importer');
-const { buildEmployeeFilters, formatBaseOptions, replaceEmployeesBySource } = require('../service/employees/repository');
+const { buildEmployeeFilters, formatBaseOptions, fromOrgTableRow, replaceEmployeesBySource } = require('../service/employees/repository');
 const { buildInterviewFilters, insertInterviewRecords } = require('../service/interviews/repository');
 const { formatDistinctTargetFilterOptions, replaceTargetsByMonth } = require('../service/targets/repository');
 const { maskPhone, parsePage, formatPercent } = require('../service/shared/format');
@@ -517,6 +517,14 @@ test('frontline base maps special office locations to business target names', ()
     officeLocation: 'YB-宜宾基地'
   }), '宜宾基地');
   assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 长春基地 - 京东外呼项目',
+    officeLocation: 'JL01-长春基地'
+  }), '京东外呼项目');
+  assert.equal(inferBase({
+    department: '伽睿集团 - NEO-OPS - 辽宁外呼项目 - 培训期',
+    officeLocation: 'LN01-辽宁外呼'
+  }), '辽宁外呼项目');
+  assert.equal(inferBase({
     department: '伽睿集团 - NEO-OPS - 金融业务运营 - 重庆外呼项目',
     officeLocation: 'CQ-重庆外呼项目'
   }), '新业务运营中心');
@@ -528,6 +536,101 @@ test('frontline base maps special office locations to business target names', ()
     department: '伽睿集团 - NEO-OPS - ITO项目',
     officeLocation: 'GZ01-贵阳德福中心'
   }), 'ITO项目');
+});
+
+test('org table frontline rows use target base names for actual training progress', () => {
+  const employee = fromOrgTableRow({
+    id: 1,
+    emp_code: 'JZ700',
+    emp_name: '目标达成员工',
+    work_status: 1,
+    org_level2: '长春基地',
+    org_name: '京东外呼培训班',
+    org_path: '伽睿集团/NEO-OPS/长春基地/京东外呼项目',
+    org_level3: '京东外呼项目',
+    position_name: '客服专员',
+    hr_channel_type: '渠道社招',
+    hr_channel_name: '供应商A',
+    work_location: 'JL01-长春基地',
+    train_start_date: '2026-06-09',
+    join_date: '2026-06-10',
+    terminate_date: null
+  });
+
+  assert.equal(employee.base, '京东外呼项目');
+  assert.equal(calculateTargetProgress({
+    target: {
+      yearMonth: '2026-06',
+      base: '京东外呼项目',
+      channel: '渠道社招',
+      dailyTargets: { 9: 1 }
+    },
+    employees: [employee],
+    cutoffDate: '2026-06-30'
+  }).actualTraining, 1);
+
+  const frontDeskEmployee = fromOrgTableRow({
+    id: 2,
+    emp_code: 'JZ701',
+    emp_name: '升投员工',
+    work_status: 1,
+    org_level2: '河北基地',
+    org_level3: '10015升投',
+    org_level4: '前台',
+    org_level5: '培训期',
+    org_level6: '前台20260623班',
+    org_name: '前台20260623班',
+    org_path: '伽睿集团>NEO-OPS>河北基地>10015升投>前台>培训期>前台20260623班',
+    position_name: '客服专员',
+    hr_channel_type: '自主社招',
+    hr_channel_name: '张三',
+    work_location: 'HB01-石家庄广安大厦',
+    train_start_date: '2026-06-23',
+    join_date: '2026-06-24',
+    terminate_date: null
+  });
+
+  assert.equal(frontDeskEmployee.base, '10015升投');
+});
+
+test('org table recruiters map to talent development base for self sourcing efficiency', () => {
+  const recruiter = fromOrgTableRow({
+    id: 3,
+    emp_code: 'JZ702',
+    emp_name: '自招专员',
+    work_status: 1,
+    org_level2: '人才开发部',
+    org_level3: '北方招聘组',
+    org_name: '北方招聘组',
+    org_path: '伽睿集团>NEO-OPS>人才开发部>北方招聘组',
+    position_name: '招聘专员',
+    join_date: '2026-01-01',
+    terminate_date: null
+  });
+  const candidate = {
+    employeeNo: 'JZ703',
+    name: '自招候选人',
+    base: '联通河北',
+    channelType: '自主社招',
+    channelName: '自招专员+JZ702',
+    trainingDate: '2026-05-10',
+    resignedDate: ''
+  };
+  const rows = buildSelfSourcingEfficiency({
+    yearMonth: '2026-05',
+    asOfDate: '2026-05-31',
+    employees: [recruiter, candidate]
+  });
+
+  assert.equal(recruiter.base, '人才开发部');
+  assert.deepEqual(rows.find((row) => row.stage === '整体'), {
+    stage: '整体',
+    recruiterCount: 1,
+    trainingCount: 1,
+    sevenDayCount: 1,
+    efficiency: '1.0',
+    sevenDayEfficiency: '1.0'
+  });
 });
 
 test('current year non-standard employee bases fall back to ITO project', () => {
@@ -776,7 +879,7 @@ test('target progress includes actual-only channels only for targeted bases', ()
   ];
   const employees = [
     { employeeNo: 'JZ001', base: '湖南基地-空港', channelType: '自主社招', trainingDate: '2026-05-01' },
-    { employeeNo: 'JZ002', base: '湖南基地-空港', channelType: '渠道社招', trainingDate: '2026-05-01' }
+    { employeeNo: 'JZ002', base: '湖南基地-空港', channelType: '渠道社招', trainingDate: new Date('2026-05-01T00:00:00+08:00') }
   ];
   const completedTargets = includeActualOnlyTargets({ targets, employees, yearMonth: '2026-05' });
   const summary = summarizeTargets(targets, employees, '2026-05-31');
@@ -1586,15 +1689,15 @@ test('dashboard overview insights expose executive cards, channel shares and ven
     progress,
     trainingDetails,
     selfSourcingEfficiency: [
-      { stage: '试用期', recruiterCount: 2, trainingCount: 2, efficiency: '1.0' },
-      { stage: '正式期', recruiterCount: 3, trainingCount: 6, efficiency: '2.0' },
-      { stage: '整体', recruiterCount: 5, trainingCount: 8, efficiency: '1.6' }
+      { stage: '试用期', recruiterCount: 2, trainingCount: 2, sevenDayCount: 1, efficiency: '1.0', sevenDayEfficiency: '0.5' },
+      { stage: '正式期', recruiterCount: 3, trainingCount: 6, sevenDayCount: 3, efficiency: '2.0', sevenDayEfficiency: '1.0' },
+      { stage: '整体', recruiterCount: 5, trainingCount: 8, sevenDayCount: 4, efficiency: '1.6', sevenDayEfficiency: '0.8' }
     ]
   });
 
   assert.equal(insights.cards.targetAchievementRateText, '66.67%');
   assert.equal(insights.cards.selfSourcingShareText, '26.67%');
-  assert.equal(insights.cards.selfSourcingEfficiency, '1.6');
+  assert.equal(insights.cards.selfSourcingEfficiency, '0.8');
   assert.equal(insights.cards.recruiterTeamSize, 5);
   assert.equal(insights.overallRisk.status, 'risk');
   assert.deepEqual(insights.baseAchievements.map((item) => [item.base, item.actualTraining, item.achievementRateText, item.status]), [
@@ -1616,10 +1719,10 @@ test('dashboard overview insights expose executive cards, channel shares and ven
     ['择能人力', 5, '江苏基地-淮安5'],
     ['大隐人力', 4, '联通河北4']
   ]);
-  assert.deepEqual(insights.selfSourcingEfficiency.map((item) => [item.stage, item.efficiency, item.recruiterCount]), [
-    ['整体', '1.6', 5],
-    ['试用期', '1.0', 2],
-    ['正式期', '2.0', 3]
+  assert.deepEqual(insights.selfSourcingEfficiency.map((item) => [item.stage, item.sevenDayEfficiency, item.efficiency, item.recruiterCount]), [
+    ['整体', '0.8', '1.6', 5],
+    ['试用期', '0.5', '1.0', 2],
+    ['正式期', '1.0', '2.0', 3]
   ]);
 });
 

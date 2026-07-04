@@ -67,7 +67,7 @@
 <div class="metric-grid overview-metric-grid">
   <div class="metric-card"><span>目标达成率</span><strong><%= insights.cards.targetAchievementRateText %></strong></div>
   <div class="metric-card"><span>自主社招占比</span><strong><%= insights.cards.selfSourcingShareText %></strong></div>
-  <div class="metric-card"><span>自招人效</span><strong><%= insights.cards.selfSourcingEfficiency %></strong></div>
+  <div class="metric-card"><span>自招7天人效</span><strong><%= insights.cards.selfSourcingEfficiency %></strong></div>
   <div class="metric-card"><span>自招团队规模</span><strong><%= insights.cards.recruiterTeamSize %></strong></div>
 </div>
 
@@ -159,17 +159,17 @@
       <div class="table-actions">
         <div>
           <h2 class="h5 mb-1">自招人效</h2>
-          <p class="section-note mb-0">整体、试用期、正式期招聘人效对比。</p>
+          <p class="section-note mb-0">整体、试用期、正式期 7 天人效和参培人效对比。</p>
         </div>
       </div>
       <div class="overview-efficiency-grid">
         <% insights.selfSourcingEfficiency.forEach((item) => { %>
           <div>
             <span><%= item.stage %></span>
-            <strong><%= item.efficiency %></strong>
-            <em>入培人效：<%= item.trainingCount %> / <%= item.recruiterCount %></em>
-            <strong class="efficiency-secondary"><%= item.sevenDayEfficiency %></strong>
+            <strong><%= item.sevenDayEfficiency || '0.0' %></strong>
             <em>满7天人效：<%= item.sevenDayCount %> / <%= item.recruiterCount %></em>
+            <strong class="efficiency-secondary"><%= item.efficiency || '0.0' %></strong>
+            <em>入培人效：<%= item.trainingCount %> / <%= item.recruiterCount %></em>
           </div>
         <% }) %>
       </div>

@@ -138,10 +138,25 @@ async function listInterviewRecords({ filters = {}, page }) {
   };
 }
 
+const INTERVIEW_CACHE_TTL_MS = 5 * 60 * 1000;
 let allInterviewsCache;
+const filteredInterviewsCache = new Map();
 
 function clearInterviewCache() {
   allInterviewsCache = undefined;
+  filteredInterviewsCache.clear();
+}
+
+function getCachedInterviews(key) {
+  const cached = filteredInterviewsCache.get(key);
+  if (!cached) {
+    return undefined;
+  }
+  if (Date.now() - cached.createdAt > INTERVIEW_CACHE_TTL_MS) {
+    filteredInterviewsCache.delete(key);
+    return undefined;
+  }
+  return cached.rows;
 }
 
 async function listAllInterviewRecords(filters = {}) {
@@ -153,9 +168,20 @@ async function listAllInterviewRecords(filters = {}) {
     return allInterviewsCache;
   }
 
+  const cacheKey = JSON.stringify(filters);
+  const cachedRows = getCachedInterviews(cacheKey);
+  if (cachedRows) {
+    return cachedRows;
+  }
+
   const { whereSql, params } = buildInterviewFilters(filters);
   const rows = await queryAll(`SELECT * FROM interview_records ${whereSql}`, params);
-  return rows.map(fromDatabaseRow);
+  const mappedRows = rows.map(fromDatabaseRow);
+  filteredInterviewsCache.set(cacheKey, {
+    createdAt: Date.now(),
+    rows: mappedRows
+  });
+  return mappedRows;
 }
 
 async function getDistinctInterviewFilterOptions() {

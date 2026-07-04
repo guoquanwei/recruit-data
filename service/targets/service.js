@@ -605,7 +605,7 @@ function includeActualOnlyTargets({ targets, employees, yearMonth }) {
   const additions = new Map();
 
   employees.forEach((employee) => {
-    if (!employee.employeeNo || !String(employee.trainingDate || '').startsWith(yearMonth)) {
+    if (!employee.employeeNo || !normalizeDate(employee.trainingDate).startsWith(yearMonth)) {
       return;
     }
 

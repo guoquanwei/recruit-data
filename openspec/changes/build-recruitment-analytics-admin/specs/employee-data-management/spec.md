@@ -30,6 +30,17 @@
 - **WHEN** 员工列表展示手机号或证件号相关字段
 - **THEN** 系统 MUST 默认展示脱敏值，不在列表中暴露完整个人敏感信息
 
+#### Scenario: 组织表员工基地归一
+- **WHEN** 系统从 `common_emp_org_real_day` 读取一线员工或招聘专员
+- **THEN** 系统 MUST 使用 `org_path`、`org_name`、`org_level2` 至 `org_level7` 和 `work_location` 共同推断统一 `base`
+- **AND** 一线员工 `base` MUST 归一为目标表可匹配的基地名称，例如 `10015升投`、`京东外呼项目`、`辽宁外呼项目`、`江苏基地-淮安`
+- **AND** 组织路径包含 `人才开发部` 的招聘专员 MUST 归一为 `人才开发部`
+
+#### Scenario: 组织表一线岗位口径
+- **WHEN** 系统查询一线员工列表或计算目标达成实际入培
+- **THEN** 系统 MUST 使用 `客服专员`、`客服班长`、`培训期学员` 作为一线岗位口径
+- **AND** 系统 MUST 使用 `train_start_date` 作为入培月份口径
+
 ### Requirement: 招聘专员列表
 系统 MUST 提供招聘专员列表页面，按招聘专员角色口径查询员工数据。
 

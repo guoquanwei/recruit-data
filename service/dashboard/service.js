@@ -1239,8 +1239,11 @@ function findDefaultCell(matrix) {
   };
 }
 
-function findDefaultMatrixSelection(batchMatrix) {
-  const firstRisk = batchMatrix.riskItems[0];
+function findDefaultMatrixSelection(batchMatrix, preferredBase = '') {
+  const riskItems = preferredBase
+    ? batchMatrix.riskItems.filter((item) => item.base === preferredBase)
+    : batchMatrix.riskItems;
+  const firstRisk = riskItems[0];
   if (firstRisk) {
     return {
       base: firstRisk.base,
@@ -1249,7 +1252,9 @@ function findDefaultMatrixSelection(batchMatrix) {
     };
   }
 
-  const firstRow = batchMatrix.rows[0];
+  const firstRow = preferredBase
+    ? batchMatrix.rows.find((row) => row.base === preferredBase)
+    : batchMatrix.rows[0];
   const firstColumn = batchMatrix.columns.find((column) => column.type === 'batch');
   return {
     base: firstRow?.base || '',
@@ -1689,6 +1694,24 @@ function pickPositionBase(progress, batchMatrix, selectedBase = '') {
   return worstBase?.base || bases[0]?.base || '';
 }
 
+function pickLargestRiskBase(progress) {
+  const bases = progress.bases || [];
+  const largestRiskBase = bases
+    .map((base) => ({
+      base: base.base,
+      total: base.channelRows.find((row) => row.channel === '合计')
+    }))
+    .filter((item) => item.total && (item.total.monthlyTarget > 0 || item.total.actualTraining > 0))
+    .sort((left, right) => {
+      if (left.total.gap !== right.total.gap) {
+        return left.total.gap - right.total.gap;
+      }
+      return left.total.achievementRate - right.total.achievementRate;
+    })[0];
+
+  return largestRiskBase?.base || '';
+}
+
 function isActualOnlyBase(base) {
   return Number(base.monthlyTarget || 0) <= 0 && Number(base.actualTraining || 0) > 0;
 }
@@ -2043,7 +2066,7 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
     cards: {
       targetAchievementRateText: overall.achievementRateText || formatPercent(overall.achievementRate || 0),
       selfSourcingShareText: overall.selfSourcingShareText || '0.00%',
-      selfSourcingEfficiency: overallEfficiency.efficiency,
+      selfSourcingEfficiency: overallEfficiency.sevenDayEfficiency || '0.0',
       recruiterTeamSize: overallEfficiency.recruiterCount
     },
     overallRisk: {
@@ -2067,12 +2090,12 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
 }
 
 async function getDashboardOverview(query = {}) {
-  const [frontlineEmployees, recruiters, progress] = await Promise.all([
+  const [frontlineEmployees, recruiters] = await Promise.all([
     listAllOrgTableFrontlineEmployees(),
-    listAllOrgTableRecruiters(),
-    getTargetProgress(query)
+    listAllOrgTableRecruiters()
   ]);
   const employees = [...frontlineEmployees, ...recruiters];
+  const progress = await getTargetProgress(query, employees);
   const yearMonth = progress.yearMonth;
   const asOfDate = progress.cutoffDate;
   const filters = {
@@ -2129,19 +2152,25 @@ async function getDashboardOverview(query = {}) {
       asOfDate
     })
     : { columns: [], rows: [], summary: { risk: 0, warning: 0, achieved: 0, empty: 0 }, riskItems: [] };
+  const defaultBase = overviewTab === 'base'
+    ? (filters.base || selectedFromQuery.base || pickLargestRiskBase(progress))
+    : '';
   const defaultCell = overviewTab === 'base'
-    ? findDefaultMatrixSelection(batchMatrix)
+    ? findDefaultMatrixSelection(batchMatrix, defaultBase)
     : { base: '', channel: '', selectedBatchDay: '' };
   const selectedCell = {
-    base: selectedFromQuery.base || defaultCell.base,
+    base: selectedFromQuery.base || defaultBase || defaultCell.base,
     channel: selectedFromQuery.channel || defaultCell.channel,
     selectedBatchDay: selectedFromQuery.selectedBatchDay || defaultCell.selectedBatchDay
   };
+  if (overviewTab === 'base') {
+    filters.base = filters.base || selectedCell.base;
+  }
   const positionBoard = overviewTab === 'base'
     ? buildPositionChannelBoard({
       progress,
       batchMatrix,
-      selectedBase: filters.base,
+      selectedBase: filters.base || selectedCell.base,
       selectedBatchDay: selectedCell.selectedBatchDay,
       employees,
       interviews,

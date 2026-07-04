@@ -1,6 +1,6 @@
 const { queryAll, queryOne } = require('../../dao/db');
 const { bulkInsert } = require('../../dao/bulkInsert');
-const { isFrontlineEmployee, FRONTLINE_POSITIONS } = require('./normalize');
+const { inferBase, isFrontlineEmployee, FRONTLINE_POSITIONS } = require('./normalize');
 
 const EMPLOYEE_COLUMNS = [
   'source_type',
@@ -29,8 +29,10 @@ const BASE_OPTION_ORDER = [
   '南二在线客服项目',
   '长春热线项目',
   '吉林外呼项目',
+  '京东外呼项目',
   '江苏基地-南京',
   '江苏基地-淮安',
+  '辽宁外呼项目',
   '济南基地-济阳',
   '济南基地-夏都',
   '湖南基地-空港',
@@ -43,9 +45,23 @@ const BASE_OPTION_ORDER = [
 ];
 
 let allEmployeesCache;
+const ORG_TABLE_CACHE_TTL_MS = 5 * 60 * 1000;
+let allOrgTableFrontlineEmployeesCache;
+let allOrgTableRecruitersCache;
 
 function clearEmployeeCache() {
   allEmployeesCache = undefined;
+  allOrgTableFrontlineEmployeesCache = undefined;
+  allOrgTableRecruitersCache = undefined;
+}
+
+function getFreshCache(cache) {
+  if (!cache) {
+    return undefined;
+  }
+  return Date.now() - cache.createdAt <= ORG_TABLE_CACHE_TTL_MS
+    ? cache.rows
+    : undefined;
 }
 
 function toDatabaseRow(employee) {
@@ -224,6 +240,19 @@ function isFrontlineRecord(row) {
 const FRONTLINE_POSITIONS_ARRAY = Array.from(FRONTLINE_POSITIONS);
 const RECRUITER_POSITIONS = ['招聘专员', '初级招聘主管'];
 
+function buildOrgDepartmentText(row) {
+  return [
+    row.org_path,
+    row.org_name,
+    row.org_level2,
+    row.org_level3,
+    row.org_level4,
+    row.org_level5,
+    row.org_level6,
+    row.org_level7
+  ].filter(Boolean).join(' ');
+}
+
 function fromOrgTableRow(row) {
   if (!row) {
     return undefined;
@@ -238,7 +267,10 @@ function fromOrgTableRow(row) {
     employeeNo: row.emp_code,
     name: row.emp_name,
     employeeStatus: employeeStatus,
-    base: row.org_level2,
+    base: inferBase({
+      department: buildOrgDepartmentText(row),
+      officeLocation: row.work_location
+    }),
     department: row.org_name,
     position: row.position_name,
     channelType: row.hr_channel_type,
@@ -328,6 +360,11 @@ async function listOrgTableFrontlineEmployees({ filters = {}, page }) {
 }
 
 async function listAllOrgTableFrontlineEmployees() {
+  const cachedRows = getFreshCache(allOrgTableFrontlineEmployeesCache);
+  if (cachedRows) {
+    return cachedRows;
+  }
+
   const rows = await queryAll(`
     SELECT * FROM common_emp_org_real_day
     WHERE position_name = ANY($1)
@@ -335,7 +372,11 @@ async function listAllOrgTableFrontlineEmployees() {
     ORDER BY work_status DESC, train_start_date DESC NULLS LAST, id DESC
   `, [FRONTLINE_POSITIONS_ARRAY]);
 
-  return rows.map(fromOrgTableRow);
+  allOrgTableFrontlineEmployeesCache = {
+    createdAt: Date.now(),
+    rows: rows.map(fromOrgTableRow)
+  };
+  return allOrgTableFrontlineEmployeesCache.rows;
 }
 
 async function getOrgTableDistinctFilterOptions(filters = {}) {
@@ -421,6 +462,11 @@ async function listOrgTableRecruiters({ filters = {}, page }) {
 }
 
 async function listAllOrgTableRecruiters() {
+  const cachedRows = getFreshCache(allOrgTableRecruitersCache);
+  if (cachedRows) {
+    return cachedRows;
+  }
+
   const rows = await queryAll(`
     SELECT * FROM common_emp_org_real_day
     WHERE position_name = ANY($1)
@@ -429,7 +475,11 @@ async function listAllOrgTableRecruiters() {
     ORDER BY work_status DESC, train_start_date DESC NULLS LAST, id DESC
   `, [RECRUITER_POSITIONS]);
 
-  return rows.map(fromOrgTableRow);
+  allOrgTableRecruitersCache = {
+    createdAt: Date.now(),
+    rows: rows.map(fromOrgTableRow)
+  };
+  return allOrgTableRecruitersCache.rows;
 }
 
 async function getOrgTableRecruiterFilterOptions(filters = {}) {

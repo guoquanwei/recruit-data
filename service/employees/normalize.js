@@ -15,6 +15,8 @@ const STANDARD_BASES = new Set([
   '南二在线客服项目',
   '长春热线项目',
   '吉林外呼项目',
+  '京东外呼项目',
+  '辽宁外呼项目',
   '江苏基地-南京',
   '江苏基地-淮安',
   '济南基地-济阳',
@@ -39,7 +41,7 @@ function inferBase({ department, officeLocation }) {
     .map((part) => part.trim())
     .filter(Boolean);
 
-  if (departmentParts[2] === '人才开发部') {
+  if (departmentParts[2] === '人才开发部' || source.includes('人才开发部')) {
     return '人才开发部';
   }
 
@@ -60,6 +62,12 @@ function inferBase({ department, officeLocation }) {
   }
   if (source.includes('宜宾基地') || source.includes('YB-宜宾基地')) {
     return '宜宾基地';
+  }
+  if (source.includes('京东外呼项目')) {
+    return '京东外呼项目';
+  }
+  if (source.includes('辽宁外呼项目') || source.includes('辽宁外呼')) {
+    return '辽宁外呼项目';
   }
   if (source.includes('贵阳') || source.includes('GZ01-贵阳德福中心')) {
     return 'ITO项目';
