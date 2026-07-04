@@ -45,11 +45,6 @@
             <a class="<%= active === 'dashboard-base-risk' ? 'active' : '' %>" href="/dashboard/base-risk" title="基地风险分析"><%- navIcon('alert') %><span class="nav-label">基地风险分析</span></a>
             <a class="<%= active === 'dashboard-self-sourcing' ? 'active' : '' %>" href="/dashboard/self-sourcing" title="自主社招人效"><%- navIcon('gauge') %><span class="nav-label">自主社招人效</span></a>
           </section>
-          <section class="nav-group <%= moduleActive === 'employees' ? 'open' : '' %>">
-            <div class="nav-group-title">员工数据管理</div>
-            <a class="<%= active === 'employees-recruiters' ? 'active' : '' %>" href="/employees/recruiters" title="招聘专员列表"><%- navIcon('user') %><span class="nav-label">招聘专员列表</span></a>
-            <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><%- navIcon('users') %><span class="nav-label">一线员工列表</span></a>
-          </section>
           <section class="nav-group <%= moduleActive === 'targets' ? 'open' : '' %>">
             <div class="nav-group-title">需求管理</div>
             <a class="<%= active === 'targets-import' ? 'active' : '' %>" href="/targets/import" title="招聘目标导入"><%- navIcon('upload') %><span class="nav-label">招聘目标导入</span></a>
@@ -61,6 +56,11 @@
             <a class="<%= active === 'interviews-import' ? 'active' : '' %>" href="/interviews/import" title="数据导入"><%- navIcon('upload') %><span class="nav-label">数据导入</span></a>
             <a class="<%= active === 'interviews-list' ? 'active' : '' %>" href="/interviews" title="面试记录列表"><%- navIcon('calendar') %><span class="nav-label">面试记录列表</span></a>
             <a class="<%= active === 'interviews-funnel' ? 'active' : '' %>" href="/interviews/funnel" title="招聘漏斗分析"><%- navIcon('funnel') %><span class="nav-label">招聘漏斗分析</span></a>
+          </section>
+          <section class="nav-group <%= moduleActive === 'employees' ? 'open' : '' %>">
+            <div class="nav-group-title">员工数据管理</div>
+            <a class="<%= active === 'employees-recruiters' ? 'active' : '' %>" href="/employees/recruiters" title="招聘专员列表"><%- navIcon('user') %><span class="nav-label">招聘专员列表</span></a>
+            <a class="<%= active === 'employees-frontline' ? 'active' : '' %>" href="/employees/frontline" title="一线员工列表"><%- navIcon('users') %><span class="nav-label">一线员工列表</span></a>
           </section>
         </nav>
       </aside>

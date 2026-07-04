@@ -200,6 +200,15 @@ test('target import is rendered on its own page', async () => {
   assert.doesNotMatch(listPage.text, /<th>截止目标<\/th>/);
 });
 
+test('sidebar places employee data management at the bottom', async () => {
+  const page = await requestApp('/dashboard/overview');
+  assert.equal(page.response.status, 200);
+  const groupTitles = Array.from(page.text.matchAll(/<div class="nav-group-title">([^<]+)<\/div>/g))
+    .map((match) => match[1]);
+
+  assert.deepEqual(groupTitles, ['综合分析看板', '需求管理', '面试记录管理', '员工数据管理']);
+});
+
 test('self sourcing page omits personal risk diagnosis column', async () => {
   const page = await requestApp('/dashboard/self-sourcing?yearMonth=2026-05');
   assert.equal(page.response.status, 200);

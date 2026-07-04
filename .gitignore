@@ -166,7 +166,6 @@ Thumbs.db
 .superpowers/
 
 # Local documents and sample data
-docs/
 systerm_data/
 *.xlsx
 *.xls
