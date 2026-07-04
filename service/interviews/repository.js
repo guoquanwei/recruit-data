@@ -138,7 +138,21 @@ async function listInterviewRecords({ filters = {}, page }) {
   };
 }
 
+let allInterviewsCache;
+
+function clearInterviewCache() {
+  allInterviewsCache = undefined;
+}
+
 async function listAllInterviewRecords(filters = {}) {
+  if (!filters || Object.keys(filters).length === 0) {
+    if (allInterviewsCache) {
+      return allInterviewsCache;
+    }
+    allInterviewsCache = (await queryAll('SELECT * FROM interview_records')).map(fromDatabaseRow);
+    return allInterviewsCache;
+  }
+
   const { whereSql, params } = buildInterviewFilters(filters);
   const rows = await queryAll(`SELECT * FROM interview_records ${whereSql}`, params);
   return rows.map(fromDatabaseRow);
@@ -161,6 +175,7 @@ async function getDistinctInterviewFilterOptions() {
 
 module.exports = {
   buildInterviewFilters,
+  clearInterviewCache,
   insertInterviewRecords,
   replaceAllInterviewRecords,
   replaceInterviewRecordsByDates,

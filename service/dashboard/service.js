@@ -2055,8 +2055,10 @@ function buildOverviewInsights({ progress, trainingDetails = [], selfSourcingEff
 }
 
 async function getDashboardOverview(query = {}) {
-  const employees = await listAllEmployees();
-  const progress = await getTargetProgress(query, employees);
+  const [employees, progress] = await Promise.all([
+    listAllEmployees(),
+    getTargetProgress(query)
+  ]);
   const yearMonth = progress.yearMonth;
   const asOfDate = progress.cutoffDate;
   const filters = {
@@ -2071,7 +2073,23 @@ async function getDashboardOverview(query = {}) {
     channel: toText(query.selectedChannel),
     selectedBatchDay: toText(query.selectedBatchDay)
   };
-  const targets = yearMonth ? await listTargetsByMonth(yearMonth) : [];
+
+  const [targets, interviews, selfSourcingEfficiency, options] = await Promise.all([
+    yearMonth ? listTargetsByMonth(yearMonth) : [],
+    (overviewTab === 'base' || overviewTab === 'self') && yearMonth
+      ? listAllInterviewRecords({ yearMonth })
+      : [],
+    getSelfSourcingEfficiency({
+      yearMonth,
+      cutoffDate: asOfDate,
+      recruiter: filters.recruiter
+    }, employees),
+    getDistinctTargetFilterOptions({
+      yearMonth,
+      base: filters.base
+    })
+  ]);
+
   const details = getTrainingDetails({
     yearMonth,
     cutoffDate: asOfDate,
@@ -2079,11 +2097,6 @@ async function getDashboardOverview(query = {}) {
     channel: filters.channel
   }, employees);
   const selfSourcingCount = details.filter((item) => item.channelType === '自主社招').length;
-  const selfSourcingEfficiency = await getSelfSourcingEfficiency({
-    yearMonth,
-    cutoffDate: asOfDate,
-    recruiter: filters.recruiter
-  }, employees);
   const overallEfficiency = selfSourcingEfficiency.find((item) => item.stage === '整体');
   const overviewInsights = buildOverviewInsights({
     progress,
@@ -2091,7 +2104,6 @@ async function getDashboardOverview(query = {}) {
     selfSourcingEfficiency
   });
   const matrix = overviewTab === 'base' ? buildDashboardMatrix(progress, filters) : { channels: [], rows: [] };
-  const interviews = (overviewTab === 'base' || overviewTab === 'self') ? (yearMonth ? await listAllInterviewRecords({ yearMonth }) : []) : [];
   const batchMatrix = overviewTab === 'base'
     ? buildBatchMatrix({
       yearMonth,
@@ -2186,10 +2198,7 @@ async function getDashboardOverview(query = {}) {
     overviewInsights,
     overviewTab,
     filters,
-    options: await getDistinctTargetFilterOptions({
-      yearMonth,
-      base: filters.base
-    }),
+    options,
     matrix,
     batchMatrix,
     positionBoard,
