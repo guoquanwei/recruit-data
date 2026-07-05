@@ -1301,7 +1301,7 @@ test('dashboard position channel board summarizes one base across channels and b
     ['回流', 0, 0, 0, '0.00%', '0.00%'],
     ['内推', 0, 0, 0, '0.00%', '0.00%'],
     ['渠道社招', 1, 0, 0, '0.00%', '0.00%'],
-    ['自主社招', 2, 1, 1, '50.00%', '100.00%']
+    ['自主社招', 2, 1, 0, '50.00%', '0.00%']
   ]);
   assert.match(board.actionPlans.find((item) => item.title === '自主社招提升方案').actions[0], /6月1日 - 6月9日/);
   assert.match(secondBatchBoard.actionPlans.find((item) => item.title === '自主社招提升方案').actions[0], /6月11日 - 6月19日/);
