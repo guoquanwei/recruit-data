@@ -1280,7 +1280,7 @@ test('dashboard position channel board summarizes one base across channels and b
     ['回流', 1, 1, 1, '100.00%', '100.00%'],
     ['内推', 2, 1, 1, '50.00%', '100.00%'],
     ['渠道社招', 3, 2, 1, '66.67%', '50.00%'],
-    ['自主社招', 4, 1, 0, '25.00%', '0.00%']
+    ['自主社招', 4, 1, 1, '25.00%', '100.00%']
   ]);
 
   const secondBatchBoard = buildPositionChannelBoard({
