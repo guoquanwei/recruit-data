@@ -23,12 +23,7 @@ pnpm-debug.log*
 .env.example
 
 # Runtime data
-data/*.db
-data/*.sqlite
-data/*.sqlite3
-data/*.db-*
-data/*.sqlite-*
-data/*.sqlite3-*
+data/*
 uploads
 tmp
 temp
@@ -39,7 +34,7 @@ pids
 # Logs and diagnostics
 logs
 *.log
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+report.[0-9]*.[0-9]*.[0-9]*.[0-9].json
 
 # Test and build artifacts
 coverage
@@ -51,6 +46,45 @@ build
 .vite
 *.tsbuildinfo
 
+# Test code and scripts (not needed in production)
+test/
+tests/
+__tests__
+*.test.js
+*.spec.js
+scripts/
+tools/
+
+# Documentation and licenses (not needed in runtime)
+LICENSE
+LICENSE*
+README.md
+README*
+CHANGELOG*
+HISTORY*
+AUTHORS
+CONTRIBUTING
+CODE_OF_CONDUCT
+docs/
+
+# Project planning/history artifacts not required at runtime
+openspec
+DB_INIT/
+
+# Docker configuration files (not needed in image)
+Dockerfile
+docker-compose*
+.docker/
+.dockerignore
+
+# Development tooling config
+nodemon.json
+.eslintrc*
+.prettierrc
+.jestrc
+.babelrc
+.editorconfig
+
 # Local documents and sample exports
 *.xlsx
 *.xls
@@ -59,11 +93,16 @@ build
 *.doc
 *.docx
 *.pdf
-docs
-
-# Project planning/history artifacts not required at runtime
-openspec
+*.sql
 
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
