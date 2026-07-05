@@ -806,6 +806,39 @@ function countTrainingInWindow(employees, { base, channel, startDate, endDate })
   return seen.size;
 }
 
+function getAssignedTargetBatchDay(dateValue, batchDays = [], yearMonth = '') {
+  const date = normalizeDate(dateValue);
+  if (!date || !date.startsWith(yearMonth) || batchDays.length === 0) {
+    return undefined;
+  }
+
+  const day = Number(date.slice(8, 10));
+  const previousBatchDay = batchDays
+    .filter((batchDay) => batchDay <= day)
+    .at(-1);
+  return previousBatchDay || batchDays[0];
+}
+
+function countTrainingInAssignedBatch(employees, { base, channel, yearMonth, batchDays, batchDay }) {
+  const seen = new Set();
+
+  employees.forEach((employee) => {
+    if (toText(employee.base) !== base || toText(employee.channelType) !== channel) {
+      return;
+    }
+    if (getAssignedTargetBatchDay(employee.trainingDate, batchDays, yearMonth) !== batchDay) {
+      return;
+    }
+
+    const employeeKey = employee.employeeNo || toText(employee.phone);
+    if (employeeKey) {
+      seen.add(employeeKey);
+    }
+  });
+
+  return seen.size;
+}
+
 function countFunnelInWindow(interviews, { base, channel, startDate, endDate }) {
   return interviews.reduce((summary, interview) => {
     if (toText(interview.base) !== base || toText(interview.channelType) !== channel) {
@@ -942,6 +975,7 @@ function buildBatchDrilldown({ yearMonth, base, channel, targets = [], employees
     && toText(target.channel) === channel
   ));
   const batches = sumDailyTargetsByDay(matchedTargets);
+  const batchDays = batches.map((batch) => batch.day);
   const month = Number(yearMonth.slice(5, 7));
   const normalizedAsOfDate = normalizeDate(asOfDate);
 
@@ -949,7 +983,13 @@ function buildBatchDrilldown({ yearMonth, base, channel, targets = [], employees
     const previousDay = index === 0 ? 1 : batches[index - 1].day + 1;
     const windowStart = buildDate(yearMonth, previousDay);
     const windowEnd = buildDate(yearMonth, batch.day);
-    const actualTraining = countTrainingInWindow(employees, { base, channel, startDate: windowStart, endDate: windowEnd });
+    const actualTraining = countTrainingInAssignedBatch(employees, {
+      base,
+      channel,
+      yearMonth,
+      batchDays,
+      batchDay: batch.day
+    });
     const funnel = countFunnelInWindow(interviews, { base, channel, startDate: windowStart, endDate: windowEnd });
     const achievementRate = batch.target > 0 ? actualTraining / batch.target : 0;
     const diagnosis = buildGapDiagnosis({
@@ -1038,10 +1078,16 @@ function buildEmptyBatchCell(day, yearMonth) {
   };
 }
 
-function buildActualOnlyBatchCell(day, yearMonth, { base, channel, previousDay, employees = [], interviews = [] }) {
+function buildActualOnlyBatchCell(day, yearMonth, { base, channel, previousDay, batchDays = [], employees = [], interviews = [] }) {
   const windowStart = buildDate(yearMonth, previousDay);
   const windowEnd = buildDate(yearMonth, day);
-  const actualTraining = countTrainingInWindow(employees, { base, channel, startDate: windowStart, endDate: windowEnd });
+  const actualTraining = countTrainingInAssignedBatch(employees, {
+    base,
+    channel,
+    yearMonth,
+    batchDays,
+    batchDay: day
+  });
   if (actualTraining <= 0) {
     return buildEmptyBatchCell(day, yearMonth);
   }
@@ -1153,17 +1199,21 @@ function buildBatchMatrix({ yearMonth, matrix, targets = [], employees = [], int
         ...batch,
         displayText: batch.achievementRateText
       }]));
+      const targetBatchDays = Array.from(batchMap.keys());
       const cells = {};
 
       batchDays.forEach((day, index) => {
         const previousDay = index === 0 ? 1 : batchDays[index - 1] + 1;
-        const sourceCell = batchMap.get(day) || buildActualOnlyBatchCell(day, yearMonth, {
+        const sourceCell = batchMap.get(day) || (targetBatchDays.length > 0
+          ? buildEmptyBatchCell(day, yearMonth)
+          : buildActualOnlyBatchCell(day, yearMonth, {
           base: baseRow.base,
           channel,
           previousDay,
+          batchDays,
           employees,
           interviews
-        });
+        }));
         const matrixStatus = toMatrixStatus(sourceCell.status);
         const cell = {
           ...sourceCell,
@@ -1905,7 +1955,7 @@ function buildPositionChannelBoard({
       suggestion: worstCell?.diagnosis?.suggestion || '',
       worstChannel: worstCell?.channel || ''
     };
-  });
+  }).filter((batch) => batch.target > 0 || batch.actualTraining > 0);
   const selectedDay = Number(selectedBatchDay || batchRisks.find((batch) => batch.status === 'risk')?.day || batchRisks[0]?.day || 0);
   const selectedBatchSummary = batchRisks.find((batch) => batch.day === selectedDay) || batchRisks[0];
   const selectedBatchRows = baseRows
