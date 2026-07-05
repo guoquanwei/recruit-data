@@ -1032,8 +1032,31 @@ test('dashboard batch drilldown groups funnel by batch feedback window', () => {
     batch.funnel.passedCount,
     batch.funnel.trainingCount
   ]), [
-    ['6月10日批次', '2026-06-01', '2026-06-10', 1, 1, 0, 'achieved', 2, 1, 1],
+    ['6月10日批次', '2026-06-01', '2026-06-10', 1, 2, 1, 'achieved', 2, 1, 2],
     ['6月20日批次', '2026-06-11', '2026-06-20', 1, 1, 0, 'achieved', 1, 1, 1]
+  ]);
+});
+
+test('dashboard batch drilldown assigns off-date training to nearest previous target batch', () => {
+  const batches = buildBatchDrilldown({
+    yearMonth: '2026-06',
+    base: '联通天津',
+    channel: '自主社招',
+    targets: [
+      { yearMonth: '2026-06', base: '联通天津', channel: '自主社招', dailyTargets: { 10: 1, 20: 1 } }
+    ],
+    employees: [
+      { employeeNo: 'EARLY', base: '联通天津', channelType: '自主社招', trainingDate: '2026-06-09' },
+      { employeeNo: 'BETWEEN', base: '联通天津', channelType: '自主社招', trainingDate: '2026-06-15' },
+      { employeeNo: 'AFTER', base: '联通天津', channelType: '自主社招', trainingDate: '2026-06-22' }
+    ],
+    interviews: [],
+    asOfDate: '2026-06-30'
+  });
+
+  assert.deepEqual(batches.map((batch) => [batch.label, batch.target, batch.actualTraining, batch.gap]), [
+    ['6月10日批次', 1, 2, 1],
+    ['6月20日批次', 1, 1, 0]
   ]);
 });
 
@@ -1110,15 +1133,14 @@ test('dashboard batch matrix uses base channel rows and batch columns', () => {
   });
 
   assert.deepEqual(batchMatrix.columns.map((column) => column.label), ['6月10日批次', '6月20日批次', '合计']);
-  assert.deepEqual(batchMatrix.summary, { risk: 2, warning: 1, achieved: 1, empty: 0 });
+  assert.deepEqual(batchMatrix.summary, { risk: 1, warning: 1, achieved: 1, empty: 1 });
   assert.deepEqual(batchMatrix.rows.map((row) => [row.label, row.cells[10].status, row.cells[10].displayText, row.total.status]), [
-    ['联通天津 / 内推', 'risk', '0.0%', 'risk'],
-    ['联通天津 / 自主社招', 'risk', '50.0%', 'risk']
+    ['联通天津 / 内推', 'risk', '50.0%', 'risk'],
+    ['联通天津 / 自主社招', 'achieved', '100.0%', 'risk']
   ]);
   assert.deepEqual(batchMatrix.riskItems.map((item) => [item.label, item.status, item.gap]), [
-    ['联通天津 / 内推 / 6月10日批次', 'risk', -2],
-    ['联通天津 / 自主社招 / 6月10日批次', 'risk', -1],
-    ['联通天津 / 自主社招 / 6月20日批次', 'warning', -1]
+    ['联通天津 / 内推 / 6月10日批次', 'risk', -1],
+    ['联通天津 / 自主社招 / 6月20日批次', 'warning', -2]
   ]);
 });
 
@@ -1230,22 +1252,22 @@ test('dashboard position channel board summarizes one base across channels and b
     ['自主社招', 9, 1, -8]
   ]);
   assert.deepEqual(board.batchRisks.map((item) => [item.label, item.target, item.actualTraining, item.gap]), [
-    ['6月10日批次', 14, 3, -11],
-    ['6月20日批次', 6, 1, -5]
+    ['6月10日批次', 14, 4, -10],
+    ['6月20日批次', 6, 0, -6]
   ]);
   assert.equal(board.batchRisks.reduce((sum, batch) => sum + batch.gap, 0), board.total.gap);
   assert.deepEqual(board.batchRisks[1].channels.map((item) => [item.channel, item.target, item.actualTraining, item.gap]), [
     ['回流', 0, 0, 0],
     ['内推', 0, 0, 0],
     ['渠道社招', 2, 0, -2],
-    ['自主社招', 4, 1, -3]
+    ['自主社招', 4, 0, -4]
   ]);
   assert.equal(board.selectedBatch.day, 10);
   assert.deepEqual(board.selectedBatch.channels.map((item) => [item.channel, item.target, item.actualTraining, item.gap]), [
     ['回流', 2, 1, -1],
     ['内推', 3, 1, -2],
     ['渠道社招', 4, 1, -3],
-    ['自主社招', 5, 0, -5]
+    ['自主社招', 5, 1, -4]
   ]);
   assert.deepEqual(board.funnelRows.map((row) => [
     row.channel,
@@ -1283,6 +1305,35 @@ test('dashboard position channel board summarizes one base across channels and b
   ]);
   assert.match(board.actionPlans.find((item) => item.title === '自主社招提升方案').actions[0], /6月1日 - 6月9日/);
   assert.match(secondBatchBoard.actionPlans.find((item) => item.title === '自主社招提升方案').actions[0], /6月11日 - 6月19日/);
+});
+
+test('dashboard position channel board hides empty batches for selected base', () => {
+  const targets = [
+    { yearMonth: '2026-06', base: '江苏基地-淮安', channel: '自主社招', dailyTargets: { 20: 5 } },
+    { yearMonth: '2026-06', base: '联通天津', channel: '内推', dailyTargets: { 10: 5 } }
+  ];
+  const summary = summarizeTargets(targets, [], '2026-06-30');
+  const matrix = buildDashboardMatrix(summary, {});
+  const batchMatrix = buildBatchMatrix({
+    yearMonth: '2026-06',
+    matrix,
+    targets,
+    employees: [],
+    interviews: [],
+    asOfDate: '2026-06-30'
+  });
+
+  const board = buildPositionChannelBoard({
+    progress: summary,
+    batchMatrix,
+    selectedBase: '江苏基地-淮安'
+  });
+
+  assert.deepEqual(batchMatrix.columns.map((column) => column.label), ['6月10日批次', '6月20日批次', '合计']);
+  assert.deepEqual(board.batchRisks.map((batch) => [batch.label, batch.target, batch.actualTraining]), [
+    ['6月20日批次', 5, 0]
+  ]);
+  assert.equal(board.selectedBatch.day, 20);
 });
 
 test('dashboard position channel board exposes funnel rows and channel action plans', () => {
