@@ -52,6 +52,103 @@ async function requestApp(pathName) {
   }
 }
 
+async function withMockedDashboardService({ targets = [], employees = [], progress }, callback) {
+  const modulePaths = [
+    require.resolve('../service/dashboard/service'),
+    require.resolve('../service/employees/repository'),
+    require.resolve('../service/interviews/repository'),
+    require.resolve('../service/targets/repository'),
+    require.resolve('../service/targets/service'),
+    require.resolve('../dao/db')
+  ];
+  const originalCacheEntries = new Map(modulePaths.map((modulePath) => [modulePath, require.cache[modulePath]]));
+  const setMockModule = (modulePath, exports) => {
+    require.cache[modulePath] = {
+      id: modulePath,
+      filename: modulePath,
+      loaded: true,
+      exports
+    };
+  };
+
+  try {
+    delete require.cache[modulePaths[0]];
+    setMockModule(modulePaths[1], {
+      listAllEmployees: async () => employees,
+      listAllOrgTableFrontlineEmployees: async () => employees,
+      listAllOrgTableRecruiters: async () => []
+    });
+    setMockModule(modulePaths[2], {
+      listAllInterviewRecords: async () => []
+    });
+    setMockModule(modulePaths[3], {
+      getDistinctTargetFilterOptions: async () => ({
+        months: ['2026-01'],
+        bases: ['达成基地', '风险基地'],
+        channels: ['自主社招']
+      }),
+      listTargetsByMonth: async () => targets
+    });
+    setMockModule(modulePaths[4], {
+      getTargetProgress: async () => progress
+    });
+    setMockModule(modulePaths[5], {
+      execute: async () => undefined
+    });
+
+    return await callback(require('../service/dashboard/service'));
+  } finally {
+    modulePaths.forEach((modulePath) => {
+      if (originalCacheEntries.get(modulePath)) {
+        require.cache[modulePath] = originalCacheEntries.get(modulePath);
+      } else {
+        delete require.cache[modulePath];
+      }
+    });
+  }
+}
+
+async function withMockedTargetService({ targets = [], employees = [] }, callback) {
+  const modulePaths = [
+    require.resolve('../service/targets/service'),
+    require.resolve('../service/targets/repository'),
+    require.resolve('../service/employees/repository')
+  ];
+  const originalCacheEntries = new Map(modulePaths.map((modulePath) => [modulePath, require.cache[modulePath]]));
+  const setMockModule = (modulePath, exports) => {
+    require.cache[modulePath] = {
+      id: modulePath,
+      filename: modulePath,
+      loaded: true,
+      exports
+    };
+  };
+
+  try {
+    delete require.cache[modulePaths[0]];
+    setMockModule(modulePaths[1], {
+      getAvailableMonths: async () => Array.from(new Set(targets.map((target) => target.yearMonth))).sort().reverse(),
+      getDistinctTargetFilterOptions: async (filters = {}) => formatDistinctTargetFilterOptions(targets, filters),
+      listTargetsByMonth: async (yearMonth) => targets.filter((target) => target.yearMonth === yearMonth)
+    });
+    setMockModule(modulePaths[2], {
+      listAllEmployees: async () => employees,
+      listAllOrgTableFrontlineEmployees: async () => employees,
+      listAllOrgTableRecruiters: async () => []
+    });
+
+    return await callback(require('../service/targets/service'));
+  } finally {
+    modulePaths.forEach((modulePath) => {
+      if (originalCacheEntries.get(modulePath)) {
+        require.cache[modulePath] = originalCacheEntries.get(modulePath);
+      } else {
+        delete require.cache[modulePath];
+      }
+    });
+  }
+}
+
 test('shared formatting masks phone numbers and parses pagination defaults', () => {
   assert.equal(maskPhone('13915993720'), '139****3720');
   assert.equal(maskPhone(''), '');
@@ -931,6 +1028,28 @@ test('target progress summary follows base filter', () => {
   ]);
 });
 
+test('target progress clears stale base filter when switching months', async () => {
+  const targets = [
+    { yearMonth: '2026-01', base: '一月基地', channel: '自主社招', dailyTargets: { 10: 10 } },
+    { yearMonth: '2026-05', base: '五月基地', channel: '自主社招', dailyTargets: { 10: 10 } }
+  ];
+  const employees = [
+    { employeeNo: 'JAN1', base: '一月基地', channelType: '自主社招', trainingDate: '2026-01-09' }
+  ];
+
+  await withMockedTargetService({ targets, employees }, async ({ getTargetProgress }) => {
+    const progress = await getTargetProgress({
+      yearMonth: '2026-01',
+      base: '五月基地'
+    });
+
+    assert.equal(progress.filters.base, '');
+    assert.equal(progress.overall.monthlyTarget, 10);
+    assert.equal(progress.overall.actualTraining, 1);
+    assert.deepEqual(progress.bases.map((base) => base.base), ['一月基地']);
+  });
+});
+
 test('target progress sorts actual-only bases after targeted bases', () => {
   const summary = summarizeTargets([
     { yearMonth: '2026-06', base: '有目标低达成基地', channel: '自主社招', dailyTargets: { 1: 10 } }
@@ -1680,6 +1799,44 @@ test('dashboard position channel board switches to base achievement overview whe
     ['江苏基地-淮安', 10, '100.00%', 'achieved']
   ]);
   assert.equal(board.riskBaseCount, 2);
+});
+
+test('dashboard base risk keeps all-base overview when base filter is empty', async () => {
+  const targets = [
+    { yearMonth: '2026-01', base: '风险基地', channel: '自主社招', dailyTargets: { 10: 10 } },
+    { yearMonth: '2026-01', base: '达成基地', channel: '自主社招', dailyTargets: { 10: 10 } }
+  ];
+  const employees = [
+    { employeeNo: 'RISK1', base: '风险基地', channelType: '自主社招', trainingDate: '2026-01-09' },
+    ...Array.from({ length: 10 }, (_, index) => ({
+      employeeNo: `OK${index}`,
+      base: '达成基地',
+      channelType: '自主社招',
+      trainingDate: '2026-01-09'
+    }))
+  ];
+  const progress = {
+    yearMonth: '2026-01',
+    cutoffDate: '2026-01-31',
+    months: ['2026-01'],
+    filters: { yearMonth: '2026-01', base: '', channel: '' },
+    options: {
+      months: ['2026-01'],
+      bases: ['达成基地', '风险基地'],
+      channels: ['自主社招']
+    },
+    ...summarizeTargets(targets, employees, '2026-01-31')
+  };
+
+  await withMockedDashboardService({ targets, employees, progress }, async ({ getDashboardOverview }) => {
+    const dashboard = await getDashboardOverview({ yearMonth: '2026-01', tab: 'base' });
+
+    assert.equal(dashboard.filters.base, '');
+    assert.equal(dashboard.selectedCell.base, '');
+    assert.equal(dashboard.positionBoard.mode, 'baseOverview');
+    assert.equal(dashboard.positionBoard.total.monthlyTarget, 20);
+    assert.deepEqual(dashboard.positionBoard.baseAchievements.map((item) => item.base), ['风险基地', '达成基地']);
+  });
 });
 
 test('dashboard overview insights expose executive cards, channel shares and vendor top three', () => {

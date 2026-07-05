@@ -637,7 +637,19 @@ async function getTargetProgress(query = {}, preloadedEmployees) {
   const yearMonth = await getDefaultMonth(query);
   const cutoffDate = getCutoffDate(yearMonth, query);
   const targets = yearMonth ? await listTargetsByMonth(yearMonth) : [];
-  const filters = buildTargetFilters({ ...query, yearMonth });
+  const normalizedQuery = { ...query, yearMonth };
+  const targetBases = new Set(targets.map((target) => toText(target.base)).filter(Boolean));
+  if (normalizedQuery.base && !targetBases.has(toText(normalizedQuery.base))) {
+    normalizedQuery.base = '';
+  }
+  const targetChannels = new Set(targets
+    .filter((target) => !normalizedQuery.base || toText(target.base) === toText(normalizedQuery.base))
+    .map((target) => toText(target.channel))
+    .filter(Boolean));
+  if (normalizedQuery.channel && !targetChannels.has(toText(normalizedQuery.channel))) {
+    normalizedQuery.channel = '';
+  }
+  const filters = buildTargetFilters(normalizedQuery);
   let employees;
 
   if (preloadedEmployees) {
@@ -656,7 +668,7 @@ async function getTargetProgress(query = {}, preloadedEmployees) {
     months: await getAvailableMonths(),
     filters,
     options: await getDistinctTargetFilterOptions(filters),
-    ...summarizeTargets(targets, employees, cutoffDate, query)
+    ...summarizeTargets(targets, employees, cutoffDate, normalizedQuery)
   };
 }
 

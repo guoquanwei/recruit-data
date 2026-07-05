@@ -2226,10 +2226,9 @@ async function getDashboardOverview(query = {}) {
       asOfDate
     })
     : { columns: [], rows: [], summary: { risk: 0, warning: 0, achieved: 0, empty: 0 }, riskItems: [] };
-  const defaultBase = overviewTab === 'base'
-    ? (filters.base || selectedFromQuery.base || pickLargestRiskBase(progress))
-    : '';
-  const defaultCell = overviewTab === 'base'
+  const selectedBase = filters.base || selectedFromQuery.base;
+  const defaultBase = overviewTab === 'base' ? selectedBase : '';
+  const defaultCell = overviewTab === 'base' && selectedBase
     ? findDefaultMatrixSelection(batchMatrix, defaultBase)
     : { base: '', channel: '', selectedBatchDay: '' };
   const selectedCell = {
@@ -2237,14 +2236,11 @@ async function getDashboardOverview(query = {}) {
     channel: selectedFromQuery.channel || defaultCell.channel,
     selectedBatchDay: selectedFromQuery.selectedBatchDay || defaultCell.selectedBatchDay
   };
-  if (overviewTab === 'base') {
-    filters.base = filters.base || selectedCell.base;
-  }
   const positionBoard = overviewTab === 'base'
     ? buildPositionChannelBoard({
       progress,
       batchMatrix,
-      selectedBase: filters.base || selectedCell.base,
+      selectedBase: selectedCell.base,
       selectedBatchDay: selectedCell.selectedBatchDay,
       employees,
       interviews,

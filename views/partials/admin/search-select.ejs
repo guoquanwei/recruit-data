@@ -1,6 +1,6 @@
 <%
-  const selectedValue = value || '';
-  const selectedItem = (items || []).find((item) => item === selectedValue);
+  const selectedItem = (items || []).find((item) => item === value);
+  const selectedValue = selectedItem || '';
   const selectedLabel = selectedItem || '全部';
   const isSearchable = (items || []).length > 15;
 %>
