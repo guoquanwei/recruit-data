@@ -13,6 +13,22 @@
     1,
     ...baseChartRows.map((base) => Math.max(base.monthlyTarget || 0, base.actualTraining || 0))
   );
+  const getNiceAxisMax = (value) => {
+    if (!Number.isFinite(value) || value <= 0) return 1;
+    const roughStep = value / 4;
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+    const normalized = roughStep / magnitude;
+    const stepMultiplier = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+    return stepMultiplier * magnitude * 4;
+  };
+  const formatAxisTick = (value) => {
+    if (Number.isInteger(value)) return String(value);
+    return value.toFixed(1).replace(/\.0$/, '');
+  };
+  const formatChartAchievementRate = (rate) => `${(Number(rate || 0) * 100).toFixed(1)}%`;
+  const baseChartAxisMax = getNiceAxisMax(maxBaseTarget);
+  const baseChartTicks = Array.from({ length: 5 }, (_, index) => baseChartAxisMax - (baseChartAxisMax / 4 * index));
+  const baseChartHeight = Math.min(420, Math.max(260, 220 + baseChartRows.length * 4));
   const channelPalette = {
     渠道社招: '#e89113',
     内推: '#5aa6e8',
@@ -55,7 +71,7 @@
   <div class="progress-metric-card"><span>月度目标</span><strong><%= progress.overall.monthlyTarget %></strong><small>上月目标汇总目标</small></div>
   <div class="progress-metric-card"><span>截止目标</span><strong><%= progress.overall.cutoffTarget %></strong><small>开班日期早于今天</small></div>
   <div class="progress-metric-card"><span>实际入培人数</span><strong><%= progress.overall.actualTraining %></strong><small>员工实际参培落实量</small></div>
-  <div class="progress-metric-card"><span>达成率</span><strong><%= progress.overall.achievementRateText %></strong><small>实际入培 / 截止目标</small></div>
+  <div class="progress-metric-card progress-rate-card"><span>达成率</span><strong><%= progress.overall.achievementRateText %></strong><small>实际入培 / 月度目标</small></div>
   <div class="progress-metric-card"><span>自主社招占比</span><strong><%= progress.overall.selfSourcingShareText %></strong><small>自主社招实际 / 实际入培</small></div>
 </div>
 
@@ -65,28 +81,48 @@
     <div class="progress-bar-legend">
       <span><i class="legend-actual"></i>实际达成</span>
       <span><i class="legend-cutoff"></i>截止缺口</span>
-      <span><i class="legend-rest"></i>未到截止目标</span>
     </div>
-    <div class="progress-bar-chart">
+    <div class="progress-bar-chart" style="--progress-bar-plot-height: <%= baseChartHeight %>px;">
       <% if (baseChartRows.length === 0) { %>
         <div class="text-muted small">暂无基地目标与达成数据。</div>
       <% } %>
-      <% baseChartRows.forEach((base) => {
-        const actualHeight = Math.max(0, Math.min(100, base.actualTraining / maxBaseTarget * 100));
-        const cutoffGap = Math.max(0, base.cutoffTarget - base.actualTraining);
-        const futureTarget = Math.max(0, base.monthlyTarget - base.cutoffTarget);
-        const cutoffHeight = Math.max(0, Math.min(100, cutoffGap / maxBaseTarget * 100));
-        const restHeight = Math.max(0, Math.min(100, futureTarget / maxBaseTarget * 100));
-      %>
-        <div class="progress-bar-item" title="<%= `${base.base}\n达成率：${base.achievementRateText}\n总目标：${base.monthlyTarget}\n截止目标：${base.cutoffTarget}\n实际达成：${base.actualTraining}` %>">
-          <div class="progress-bar-stack">
-            <span class="bar-rest" style="height:<%= restHeight %>%"></span>
-            <span class="bar-cutoff" style="height:<%= cutoffHeight %>%"></span>
-            <span class="bar-actual" style="height:<%= actualHeight %>%"></span>
-          </div>
-          <em><%= base.base %></em>
+      <% if (baseChartRows.length > 0) { %>
+        <div class="progress-bar-axis" aria-hidden="true">
+          <% baseChartTicks.forEach((tick) => { %>
+            <span><%= formatAxisTick(tick) %></span>
+          <% }) %>
         </div>
-      <% }) %>
+        <div class="progress-bar-plot">
+          <% baseChartRows.forEach((base) => {
+            const actualHeight = Math.max(0, Math.min(100, base.actualTraining / baseChartAxisMax * 100));
+            const cutoffGap = Math.max(0, base.cutoffTarget - base.actualTraining);
+            const futureTarget = Math.max(0, base.monthlyTarget - base.cutoffTarget);
+            const cutoffHeight = Math.max(0, Math.min(100, cutoffGap / baseChartAxisMax * 100));
+            const restHeight = Math.max(0, Math.min(100, futureTarget / baseChartAxisMax * 100));
+            const stackHeight = Math.min(100, actualHeight + cutoffHeight + restHeight);
+            const chartAchievementRateText = formatChartAchievementRate(base.achievementRate);
+          %>
+          <div class="progress-bar-item" style="--bar-rate-height: <%= stackHeight %>%;" tabindex="0" aria-label="<%= `${base.base}，达成率 ${base.achievementRateText}` %>">
+            <div class="progress-bar-stack">
+              <div class="progress-bar-segments">
+                <span class="bar-rest" style="height:<%= restHeight %>%"></span>
+                <span class="bar-cutoff" style="height:<%= cutoffHeight %>%"></span>
+                <span class="bar-actual" style="height:<%= actualHeight %>%"></span>
+              </div>
+              <span class="progress-bar-rate"><%= chartAchievementRateText %></span>
+              <div class="progress-bar-tooltip" role="tooltip">
+                <strong><%= base.base %></strong>
+                <b>达成率 <%= base.achievementRateText %></b>
+                <span><em>月度目标</em><i><%= base.monthlyTarget %></i></span>
+                <span><em>截止目标</em><i><%= base.cutoffTarget %></i></span>
+                <span><em>实际达成</em><i><%= base.actualTraining %></i></span>
+              </div>
+            </div>
+            <em><%= base.base %></em>
+          </div>
+          <% }) %>
+        </div>
+      <% } %>
     </div>
   </section>
 
